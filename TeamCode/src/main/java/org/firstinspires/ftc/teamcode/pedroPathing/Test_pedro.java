@@ -94,7 +94,92 @@ public class Test_pedro extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
+                follower.followPath(Shoot1,1,true);
+                if (!follower.isBusy()){
+                    setPathState(1);
+                    break;
+                }
 
+            case 1:
+                if (actionTimer.getElapsedTimeSeconds()>0.5) {
+                    follower.followPath(Intake1,1,true);
+                    if (!follower.isBusy()) {
+                        setPathState(2);
+                        break;
+                    }
+                }
+
+            case 2:
+                follower.followPath(Gate,1,true);
+                if (!follower.isBusy()){
+                    setPathState(3);
+                    break;
+                }
+
+            case 3:
+                follower.followPath(Shoot2,1,true);
+                if (!follower.isBusy()){
+                    setPathState(4);
+                    break;
+                }
+
+            case 4:
+                if (actionTimer.getElapsedTimeSeconds()>0.5){
+                    setPathState(5);
+                    break;
+                }
+
+            case 5:
+                follower.followPath(Intake2Pose,1,true);
+                if (!follower.isBusy()){
+                    setPathState(6);
+                    break;
+                }
+
+            case 6:
+                follower.followPath(Intake2Line,1,true);
+                if (!follower.isBusy()){
+                    setPathState(7);
+                    break;
+                }
+
+            case 7:
+                follower.followPath(Shoot3,1,true);
+                if (!follower.isBusy()){
+                    setPathState(8);
+                    break;
+                }
+
+            case 8:
+                if (actionTimer.getElapsedTimeSeconds()>0.5){
+                    setPathState(9);
+                    break;
+                }
+
+            case 9:
+                follower.followPath(Intake3Pose,1,true);
+                if (!follower.isBusy()){
+                    setPathState(10);
+                    break;
+                }
+
+            case 10:
+                follower.followPath(Intake3Line,1,true);
+                if (!follower.isBusy()){
+                    setPathState(11);
+                    break;
+                }
+            case 11:
+                follower.followPath(Shoot4,1,true);
+                if (!follower.isBusy()){
+                    setPathState(12);
+                }
+
+            case 12:
+                if (actionTimer.getElapsedTimeSeconds()>0.5){
+                    setPathState(-1);
+                    break;
+                }
 
         }
     }
@@ -105,6 +190,7 @@ public class Test_pedro extends OpMode {
     public void setPathState(int pState) {
         pathState = pState;
         pathTimer.resetTimer();
+        actionTimer.resetTimer();
     }
 
 
