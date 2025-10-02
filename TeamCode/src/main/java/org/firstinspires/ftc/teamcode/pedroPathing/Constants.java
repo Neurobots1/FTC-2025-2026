@@ -58,7 +58,7 @@ public class Constants {
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("sensor_otos")
             .linearUnit(DistanceUnit.INCH)
-            .angleUnit(AngleUnit.RADIANS)
+            .angleUnit(AngleUnit.DEGREES)
             .offset(new SparkFunOTOS.Pose2D(1.9081, 6, 0))
             .linearScalar(0.9763)
             .angularScalar(0.9795);
