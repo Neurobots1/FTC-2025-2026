@@ -8,6 +8,7 @@ import com.pedropathing.ftc.FollowerBuilder;
 import com.pedropathing.ftc.drivetrains.MecanumConstants;
 import com.pedropathing.ftc.localization.constants.OTOSConstants;
 import com.pedropathing.paths.PathConstraints;
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -16,21 +17,25 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(0)
-            .forwardZeroPowerAcceleration(0)
-            .lateralZeroPowerAcceleration(0)
+            //Follower Constant
+            .mass(16)
+            .forwardZeroPowerAcceleration(-25.7718)
+            .lateralZeroPowerAcceleration(-72.4386)
+            .centripetalScaling(0.000365)
+            .automaticHoldEnd(true)
+
+    //PIDF
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.18,0,0.01,0))
+            .headingPIDFCoefficients(new PIDFCoefficients(1.5 ,0,0.1,0))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.008,0,0,0.6,0))
             .useSecondaryTranslationalPIDF(false)
             .useSecondaryHeadingPIDF(false)
-            .useSecondaryDrivePIDF(false)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.1,0.0,0.01,0.6,0.0))
-            .centripetalScaling(0.005);
+            .useSecondaryDrivePIDF(false);
 
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
-            .maxPower(1)
+            //motor
             .rightFrontMotorName("rightFront")
             .rightRearMotorName("rightRear")
             .leftRearMotorName("leftRear")
@@ -39,25 +44,30 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(0)
-            .yVelocity(0);
+            //Drive constant
+            .maxPower(1)
+            .useVoltageCompensation(true)
+            .nominalVoltage(13.3)
+            .xVelocity(75.6121)
+            .yVelocity(55.8394);
 
 
 
 
 
     public static OTOSConstants localizerConstants = new OTOSConstants()
-            .hardwareMapName("otos")
+            .hardwareMapName("sensor_otos")
             .linearUnit(DistanceUnit.INCH)
-            .angleUnit(AngleUnit.RADIANS)
-            .linearScalar(0)
-            .angularScalar(0);
+            .angleUnit(AngleUnit.DEGREES)
+            .offset(new SparkFunOTOS.Pose2D(1.9081, 6, 0))
+            .linearScalar(0.9763)
+            .angularScalar(0.9795);
 
 
 
 
 
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 4, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
