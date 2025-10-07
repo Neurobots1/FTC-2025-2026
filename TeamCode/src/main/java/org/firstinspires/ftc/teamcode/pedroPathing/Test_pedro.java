@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing; // make sure this aligns with class location
 
+import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -9,7 +10,7 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
-
+import com.bylazar.telemetry.PanelsTelemetry;
 import kotlin.jvm.internal.PropertyReference0Impl;
 
 @Autonomous(name = "Test_pedro", group = "Examples")
@@ -20,21 +21,24 @@ public class Test_pedro extends OpMode {
 
     private int pathState;
 
+    private TelemetryManager telemetryM;
+    private boolean slowMode = false;
+    private double slowModeMultiplier = 0.5;
 
-    private final Pose startPose = new Pose(63, 136, 90); // Start Pose of our robot.
-    private final Pose ShootingPose = new Pose(52, 92, 139);
-    private final Pose Intake1Pose = new Pose(20,59, 180);
-    private final Pose GatePose = new Pose(15,63,180);
-    private final Pose Intake2Start = new Pose(49,36,180);
-    private final Pose Intake2Final = new Pose(18,36,180);
-    private final Pose Intake3Start = new Pose(42,84,180);
-    private final Pose Intake3Final = new Pose(20,84,180);
+    private final Pose startPose = new Pose(63, 136, Math.toRadians(90)); // Start Pose of our robot.
+    private final Pose ShootingPose = new Pose(52, 92, Math.toRadians(139));
+    private final Pose Intake1Pose = new Pose(20,59, Math.toRadians(180));
+    private final Pose GatePose = new Pose(15,63,Math.toRadians(180));
+    private final Pose Intake2Start = new Pose(49,36,Math.toRadians(180));
+    private final Pose Intake2Final = new Pose(18,36,Math.toRadians(180));
+    private final Pose Intake3Start = new Pose(42,84,Math.toRadians(180));
+    private final Pose Intake3Final = new Pose(20,84,Math.toRadians(180));
     private final Pose ControlPointIntk1 = new Pose(86,59);
     private final Pose ControlPointShoot2 = new Pose(62,67);
     private final Pose ControlPointShoot3 = new Pose(68,72);
 
 
-    private Path s;
+    private Path d;
     private PathChain Shoot1,Intake1,Gate,Shoot2,Intake2Pose,Intake2Line,Shoot3,Intake3Pose,Intake3Line,Shoot4;
     public void buildPaths() {
         /* This is our scorePreload path. We are using a BezierLine, which is a straight line. */
@@ -95,91 +99,100 @@ public class Test_pedro extends OpMode {
         switch (pathState) {
             case 0:
                 follower.followPath(Shoot1,1,true);
-                if (!follower.isBusy()){
-                    setPathState(1);
-                    break;
-                }
+                setPathState(1);
+                break;
+
 
             case 1:
-                if (actionTimer.getElapsedTimeSeconds()>0.5) {
-                    follower.followPath(Intake1,1,true);
-                    if (!follower.isBusy()) {
-                        setPathState(2);
-                        break;
-                    }
-                }
-
-            case 2:
-                follower.followPath(Gate,1,true);
                 if (!follower.isBusy()){
-                    setPathState(3);
-                    break;
+                    follower.followPath(Intake1,1,true);
+                    setPathState(2);
+
                 }
+                break;
+            case 2:
+                if (!follower.isBusy()){
+                    follower.followPath(Gate,1,true);
+                    setPathState(3);
+
+                }
+                break;
 
             case 3:
-                follower.followPath(Shoot2,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Shoot2,1,true);
                     setPathState(4);
-                    break;
+
                 }
+                break;
 
             case 4:
                 if (actionTimer.getElapsedTimeSeconds()>0.5){
                     setPathState(5);
-                    break;
+
                 }
+                break;
 
             case 5:
-                follower.followPath(Intake2Pose,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Intake2Pose,1,true);
                     setPathState(6);
-                    break;
+
                 }
+                break;
 
             case 6:
-                follower.followPath(Intake2Line,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Intake2Line,1,true);
                     setPathState(7);
-                    break;
+
                 }
+                break;
 
             case 7:
-                follower.followPath(Shoot3,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Shoot3,1,true);
                     setPathState(8);
-                    break;
+
                 }
+                break;
 
             case 8:
                 if (actionTimer.getElapsedTimeSeconds()>0.5){
                     setPathState(9);
-                    break;
+
                 }
+                break;
 
             case 9:
-                follower.followPath(Intake3Pose,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Intake3Pose,1,true);
                     setPathState(10);
-                    break;
+
                 }
+                break;
 
             case 10:
-                follower.followPath(Intake3Line,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Intake3Line,1,true);
                     setPathState(11);
-                    break;
+
                 }
+                break;
             case 11:
-                follower.followPath(Shoot4,1,true);
                 if (!follower.isBusy()){
+                    follower.followPath(Shoot4,1,true);
                     setPathState(12);
                 }
 
             case 12:
                 if (actionTimer.getElapsedTimeSeconds()>0.5){
                     setPathState(-1);
-                    break;
+
                 }
+
+                break;
+
 
         }
     }
@@ -208,15 +221,18 @@ public class Test_pedro extends OpMode {
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.update();
+
+
     }
 
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
         pathTimer = new Timer();
+        actionTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
-
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
