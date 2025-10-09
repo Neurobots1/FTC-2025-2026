@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.pedroPathing; // make sure this aligns with class location
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
@@ -10,16 +13,21 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.bylazar.telemetry.PanelsTelemetry;
-import kotlin.jvm.internal.PropertyReference0Impl;
+
+import org.firstinspires.ftc.teamcode.SubSystem.Init;
+
+import java.util.Set;
 
 @Autonomous(name = "Test_pedro", group = "Examples")
 public class Test_pedro extends OpMode {
 
     private Follower follower;
+    private Init init;
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
+    
+
 
     private TelemetryManager telemetryM;
     private boolean slowMode = false;
@@ -225,20 +233,21 @@ public class Test_pedro extends OpMode {
 
     }
 
-    /** This method is called once at the init of the OpMode. **/
+    /** This method is called once at the setup of the OpMode. **/
     @Override
     public void init() {
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
-        opmodeTimer.resetTimer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
-        buildPaths();
         follower.setStartingPose(startPose);
+        follower.update();
 
+        buildPaths();
     }
+
 
     /** This method is called continuously after Init while waiting for "play". **/
     @Override

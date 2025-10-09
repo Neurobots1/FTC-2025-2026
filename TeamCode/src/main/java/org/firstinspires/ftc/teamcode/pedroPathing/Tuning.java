@@ -50,7 +50,7 @@ public class Tuning extends SelectableOpMode {
     public Tuning() {
         super("Select a Tuning OpMode", s -> {
             s.folder("Localization", l -> {
-                l.add("Localization Test", LocalizationTest::new);
+                l.add("Localization Testq", LocalizationTest::new);
                 l.add("Forward Tuner", ForwardTuner::new);
                 l.add("Lateral Tuner", LateralTuner::new);
                 l.add("Turn Tuner", TurnTuner::new);
@@ -927,7 +927,7 @@ class DriveTuner extends OpMode {
 }
 
 /**
- * This is the Line Test Tuner OpMode. It will drive the robot forward and back
+ * This is the Line Testq Tuner OpMode. It will drive the robot forward and back
  * The user should push the robot laterally and angular to test out the drive, heading, and translational PIDFs.
  *
  * @author Baron Henderson - 20077 The Indubitables
