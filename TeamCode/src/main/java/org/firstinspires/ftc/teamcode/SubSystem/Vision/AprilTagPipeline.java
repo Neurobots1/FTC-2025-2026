@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import android.util.Size;
@@ -22,7 +21,7 @@ import java.util.List;
 
 public class AprilTagPipeline extends OpenCvPipeline {
 
-    private AprilTagProcessor aprilTag;
+    public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     private volatile AprilTagDetection latestDetection = null;
     private HardwareMap hardwareMap;
@@ -57,7 +56,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .enableLiveView(true)
                 .build();
 
-           visionPortal.setProcessorEnabled(aprilTag, false);
+           visionPortal.setProcessorEnabled(aprilTag, true);
     }
 
     @Override
@@ -79,7 +78,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
             Imgproc.putText(input,
                     "ID: " + tag.id,
                     new Point(tag.center.x - 20, tag.center.y - 10),
-                    Imgproc.FONT_HERSHEY_SIMPLEX,
+                    Imgproc.FXONT_HERSHEY_SIMPLE,
                     0.5,
                     new Scalar(255),
                     2);

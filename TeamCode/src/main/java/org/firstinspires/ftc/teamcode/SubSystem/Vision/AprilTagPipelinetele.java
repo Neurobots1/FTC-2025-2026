@@ -38,10 +38,10 @@ public class AprilTagPipelinetele extends LinearOpMode {
             } else {
                 telemetry.addData("Detections", detections.size());
                 for (AprilTagDetection detection : detections) {
-                    telemetry.addLine(String.format("ID: %d | Center: (%.2f, %.2f)",
+                    telemetry.addLine(String.format("ID: %d | ftcpose: (%.2f, %.2f)",
                             detection.id,
-                            detection.center.x,
-                            detection.center.y));
+                            detection.ftcPose.x,
+                            detection.ftcPose.y));
                 }
             }
 
