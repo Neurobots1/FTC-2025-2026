@@ -58,7 +58,7 @@ public class Constants {
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("sensor_otos")
             .linearUnit(DistanceUnit.INCH)
-            .angleUnit(AngleUnit.DEGREES)
+            .angleUnit(AngleUnit.RADIANS)
             .offset(new SparkFunOTOS.Pose2D(1.9081, 6, 0))
             .linearScalar(0.9763)
             .angularScalar(0.9795);
@@ -67,7 +67,7 @@ public class Constants {
 
 
 
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 4, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(0.95, 50, 4, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
