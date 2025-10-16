@@ -78,7 +78,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
             Imgproc.putText(input,
                     "ID: " + tag.id,
                     new Point(tag.center.x - 20, tag.center.y - 10),
-                    Imgproc.FXONT_HERSHEY_SIMPLE,
+                    Imgproc.FONT_HERSHEY_SIMPLEX,
                     0.5,
                     new Scalar(255),
                     2);

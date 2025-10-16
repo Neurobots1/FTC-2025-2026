@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -12,6 +13,7 @@ import java.util.List;
 public class AprilTagPipelinetele extends LinearOpMode {
 
     private AprilTagPipeline aprilTagPipeline;
+    Relocalisation relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
 
     @Override
     public void runOpMode() {
@@ -30,6 +32,10 @@ public class AprilTagPipelinetele extends LinearOpMode {
 
         while (opModeIsActive()) {
 
+            relocalisation.relocalisation();
+
+            Pose currentPose = relocalisation.getPedroPose();
+
             // Get all current detections
             List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
 
@@ -43,6 +49,14 @@ public class AprilTagPipelinetele extends LinearOpMode {
                             detection.ftcPose.x,
                             detection.ftcPose.y));
                 }
+            }
+
+            if (currentPose != null) {
+                telemetry.addData("X", currentPose.getX());
+                telemetry.addData("Y", currentPose.getY());
+                telemetry.addData("Heading", currentPose.getHeading());
+            } else {
+                telemetry.addData("Pose", "No detection yet");
             }
 
             telemetry.update();

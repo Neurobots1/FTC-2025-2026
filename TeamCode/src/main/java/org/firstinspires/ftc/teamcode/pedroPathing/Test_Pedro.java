@@ -1,10 +1,10 @@
 package org.firstinspires.ftc.teamcode.pedroPathing; // make sure this aligns with class location
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.SubSystem.Init;
+
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
@@ -16,93 +16,24 @@ import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Init;
 
-import java.util.Set;
-
-@Autonomous(name = "Test_pedro", group = "Examples")
-public class Test_pedro extends OpMode {
+@Autonomous(name = "PedroGBleu", group = "Examples")
+public class Test_Pedro extends OpMode {
 
     private Follower follower;
-    private Init init;
-    private Timer pathTimer, actionTimer, opmodeTimer;
-
-    private int pathState;
-    
-
-
     private TelemetryManager telemetryM;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private final Pose startPose = new Pose(63, 136, Math.toRadians(90)); // Start Pose of our robot.
-    private final Pose ShootingPose = new Pose(52, 92, Math.toRadians(139));
-    private final Pose Intake1Pose = new Pose(20,59, Math.toRadians(180));
-    private final Pose GatePose = new Pose(15,63,Math.toRadians(180));
-    private final Pose Intake2Start = new Pose(49,36,Math.toRadians(180));
-    private final Pose Intake2Final = new Pose(18,36,Math.toRadians(180));
-    private final Pose Intake3Start = new Pose(42,84,Math.toRadians(180));
-    private final Pose Intake3Final = new Pose(20,84,Math.toRadians(180));
-    private final Pose ControlPointIntk1 = new Pose(86,59);
-    private final Pose ControlPointShoot2 = new Pose(62,67);
-    private final Pose ControlPointShoot3 = new Pose(68,72);
+    private Init init;
+    private Timer pathTimer, actionTimer, opmodeTimer;
 
+    private int pathState;
+    public final Pose startPose = new Pose(63, 136, Math.toRadians(90)); // Start Pose of our robot.
 
-    private Path d;
-    private PathChain Shoot1,Intake1,Gate,Shoot2,Intake2Pose,Intake2Line,Shoot3,Intake3Pose,Intake3Line,Shoot4;
     public void buildPaths() {
-        /* This is our scorePreload path. We are using a BezierLine, which is a straight line. */
-        Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, ShootingPose))
-                .setLinearHeadingInterpolation(startPose.getHeading() , ShootingPose.getHeading())
-                .build();
-
-        Intake1 = follower.pathBuilder()
-                .addPath(new BezierCurve(ShootingPose, ControlPointIntk1, Intake1Pose))
-                .setLinearHeadingInterpolation(ShootingPose.getHeading() , Intake1Pose.getHeading())
-                .build();
-
-        Gate = follower.pathBuilder()
-                .addPath(new BezierLine(Intake1Pose, GatePose))
-                .setLinearHeadingInterpolation(Intake1Pose.getHeading() , GatePose.getHeading())
-                .build();
-
-        Shoot2 = follower.pathBuilder()
-                .addPath(new BezierCurve(GatePose, ControlPointShoot2, ShootingPose))
-                .setLinearHeadingInterpolation(GatePose.getHeading() , ShootingPose.getHeading())
-                .build();
-
-        Intake2Pose = follower.pathBuilder()
-                .addPath(new BezierLine(ShootingPose, Intake2Start))
-                .setLinearHeadingInterpolation(ShootingPose.getHeading() , Intake2Start.getHeading())
-                .build();
-
-        Intake2Line = follower.pathBuilder()
-                .addPath(new BezierLine(Intake2Start, Intake2Final))
-                .setLinearHeadingInterpolation(Intake2Start.getHeading() , Intake2Final.getHeading())
-                .build();
-
-        Shoot3 = follower.pathBuilder()
-                .addPath(new BezierCurve(Intake2Final,ControlPointShoot3, ShootingPose))
-                .setLinearHeadingInterpolation(Intake2Final.getHeading() , ShootingPose.getHeading())
-                .build();
-
-        Intake3Pose = follower.pathBuilder()
-                .addPath(new BezierLine(ShootingPose, Intake3Start))
-                .setLinearHeadingInterpolation(ShootingPose.getHeading() , Intake3Start.getHeading())
-                .build();
-
-        Intake3Line = follower.pathBuilder()
-                .addPath(new BezierLine(Intake3Start, Intake3Final))
-                .setLinearHeadingInterpolation(Intake3Start.getHeading() , Intake3Final.getHeading())
-                .build();
-
-        Shoot4 = follower.pathBuilder()
-                .addPath(new BezierLine(Intake3Final, ShootingPose))
-                .setLinearHeadingInterpolation(Intake3Final.getHeading() , ShootingPose.getHeading())
-                .build();
 
     }
-
-
+    public PathChain Shoot1,Intake1,Gate,Shoot2,Intake2Pose,Intake2Line,Shoot3,Intake3Pose,Intake3Line,Shoot4;
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
@@ -234,6 +165,10 @@ public class Test_pedro extends OpMode {
     }
 
     /** This method is called once at the setup of the OpMode. **/
+
+    public void init_Path() {
+        init.setup();
+    }
     @Override
     public void init() {
         pathTimer = new Timer();
@@ -244,6 +179,9 @@ public class Test_pedro extends OpMode {
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
         follower.update();
+
+        // Initialize your Init object here
+
 
         buildPaths();
     }
@@ -257,7 +195,7 @@ public class Test_pedro extends OpMode {
      * It runs all the setup actions, including building paths and starting the path system **/
     @Override
     public void start() {
-        opmodeTimer.resetTimer();
+
         setPathState(0);
     }
 
