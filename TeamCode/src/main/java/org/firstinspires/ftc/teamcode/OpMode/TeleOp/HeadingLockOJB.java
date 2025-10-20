@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 @Configurable
 @TeleOp
-public class HeadingLockOBJ extends OpMode {
+public class HeadingLockOJB extends OpMode {
     private Follower follower;
     public static Pose startingPose;
     private boolean automatedDrive;
