@@ -22,15 +22,15 @@ public class HeadingLockOJB extends OpMode {
     private Follower follower;
     public static Pose startingPose;
     private boolean automatedDrive;
-    private Supplier<PathChain> pathChain;
+
     private TelemetryManager telemetryM;
 
     // Shooting mode variables
     private boolean shootingMode = false;
 
     // Configure your goal position here (x, y coordinates on the field)
-    private static final double GOAL_X = 72.0; // Example: 72 inches
-    private static final double GOAL_Y = 72.0; // Example: 72 inches
+    private static final double GOAL_X = 12; // Example: 72 inches
+    private static final double GOAL_Y = 132; // Example: 72 inches
 
     @Override
     public void init() {
@@ -39,10 +39,6 @@ public class HeadingLockOJB extends OpMode {
         follower.update();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        pathChain = () -> follower.pathBuilder()
-                .addPath(new Path(new BezierLine(follower::getPose, new Pose(45, 98))))
-                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(45), 0.8))
-                .build();
     }
 
     @Override
@@ -81,17 +77,6 @@ public class HeadingLockOJB extends OpMode {
             shootingMode = !shootingMode;
         }
 
-        // Automated PathFollowing
-        if (gamepad1.aWasPressed()) {
-            follower.followPath(pathChain.get());
-            automatedDrive = true;
-        }
-
-        // Stop automated following if the follower is done
-        if (automatedDrive && (gamepad1.bWasPressed() || !follower.isBusy())) {
-            follower.startTeleopDrive();
-            automatedDrive = false;
-        }
 
         // Telemetry
         telemetryM.debug("position", follower.getPose());
