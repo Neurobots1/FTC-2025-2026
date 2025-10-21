@@ -4,12 +4,12 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
+//import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
-@TeleOp(name = "AprilTag TeleOp", group = "Vision")
+/*@TeleOp(name = "AprilTag TeleOp", group = "Vision")
 public class AprilTagPipelinetele extends LinearOpMode {
 
     private AprilTagPipeline aprilTagPipeline;
@@ -63,3 +63,5 @@ public class AprilTagPipelinetele extends LinearOpMode {
         }
     }
 }
+
+ */

@@ -41,8 +41,7 @@ public class Test_Pedro extends OpMode {
                 setPathState(1);
                 break;
 
-
-            case 1:
+                case 1:
                 if (!follower.isBusy()){
                     follower.followPath(Intake1,1,true);
                     setPathState(2);
@@ -166,9 +165,9 @@ public class Test_Pedro extends OpMode {
 
     /** This method is called once at the setup of the OpMode. **/
 
-    public void init_Path() {
+    /* public void init_Path() {
         init.setup();
-    }
+    } */
     @Override
     public void init() {
         pathTimer = new Timer();

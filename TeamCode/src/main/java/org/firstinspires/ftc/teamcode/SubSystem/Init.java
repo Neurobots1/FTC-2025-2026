@@ -23,13 +23,14 @@ public class Init {
 
 
 
-public void setup(){
+/* public void setup(){
+tuning = new Tuning();
     pathTimer = new Timer();
     actionTimer = new Timer();
     opmodeTimer = new Timer();
     telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
     follower = Constants.createFollower(hardwareMap);
     follower.update();
-}
+} */
 
 }
