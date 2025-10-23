@@ -1,5 +1,4 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -19,7 +18,7 @@ public class Shoot {
         shootMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
-    public void ShootM() {
+    public void fire() {
         shootMotor1.setPower(-1.0);  // Run motor at full speed forward for Shoot
         shootMotor2.setPower(-1);
     }

@@ -25,15 +25,11 @@ public class Robot {
     public HardwareMap hardwareMap;
 
 
-    public void init() {
+    public Robot(HardwareMap hardwareMap) {
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-
-        //FuturClimbMotor
-        /*climbMotor = hardwareMap.get(DcMotorEx.class, "climbMotor");
-        climbMotor.setDirection(DcMotorSimple.Direction.FORWARD); */
 
 
     }

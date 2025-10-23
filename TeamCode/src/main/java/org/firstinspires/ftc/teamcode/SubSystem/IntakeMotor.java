@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class IntakeMotor {
     private DcMotorEx intakeMotor;
 
-    public void hardware (HardwareMap hardwareMap) {
+    public IntakeMotor(HardwareMap hardwareMap) {
         this.intakeMotor = intakeMotor;
         // Set the motor direction to FORWARD or REVERSE based on your setup
         intakeMotor.setDirection(DcMotor.Direction.REVERSE); // Set the motor direction to forward
