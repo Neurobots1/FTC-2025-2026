@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Shoot {
-    public Robot robot;
 
     public DcMotorEx shootMotor1;
     public DcMotorEx shootMotor2;
