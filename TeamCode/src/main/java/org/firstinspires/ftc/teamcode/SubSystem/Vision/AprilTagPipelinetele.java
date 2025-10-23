@@ -9,7 +9,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
-/*@TeleOp(name = "AprilTag TeleOp", group = "Vision")
+@TeleOp(name = "AprilTag TeleOp", group = "Vision")
 public class AprilTagPipelinetele extends LinearOpMode {
 
     private AprilTagPipeline aprilTagPipeline;
@@ -50,18 +50,8 @@ public class AprilTagPipelinetele extends LinearOpMode {
                             detection.ftcPose.y));
                 }
             }
-
-            if (currentPose != null) {
-                telemetry.addData("X", currentPose.getX());
-                telemetry.addData("Y", currentPose.getY());
-                telemetry.addData("Heading", currentPose.getHeading());
-            } else {
-                telemetry.addData("Pose", "No detection yet");
-            }
-
-            telemetry.update();
         }
     }
 }
 
- */
+

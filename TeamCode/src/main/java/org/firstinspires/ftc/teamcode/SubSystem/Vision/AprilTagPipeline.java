@@ -19,7 +19,7 @@ import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.List;
 
-/*public class AprilTagPipeline extends OpenCvPipeline {
+public class AprilTagPipeline extends OpenCvPipeline {
 
     public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
@@ -96,4 +96,4 @@ import java.util.List;
     }
 }
 
- */
+

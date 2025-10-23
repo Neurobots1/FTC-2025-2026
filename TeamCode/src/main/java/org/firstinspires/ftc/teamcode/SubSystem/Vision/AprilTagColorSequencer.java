@@ -2,11 +2,12 @@ package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
 public class AprilTagColorSequencer {
 
-    //AprilTagColorSequencer sequencer = new AprilTagColorSequencer();
+    /*AprilTagColorSequencer sequencer = new AprilTagColorSequencer();
 
-    //int detectedId = 21;
-    //String sequence = sequencer.getColorSequence(detectedId);
-    //System.out.println("Color sequence for tag " + detectedId + ": " + sequence);
+    int detectedId = 21;
+    String sequence = sequencer.getColorSequence(detectedId);
+    System.out.println("Color sequence for tag " + detectedId + ": " + sequence);*/
+
     public String getColorSequence(int tagId) {
         switch (tagId) {
             case 20:

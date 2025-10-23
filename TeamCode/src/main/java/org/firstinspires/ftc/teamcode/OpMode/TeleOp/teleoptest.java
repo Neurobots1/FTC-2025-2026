@@ -4,6 +4,7 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.Path;
@@ -53,32 +54,6 @@ public class teleoptest extends OpMode {
                 .build();
     }
 
-    public teleoptest(HardwareMap hardwareMap, AprilTagPipeline aprilTagPipeline) {
-        this.hardwareMap = hardwareMap;
-        this.aprilTagPipeline = aprilTagPipeline;
-        // Initialize aprilTag, visionPortal, or other components here if needed
-    }
-
-    public void relocalisation() {
-        if (aprilTagPipeline == null) {
-            // Pipeline not initialized; skip or throw exception
-            return;
-        }
-
-        List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
-        if (!detections.isEmpty()) {
-            AprilTagDetection detection = detections.get(0);
-
-            ftcPose = new Pose(
-                    detection.ftcPose.x,
-                    detection.ftcPose.y,
-                    detection.ftcPose.yaw
-            );
-
-            pedroPose = ftcPose;
-        }
-    }
-
     @Override
     public void start() {
         //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
@@ -121,19 +96,29 @@ public class teleoptest extends OpMode {
             follower.startTeleopDrive();
             automatedDrive = false;
         }
+            if (aprilTagPipeline == null) {
+                // Pipeline not initialized; skip or throw exception
+                return;
+            }
 
+            List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
+            if (!detections.isEmpty()) {
+                AprilTagDetection detection = detections.get(0);
 
+                ftcPose = new Pose(
+                        detection.ftcPose.x,
+                        detection.ftcPose.y,
+                        detection.ftcPose.yaw
+                );
 
-
-
-
+               pedroPose = ftcPose.getAsCoordinateSystem(PedroCoordinates.INSTANCE);
+            }
 
         telemetryM.debug("position", follower.getPose());
         telemetryM.debug("velocity", follower.getVelocity());
         telemetryM.debug("automatedDrive", automatedDrive);
-        telemetry.addLine(String.format("ftcpose: (%.2f, %.2f)",
-                pedroPose.getX(),
-                pedroPose.getY(),
-                pedroPose.getHeading()));
+        telemetry.addData("pedroPose", pedroPose.getPose());
+
+
     }
 }
