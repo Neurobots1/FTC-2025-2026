@@ -17,6 +17,8 @@ public class Shoot {
     private PIDController controller2;
     public double targetRPM = 0;
 
+    private double motor1RPM =0;
+    private double motor2RPM = 0;
 
 
     public Shoot(HardwareMap hardwareMap, double p1, double i1, double d1,
@@ -43,7 +45,6 @@ public class Shoot {
         double motor2RPM = shootMotor2.getVelocity() * 60.0 / 28.0;
 
         // Average both motors
-       double currentRPM = (motor1RPM + motor2RPM) / 2.0;
 
         // Calculate power correction
         // PID control for each motor separately

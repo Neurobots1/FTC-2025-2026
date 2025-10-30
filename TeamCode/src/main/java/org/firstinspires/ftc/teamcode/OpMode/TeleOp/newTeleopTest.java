@@ -20,7 +20,7 @@ public class newTeleopTest extends OpMode {
         follower.update();
         shooter = new Shoot(hardwareMap,
                 0.01, 0.0001, 0.001,   // PID for Motor 1
-                0.01,0.001,0.001 // PID for Motor 2
+                0.01,0.0001,0.001 // PID for Motor 2
         );
     }
 
@@ -32,6 +32,14 @@ public class newTeleopTest extends OpMode {
 
         if (gamepad1.b){
             shooter.setTargetRPM(1000);
+        }
+
+        if (gamepad1.y){
+            shooter.setTargetRPM(500);
+        }
+
+        if (gamepad1.x){
+            shooter.setTargetRPM(200);
         }
         shooter.update();
 
