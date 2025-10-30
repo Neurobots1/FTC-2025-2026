@@ -15,7 +15,9 @@ public class Shoot {
 
     private PIDController controller1;
     private PIDController controller2;
-    private double targetRPM = 0;
+    public double targetRPM = 0;
+
+
 
     public Shoot(HardwareMap hardwareMap, double p1, double i1, double d1,
                  double p2, double i2, double d2) {
@@ -25,7 +27,7 @@ public class Shoot {
         shootMotor2 = hardwareMap.get(DcMotorEx.class, "shootMotor2");
         shootMotor2.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        hoodServo = hardwareMap.get(Servo.class, "HoodServo");
+       // hoodServo = hardwareMap.get(Servo.class, "HoodServo");
 
         controller1 = new PIDController(p1, i1, d1);
         controller2 = new PIDController(p2,i2,d2);
@@ -41,7 +43,7 @@ public class Shoot {
         double motor2RPM = shootMotor2.getVelocity() * 60.0 / 28.0;
 
         // Average both motors
-        double currentRPM = (motor1RPM + motor2RPM) / 2.0;
+       double currentRPM = (motor1RPM + motor2RPM) / 2.0;
 
         // Calculate power correction
         // PID control for each motor separately
@@ -53,12 +55,11 @@ public class Shoot {
         shootMotor2.setPower(power2);
     }
 
-
-    public void On(){
+    /*public void On(){
         hoodServo.setPosition(1);
     }
 
     public void Off(){
         hoodServo.setPosition(0);
-    }
+    } */
 }
