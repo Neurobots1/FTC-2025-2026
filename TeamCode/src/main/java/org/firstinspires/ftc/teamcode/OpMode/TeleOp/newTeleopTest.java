@@ -1,47 +1,71 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
+
+
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+
+@Configurable
 @TeleOp
 public class newTeleopTest extends OpMode {
-    public Follower follower;
+
 
     public Shoot shooter;
+    public static double Target = 0;
+
+    public static double p1 = 0.1;
+
+    public static double i1;
+
+    public static double d1;
+
+    public static double p2;
+
+    public static double i2;
+
+    public static double d2 ;
+
+
+
+    private TelemetryManager telemetryM;
 
 
     public void init(){
-        follower = Constants.createFollower(hardwareMap);
-        follower.update();
-        shooter = new Shoot(hardwareMap,
-                0.01, 0.0001, 0.001,   // PID for Motor 1
-                0.01,0.0001,0.001 // PID for Motor 2
-        );
+
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
     }
 
 
     public void loop(){
+
+        shooter = new Shoot( hardwareMap,
+                p1, i1, d1,
+                p2, i2, d2
+        );
         if (gamepad1.a){
-            shooter.setTargetRPM(2000);
+            Target= Target+100;
         }
 
         if (gamepad1.b){
-            shooter.setTargetRPM(1000);
+            Target = Target-100;
         }
 
-        if (gamepad1.y){
-            shooter.setTargetRPM(500);
-        }
-
-        if (gamepad1.x){
-            shooter.setTargetRPM(200);
-        }
+        shooter.setTargetRPM(Target);
+        telemetryM.addData("TargetRpm", shooter.getTargetRPM());
+        telemetryM.addData("averageRpm", shooter.getAverageRPM());
+        telemetryM.debug("TargetRpm", shooter.getTargetRPM());
+        telemetryM.debug("averageRpm", shooter.getAverageRPM());
+        telemetryM.addData("p1", p1);
+        telemetryM.update();
         shooter.update();
+
+
 
     }
 }
