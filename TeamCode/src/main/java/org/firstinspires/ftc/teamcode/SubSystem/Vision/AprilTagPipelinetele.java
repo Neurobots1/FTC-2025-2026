@@ -31,11 +31,6 @@ public class AprilTagPipelinetele extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-
-            relocalisation.relocalisation();
-
-            Pose currentPose = relocalisation.getPedroPose();
-
             // Get all current detections
             List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
 

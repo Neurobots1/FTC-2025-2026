@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.SubSystem.component;
+/*package org.firstinspires.ftc.teamcode.SubSystem.component;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -17,15 +17,15 @@ public class ColorSensorDataLogger extends OpMode {
 
     @Override
     public void loop() {
-        // Get the current RGB values from the color sensor
+         Get the current RGB values from the color sensor
         int red = colorSensor.red();
         int green = colorSensor.green();
         int blue = colorSensor.blue();
 
-        // Display the raw RGB values on the telemetry screen
+        Display the raw RGB values on the telemetry screen
         telemetry.addData("Raw RGB Values", "R=%d, G=%d, B=%d", red, green, blue);
 
-        // Update the telemetry
+        Update the telemetry
         telemetry.update();
     }
-}
+}*/

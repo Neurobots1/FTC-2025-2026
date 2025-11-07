@@ -2,9 +2,15 @@ package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import android.icu.text.Transliterator;
 import android.util.Size;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessorImpl;
@@ -26,6 +32,11 @@ public class AprilTagPipeline extends OpenCvPipeline {
     private volatile AprilTagDetection latestDetection = null;
     private HardwareMap hardwareMap;
 
+    private Position cameraPosition = new Position(DistanceUnit.INCH,
+            0, 9, 8, 0);
+
+    private YawPitchRollAngles cameraorientation = new YawPitchRollAngles(AngleUnit.DEGREES,0,-90,0, 0);
+
 
 
     public AprilTagPipeline(HardwareMap hardwareMap) {
@@ -39,6 +50,9 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .build();
     }
 
+    public AprilTagPipeline() {
+    }
+
     public void startCamera() {
         aprilTag = new AprilTagProcessor.Builder()
 
@@ -46,6 +60,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .setDrawCubeProjection(true)
                 .setDrawTagOutline(true)
                 .setLensIntrinsics(549.651, 549.651, 317.108, 236.644)
+                .setCameraPose(cameraPosition, cameraorientation)
                 .build();
 
         visionPortal = new VisionPortal.Builder()
