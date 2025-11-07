@@ -70,7 +70,7 @@ public class Relocalisation extends AprilTagPipeline {
      * Converts an FTC field-space pose into PedroPathing field-space coordinates.
      * Field is 144" x 144", rotated 90° CCW, origin moved from center to bottom-left corner.
      */
-    public Pose convertToPedroPose(Pose ftcPose) {
+    /*public Pose convertToPedroPose(Pose ftcPose) {
         if (ftcPose == null) return null;
 
         double x = ftcPose.getX();
@@ -83,10 +83,11 @@ public class Relocalisation extends AprilTagPipeline {
 
         // Adjust heading for 90° CCW rotation
         double headingPedro = headingDegrees + 90.0;
-        headingPedro = ((headingPedro + 360) % 360);  // normalize to [0,360)
+        headingPedro = ((headingPedro + 360) % 360);   // normalize to [0,360)
 
         return new Pose(xPedro, yPedro, headingPedro);
-    }
+
+    } */
 
 
 
