@@ -31,7 +31,7 @@ public class RelocalisationOJB extends OpMode {
      * X = right, Y = forward, Z = up (in inches)
      */
     private Position cameraPosition = new Position(DistanceUnit.INCH,
-            -1.5, 9, 8, 0); // TODO: Adjust these values for your robot
+            0, 0, 0, 0); // TODO: Adjust these values for your robot
 
     /**
      * Camera orientation
@@ -40,7 +40,7 @@ public class RelocalisationOJB extends OpMode {
      * Roll = 0 if upright, 180 if upside-down
      */
     private YawPitchRollAngles cameraOrientation = new YawPitchRollAngles(AngleUnit.DEGREES,
-            0, 0, 0, 0); // TODO: Adjust for your camera mounting
+            0, -90, 0, 0); // TODO: Adjust for your camera mounting
 
     @Override
     public void init() {
@@ -66,7 +66,7 @@ public class RelocalisationOJB extends OpMode {
 
         // Initialize follower
         follower = Constants.createFollower(hardwareMap);
-        //follower.setStartingPose(new Pose(9, 111, 0)); // Set your starting pose
+        follower.setStartingPose(new Pose(9, 111, 0)); // Set your starting pose
 
         telemetry.addData("Status", "Initialized with calibrated camera");
         telemetry.update();
