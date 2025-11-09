@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.SubSystem;
+package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
 import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.FilteredPIDFController;
@@ -9,8 +9,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Provider;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LUTs;
 
 public class ShooterController {
 
@@ -51,6 +53,10 @@ public class ShooterController {
 
     private static final double MAX_RPM_SLEW_PER_S = 2000.0;
 
+    private static final double CLOSE_MIN_D = 18.0, CLOSE_MAX_D = 30.0;
+    private static final double MID_MIN_D   = 32.0, MID_MAX_D   = 50.0;
+    private static final double FAR_MIN_D   = 52.0, FAR_MAX_D   = 70.0;
+
     private final Provider allianceProvider;
     private final PoseSupplier poseSupplier;
     private final DcMotorEx motorA;
@@ -69,16 +75,6 @@ public class ShooterController {
     private boolean shootHold = false;
 
     private double commandedRpm = 0.0;
-
-    private static final double[][] CLOSE_TABLE = {
-            {18,1700},{24,1780},{30,1860}
-    };
-    private static final double[][] MID_TABLE = {
-            {32,1920},{38,2020},{44,2120},{50,2240}
-    };
-    private static final double[][] FAR_TABLE = {
-            {52,2320},{58,2450},{64,2590},{70,2740}
-    };
 
     public ShooterController(Provider allianceProvider,
                              PoseSupplier poseSupplier,
@@ -202,8 +198,8 @@ public class ShooterController {
 
     private double distanceToGoalInches() {
         Pose p = poseSupplier.get();
-        double gx = AllianceSelector.Field.goalX(allianceProvider.getAlliance());
-        double gy = AllianceSelector.Field.goalY(allianceProvider.getAlliance());
+        double gx = org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Field.goalX(allianceProvider.getAlliance());
+        double gy = org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Field.goalY(allianceProvider.getAlliance());
         double dx = gx - p.getX();
         double dy = gy - p.getY();
         return Math.hypot(dx, dy);
@@ -236,16 +232,22 @@ public class ShooterController {
     }
 
     private double rpmFor(Band b, double d) {
-        double[][] T = (b==Band.CLOSE)?CLOSE_TABLE: (b==Band.MID)?MID_TABLE:FAR_TABLE;
-        if (d <= T[0][0]) return T[0][1];
-        for (int i=0;i<T.length-1;i++){
-            double x0=T[i][0], y0=T[i][1], x1=T[i+1][0], y1=T[i+1][1];
-            if (d <= x1){
-                double t=(d-x0)/(x1-x0);
-                return y0 + t*(y1-y0);
-            }
+        double x = clampToBand(b, d);
+        switch (b) {
+            case CLOSE: return LUTs.closeRPM.get(x);
+            case MID:   return LUTs.midRPM.get(x);
+            case FAR:   return LUTs.farRPM.get(x);
         }
-        return T[T.length-1][1];
+        return 0.0;
+    }
+
+    private double clampToBand(Band b, double d) {
+        switch (b) {
+            case CLOSE: return clip(d, CLOSE_MIN_D, CLOSE_MAX_D);
+            case MID:   return clip(d, MID_MIN_D, MID_MAX_D);
+            case FAR:   return clip(d, FAR_MIN_D, FAR_MAX_D);
+            default:    return d;
+        }
     }
 
     private boolean atSpeed(double targetRpm) {

@@ -6,7 +6,7 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.SubSystem.ShooterController;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.ShooterController;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Alliance;
 
