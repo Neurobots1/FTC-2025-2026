@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
-import com.pedropathing.control.FilteredPIDFCoefficients;
-import com.pedropathing.control.FilteredPIDFController;
+
+import com.pedropathing.control.PIDFCoefficients;
+import com.pedropathing.control.PIDFController;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -34,7 +36,6 @@ public class ShooterController {
     private static final double CTRL_P = 0.006;
     private static final double CTRL_I = 0.000;
     private static final double CTRL_D = 0.000;
-    private static final double CTRL_T = 0.050;
     private static final double CTRL_F = 0.0005;
 
     private static final double HOOD_CLOSE = 0.72;
@@ -63,7 +64,7 @@ public class ShooterController {
     private final DcMotorEx motorB;
     private final Servo hood;
     private final Servo gate;
-    private final FilteredPIDFController pidf;
+    private final PIDFController pidf;
 
     private Band band = Band.MID;
     private ShootState state = ShootState.IDLE;
@@ -89,13 +90,15 @@ public class ShooterController {
         this.hood = hood;
         this.gate = gate;
 
-        motorA.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        motorB.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        motorA.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        motorB.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         motorA.setDirection(MOTOR_A_DIR);
         motorB.setDirection(MOTOR_B_DIR);
+        motorA.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        motorB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        FilteredPIDFCoefficients coeffs = new FilteredPIDFCoefficients(CTRL_P, CTRL_I, CTRL_D, CTRL_T, CTRL_F);
-        pidf = new FilteredPIDFController(coeffs);
+        PIDFCoefficients coeffs = new PIDFCoefficients(CTRL_P, CTRL_I, CTRL_D,CTRL_F);
+        pidf = new PIDFController(coeffs);
 
         hood.setPosition(HOOD_MID);
         gate.setPosition(GATE_CLOSED);
@@ -133,7 +136,6 @@ public class ShooterController {
     }
 
     public void setShootHold(boolean on) { shootHold = on; }
-
     public AllianceSelector.Alliance getAlliance() { return allianceProvider.getAlliance(); }
 
     public void update() {
@@ -191,9 +193,8 @@ public class ShooterController {
     }
 
     private double getShooterRpm() {
-        double rpsA = motorA.getVelocity() / (TICKS_PER_REV * GEAR_RATIO);
-        double rpsB = motorB.getVelocity() / (TICKS_PER_REV * GEAR_RATIO);
-        return ((rpsA + rpsB) * 0.5) * 60.0;
+        double rps = motorA.getVelocity() / (TICKS_PER_REV * GEAR_RATIO);
+        return rps * 60.0;
     }
 
     private double distanceToGoalInches() {
