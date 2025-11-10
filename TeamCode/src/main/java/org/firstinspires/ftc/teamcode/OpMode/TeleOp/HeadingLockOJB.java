@@ -14,7 +14,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @TeleOp
 public class HeadingLockOJB extends OpMode {
     private Follower follower;
-    public static Pose startingPose;
+    public final Pose startingPose = new Pose(63, 136, Math.toRadians(90)); // Start Pose of our robot.
+
     private boolean automatedDrive;
 
     private TelemetryManager telemetryM;
@@ -29,7 +30,7 @@ public class HeadingLockOJB extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
+        follower.setStartingPose(startingPose);
         follower.update();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
@@ -116,7 +117,7 @@ public class HeadingLockOJB extends OpMode {
 
         // P controller for heading correction
         // Tune this gain value to control how aggressively the robot turns
-        double kP = 2.0; // Adjust this value based on testing
+        double kP = 1.0; // Adjust this value based on testing
 
         // Calculate heading correction power
         double headingPower = headingError * kP;

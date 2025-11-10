@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
 
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class IntakeMotor {
@@ -11,7 +13,7 @@ public class IntakeMotor {
     public IntakeMotor(HardwareMap hardwareMap) {
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
         // Set the motor direction to FORWARD or REVERSE based on your setup
-        intakeMotor.setDirection(DcMotor.Direction.REVERSE); // Set the motor direction to forward
+
     }
 
     // Method to run the motor for intaking at full speed (positive power)

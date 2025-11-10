@@ -26,7 +26,7 @@ public class Shooter_Burst_Test extends OpMode {
     @Override
     public void init() {
         alliance = new AllianceSelector.Manager(Alliance.BLUE);
-        follower = Constants.createFollower(hardwareMap);
+        //follower = Constants.createFollower(hardwareMap);
         shooter  = ShooterController.create(hardwareMap, follower, alliance);
         shooter.setSpinEnabled(false);
         shooter.setShootHold(false);
@@ -35,7 +35,7 @@ public class Shooter_Burst_Test extends OpMode {
 
     @Override
     public void loop() {
-        follower.update();
+        //follower.update();
 
         boolean rb = gamepad1.right_bumper;
         boolean a  = gamepad1.a;

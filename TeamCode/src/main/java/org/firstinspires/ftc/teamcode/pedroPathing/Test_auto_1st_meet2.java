@@ -1,10 +1,8 @@
-package org.firstinspires.ftc.teamcode.OpMode.Autonomous;
+package org.firstinspires.ftc.teamcode.pedroPathing;
 
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
-import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -14,18 +12,21 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+//import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
+import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
-import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
+import org.firstinspires.ftc.teamcode.SubSystem.Servo_HOOD;
 
-@Autonomous(name = "Test_auto_1st_meet", group = "Examples")
-public class Test_auto_1st_meet extends OpMode {
+@Autonomous(name = "Auto_2", group = "Examples")
+public class Test_auto_1st_meet2 extends OpMode {
 
     private Follower follower;
     private HardwareMap hardwareMap;
-    private IntakeMotor intkM;
-    private Tuning tuning;
-    private Robot init;
+  //NIGGERfarm(cotoneslave)  private IntakeMotor intkM;
+    private Shoot shootM;
+    private Servo_HOOD servo;
 
+    private Robot robot;
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
@@ -36,45 +37,45 @@ public class Test_auto_1st_meet extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private final Pose startPose = new Pose(33, 136, Math.toRadians(90));
-    private final Pose Shoot = new Pose(52, 92, Math.toRadians(139));
+    private final Pose startPose = new Pose(56, 8, Math.toRadians(90));
+    private final Pose ShootPose = new Pose(67, 18, Math.toRadians(139));
     private final Pose IntkStart1 = new Pose(50, 90, Math.toRadians(180));
     private final Pose IntkFinal1 = new Pose(30, 90, Math.toRadians(180));
     private final Pose IntkStart2 = new Pose(50, 65, Math.toRadians(180));
     private final Pose IntkFinal2 = new Pose(30, 65, Math.toRadians(180));
     private final Pose IntkStart3 = new Pose(50, 50, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(30, 50, Math.toRadians(180));
-    private final Pose FinalPose = new Pose(52, 80, Math.toRadians(135));
+    private final Pose FinalPose = new Pose(67, 60, Math.toRadians(135));
 
-    private Path a;
+    private Path b;
 
     private PathChain Shoot1,Shoot2,Shoot3,Shoot4,IntkSt1,IntkSt2,IntkSt3,IntkFi1,IntkFi2,IntkFi3,FiString;
     public void buildPaths() {
 
         Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose,Shoot))
-                .setLinearHeadingInterpolation(startPose.getHeading() , Shoot.getHeading())
+                .addPath(new BezierLine(startPose, ShootPose))
+                .setLinearHeadingInterpolation(startPose.getHeading() , ShootPose.getHeading())
                 .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal1,Shoot))
-                .setLinearHeadingInterpolation(IntkFinal1.getHeading() , Shoot.getHeading())
+                .addPath(new BezierLine(IntkFinal1, ShootPose))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading() , ShootPose.getHeading())
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal2,Shoot))
-                .setLinearHeadingInterpolation(IntkFinal2.getHeading() , Shoot.getHeading())
+                .addPath(new BezierLine(IntkFinal2, ShootPose))
+                .setLinearHeadingInterpolation(IntkFinal2.getHeading() , ShootPose.getHeading())
                 .build();
 
         Shoot4 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal3,Shoot))
-                .setLinearHeadingInterpolation(IntkFinal3.getHeading() , Shoot.getHeading())
+                .addPath(new BezierLine(IntkFinal3, ShootPose))
+                .setLinearHeadingInterpolation(IntkFinal3.getHeading() , ShootPose.getHeading())
                 .build();
 
 
         IntkSt1 = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot, IntkStart1))
-                .setLinearHeadingInterpolation(Shoot.getHeading() , IntkStart1.getHeading())
+                .addPath(new BezierLine(ShootPose, IntkStart1))
+                .setLinearHeadingInterpolation(ShootPose.getHeading() , IntkStart1.getHeading())
                 .build();
 
         IntkFi1 = follower.pathBuilder()
@@ -85,8 +86,8 @@ public class Test_auto_1st_meet extends OpMode {
 
 
         IntkSt2 = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot, IntkStart2))
-                .setLinearHeadingInterpolation(Shoot.getHeading() ,IntkStart2.getHeading())
+                .addPath(new BezierLine(ShootPose, IntkStart2))
+                .setLinearHeadingInterpolation(ShootPose.getHeading() ,IntkStart2.getHeading())
                 .build();
 
         IntkFi2 = follower.pathBuilder()
@@ -97,8 +98,8 @@ public class Test_auto_1st_meet extends OpMode {
 
 
         IntkSt3 = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot, IntkStart3))
-                .setLinearHeadingInterpolation(Shoot.getHeading() ,IntkStart3.getHeading())
+                .addPath(new BezierLine(ShootPose, IntkStart3))
+                .setLinearHeadingInterpolation(ShootPose.getHeading() ,IntkStart3.getHeading())
                 .build();
 
         IntkFi3 = follower.pathBuilder()
@@ -108,8 +109,8 @@ public class Test_auto_1st_meet extends OpMode {
 
 
         FiString = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot, FinalPose))
-                .setLinearHeadingInterpolation(Shoot.getHeading() ,FinalPose.getHeading())
+                .addPath(new BezierLine(ShootPose, FinalPose))
+                .setLinearHeadingInterpolation(ShootPose.getHeading() ,FinalPose.getHeading())
                 .build();
 
 
@@ -120,11 +121,21 @@ public class Test_auto_1st_meet extends OpMode {
         switch (pathState) {
             case 0:
                 follower.followPath(Shoot1, 0.7, true);
+
+                if (!follower.isBusy()) {
+                    //shootM.();
+                }
                 setPathState(1);
+
+
                 break;
+
 
             case 1:
                 if (!follower.isBusy()) {
+                    //shootM.();
+  //                  intkM.();
+
                     follower.followPath(IntkSt1, 0.7, true);
                     setPathState(2);
 
@@ -135,6 +146,10 @@ public class Test_auto_1st_meet extends OpMode {
             case 2:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi1, 0.7, true);
+
+                    if (!follower.isBusy()) {
+    //                    intkM.();
+                    }
                     setPathState(3);
 
                 }
@@ -143,8 +158,11 @@ public class Test_auto_1st_meet extends OpMode {
             case 3:
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot2, 0.7, true);
-                    setPathState(4);
 
+                    if (!follower.isBusy()){
+                        //shootM.();
+                    }
+                    setPathState(4);
                 }
                 break;
 
@@ -158,6 +176,11 @@ public class Test_auto_1st_meet extends OpMode {
             case 5:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkSt2, 0.7, true);
+
+                    if (!follower.isBusy()) {
+      //                  intkM.();
+
+                    }
                     setPathState(6);
 
 
@@ -169,8 +192,11 @@ public class Test_auto_1st_meet extends OpMode {
             case 6:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi2, 0.7, true);
-                    setPathState(7);
 
+                    if (!follower.isBusy()) {
+        //                intkM.();
+                    }
+                    setPathState(7);
 
 
 
@@ -179,9 +205,13 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 7:
                 if (!follower.isBusy()) {
-                    intkM.intake();{}{}{{}{}{}{}{}{{{{}}}}}
                     follower.followPath(Shoot3, 0.7, true);
+
+                    if (!follower.isBusy()) {
+                       // shootM.();
+                    }
                     setPathState(8);
+
 
 
 
@@ -192,6 +222,10 @@ public class Test_auto_1st_meet extends OpMode {
             case 8:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkSt3, 0.7, true);
+
+                    if (!follower.isBusy()) {
+          //              intkM.();
+                    }
                     setPathState(9);
 
 
@@ -203,6 +237,10 @@ public class Test_auto_1st_meet extends OpMode {
             case 9:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi3, 0.7, true);
+
+                    if (!follower.isBusy()) {
+            //            intkM.();
+                    }
                     setPathState(10);
 
 
@@ -214,6 +252,10 @@ public class Test_auto_1st_meet extends OpMode {
             case 10:
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot4, 0.7, true);
+
+                    if (!follower.isBusy()) {
+                        //shootM.();
+                    }
                     setPathState(11);
 
 
@@ -225,6 +267,12 @@ public class Test_auto_1st_meet extends OpMode {
             case 11:
                 if (!follower.isBusy()) {
                     follower.followPath(FiString, 0.7, true);
+
+                    if (!follower.isBusy()) {
+                        //shootM.();
+                       servo.getCurrentAngle();
+                       servo.setAngle(90);
+                    }
                     setPathState(-1);
 
 
@@ -264,11 +312,13 @@ public class Test_auto_1st_meet extends OpMode {
     /** This method is called once at the setup of the OpMode. **/
     @Override
     public void init() {
-        pathTimer = new Timer();
-        actionTimer = new Timer();
-        opmodeTimer = new Timer();
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
+//        intkM = new IntakeMotor(hardwareMap);
+        shootM = new Shoot(hardwareMap,
+                0.01,0.0001,0.001,
+                0.01, 0.001, 0.001);
+        robot = new Robot(hardwareMap);
+        this.servo = servo;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
         follower.update();
@@ -280,7 +330,6 @@ public class Test_auto_1st_meet extends OpMode {
     }
     @Override
     public void start() {
-        opmodeTimer.resetTimer();
         setPathState(0);
     }
 }

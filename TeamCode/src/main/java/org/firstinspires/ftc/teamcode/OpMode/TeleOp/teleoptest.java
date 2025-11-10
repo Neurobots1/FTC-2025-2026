@@ -1,67 +1,124 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
-
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.PedroCoordinates;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
-import com.pedropathing.geometry.Pose;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.vision.VisionPortal;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
-@TeleOp(name = "AprilTag Relocalisation", group = "Test")
+import java.util.List;
+import java.util.function.Supplier;
+
+@Configurable
+@TeleOp
 public class teleoptest extends OpMode {
-
-    private Relocalisation relocalisation;
+    private Follower follower;
+    public static Pose startingPose; //See ExampleAuto to understand how to use this
+    private boolean automatedDrive;
+    private Supplier<PathChain> pathChain;
+    private TelemetryManager telemetryM;
+    private boolean slowMode = false;
+    private double slowModeMultiplier = 0.5;
     private AprilTagPipeline aprilTagPipeline;
-    private ConvertToPedroPose convertToPedroPose;
+    public AprilTagProcessor aprilTag;
+    private VisionPortal visionPortal;
+    private Pose ftcPose, pedroPose;
+
+
+
 
     @Override
     public void init() {
-        // Initialize vision system
-        aprilTagPipeline = new AprilTagPipeline(hardwareMap); // Replace with your pipeline setup
-        aprilTagPipeline.startCamera();
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
+        follower.update();
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
+        pathChain = () -> follower.pathBuilder() //Lazy Curve Generation
+                .addPath(new Path(new BezierLine(follower::getPose, new Pose(45, 98))))
+                .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, Math.toRadians(45), 0.8))
+                .build();
+    }
 
-        // Initialize conversion utility
-        convertToPedroPose = new ConvertToPedroPose();
-
-        telemetry.addLine("Initialized - Ready to start");
-        telemetry.update();
+    @Override
+    public void start() {
+        //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
+        //In order to use float mode, add .useBrakeModeInTeleOp(true); to your Drivetrain Constants in Constant.java (for Mecanum)
+        //If you don't pass anything in, it uses the default (false)
+        follower.startTeleopDrive();
     }
 
     @Override
     public void loop() {
-        Pose currentPose = relocalisation.relocalisation();
-        Pose pedroPose = null;
-
-        if (currentPose != null && convertToPedroPose != null) {
-            pedroPose = convertToPedroPose.convertToPedroPose(currentPose);
-        }
-
-        telemetry.addLine("=== AprilTag FTC Relocalisation ===");
-        if (currentPose != null) {
-            telemetry.addData("Current X (mm)", "%.2f", currentPose.getX());
-            telemetry.addData("Current Y (mm)", "%.2f", currentPose.getY());
-            telemetry.addData("Current Heading (deg)", "%.2f", currentPose.getHeading());
-        } else {
-            telemetry.addLine("Current Pose: null");
-        }
-
-        telemetry.addLine();
-        telemetry.addLine("=== PedroPose Conversion ===");
-        if (pedroPose != null) {
-            telemetry.addData("Pedro X (mm)", "%.2f", pedroPose.getX());
-            telemetry.addData("Pedro Y (mm)", "%.2f", pedroPose.getY());
-            telemetry.addData("Pedro Heading (deg)", "%.2f", pedroPose.getHeading());
-        } else {
-            telemetry.addLine("Pedro Pose: null");
-        }
-
+        //Call this once per loop
+        follower.update();
+        telemetryM.update();
         telemetry.update();
+
+        if (!automatedDrive) {
+            //Make the last parameter false for field-centric
+            //In case the drivers want to use a "slowMode" you can scale the vectors
+
+            //This is the normal version to use in the TeleOp
+            if (!slowMode) follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    -gamepad1.right_stick_x,
+                    true // Robot Centric
+            );
+
+                //This is how it looks with slowMode on
+            else follower.setTeleOpDrive(
+                    -gamepad1.left_stick_y * slowModeMultiplier,
+                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    -gamepad1.right_stick_x * slowModeMultiplier,
+                    true // Robot Centric
+            );
+        }
+
+
+        //Stop automated following if the follower is done
+        if (automatedDrive && (gamepad1.bWasPressed() || !follower.isBusy())) {
+            follower.startTeleopDrive();
+            automatedDrive = false;
+        }
+            if (aprilTagPipeline == null) {
+                // Pipeline not initialized; skip or throw exception
+                return;
+            }
+
+            List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
+            if (!detections.isEmpty()) {
+                AprilTagDetection detection = detections.get(0);
+
+                ftcPose = new Pose(
+                        detection.ftcPose.x,
+                        detection.ftcPose.y,
+                        detection.ftcPose.yaw
+                );
+
+               pedroPose = ftcPose.getAsCoordinateSystem(PedroCoordinates.INSTANCE);
+            }
+
+        telemetryM.debug("position", follower.getPose());
+        telemetryM.debug("velocity", follower.getVelocity());
+        telemetryM.debug("automatedDrive", automatedDrive);
+        telemetry.addData("pedroPose", pedroPose.getPose());
+
+
     }
 }
-
-
-
-
-

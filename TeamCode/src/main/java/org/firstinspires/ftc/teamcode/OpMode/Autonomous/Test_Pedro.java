@@ -10,7 +10,7 @@ import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.SubSystem.Init;
+import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "PedroGBleu", group = "Examples")
@@ -21,7 +21,7 @@ public class Test_Pedro extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private Init init;
+    private Robot init;
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
