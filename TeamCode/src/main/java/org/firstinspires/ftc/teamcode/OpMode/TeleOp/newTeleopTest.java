@@ -19,22 +19,14 @@ public class newTeleopTest extends OpMode {
     public Shoot shooter;
     public static double Target = 0;
 
-    public static double p1 = 0.1;
+    public static double p = 0.1;
 
-    public static double i1;
+    public static double i;
 
-    public static double d1;
-
-    public static double p2;
-
-    public static double i2;
-
-    public static double d2 ;
-
-
+    public static double d;
 
     private TelemetryManager telemetryM;
-
+    private PanelsTelemetry panelsTelemetry;
 
     public void init(){
 
@@ -45,8 +37,7 @@ public class newTeleopTest extends OpMode {
     public void loop(){
 
         shooter = new Shoot( hardwareMap,
-                p1, i1, d1,
-                p2, i2, d2
+                p, i, d
         );
         if (gamepad1.a){
             Target= Target+100;
@@ -57,15 +48,10 @@ public class newTeleopTest extends OpMode {
         }
 
         shooter.setTargetRPM(Target);
-        telemetryM.addData("TargetRpm", shooter.getTargetRPM());
-        telemetryM.addData("averageRpm", shooter.getAverageRPM());
+        shooter.update();
         telemetryM.debug("TargetRpm", shooter.getTargetRPM());
         telemetryM.debug("averageRpm", shooter.getAverageRPM());
-        telemetryM.addData("p1", p1);
+        telemetryM.addData("CurrentRpm1", shooter.getCurrentRPM1());;
         telemetryM.update();
-        shooter.update();
-
-
-
     }
 }

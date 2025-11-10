@@ -23,8 +23,8 @@ public class Shoot {
 
     private static final double TICKS_PER_REV = 28.0; // adjust if needed
 
-    public Shoot(HardwareMap hardwareMap, double p1, double i1, double d1,
-                 double p2, double i2, double d2) {
+
+    public Shoot(HardwareMap hardwareMap, double p, double i, double d) {
         shootMotor1 = hardwareMap.get(DcMotorEx.class, "shootMotor1");
         shootMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shootMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -33,8 +33,7 @@ public class Shoot {
         shootMotor2.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         shootMotor2.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        controller1 = new PIDController(p1, i1, d1);
-        controller2 = new PIDController(p2,i2,d2);
+        controller1 = new PIDController(p, i, d);
     }
 
 
@@ -47,18 +46,22 @@ public class Shoot {
             currentRPM1 = shootMotor1.getVelocity() * 60.0 / TICKS_PER_REV;
             currentRPM2 = shootMotor2.getVelocity() * 60.0 / TICKS_PER_REV;
 
-            double power1 = controller1.calculate(targetRPM, currentRPM1);
-            double power2 = controller2.calculate(targetRPM, currentRPM2);
+            double currentRPM = (currentRPM1 + currentRPM2) / 2.0;
 
-            power1 = Math.max(0, Math.min(1, power1));
-            power2 = Math.max(0, Math.min(1, power2));
+            double power = controller1.calculate(targetRPM, currentRPM);
 
-            shootMotor1.setPower(power1);
-            shootMotor2.setPower(power2);
+            power = Math.max(0, Math.min(1, power));
+
+            shootMotor1.setPower(power);
+            shootMotor2.setPower(power);
         }
 
     public double getTargetRPM() {
         return targetRPM;
+    }
+
+    public double getCurrentRPM1(){
+    return currentRPM1;
     }
 
     public double getAverageRPM() {
