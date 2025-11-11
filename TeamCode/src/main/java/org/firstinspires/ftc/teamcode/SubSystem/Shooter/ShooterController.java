@@ -31,7 +31,7 @@ public class ShooterController {
     private static final String GATE_SERVO   = "gate";
 
     private static final DcMotorSimple.Direction MOTOR_A_DIR = DcMotorSimple.Direction.FORWARD;
-    private static final DcMotorSimple.Direction MOTOR_B_DIR = DcMotorSimple.Direction.FORWARD;
+    private static final DcMotorSimple.Direction MOTOR_B_DIR = DcMotorSimple.Direction.REVERSE;
 
     private static final double TICKS_PER_REV = 28.0;
     private static final double GEAR_RATIO    = 1.0;
@@ -194,7 +194,7 @@ public class ShooterController {
         pidf.updateFeedForwardInput(targetRpm);
         pidf.updateError(err);
         double out = clip(pidf.run(), -1.0, 1.0);
-        setPower(out, -out);
+        setPower(out, out);
     }
 
     private void setPower(double a, double b) {
