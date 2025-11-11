@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.follower.Follower;
@@ -15,6 +16,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Provider;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LUTs;
+
+@Configurable
 
 public class ShooterController {
 
@@ -33,14 +36,14 @@ public class ShooterController {
     private static final double TICKS_PER_REV = 28.0;
     private static final double GEAR_RATIO    = 1.0;
 
-    private static final double CTRL_P = 0.006;
-    private static final double CTRL_I = 0.000;
-    private static final double CTRL_D = 0.000;
-    private static final double CTRL_F = 0.0005;
+    public static  double CTRL_P = 0.006;
+    public static  double CTRL_I = 0.000;
+    public static  double CTRL_D = 0.000;
+    public static  double CTRL_F = 0.0005;
 
-    private static final double HOOD_CLOSE = 0.72;
-    private static final double HOOD_MID   = 0.56;
-    private static final double HOOD_FAR   = 0.41;
+    public static  double HOOD_CLOSE = 0.72;
+    public static  double HOOD_MID   = 0.56;
+    public static  double HOOD_FAR   = 0.41;
 
     private static final double GATE_CLOSED = 0.10;
     private static final double GATE_OPEN   = 0.65;
@@ -49,14 +52,17 @@ public class ShooterController {
     private static final double MID_MAX   = 46.0;
     private static final double HYST      = 2.0;
 
+    public static double TARGET_RPM = 3000.0;
+
+
     private static final double RPM_TOL       = 75.0;
     private static final double READY_HOLD_MS = 120.0;
 
     private static final double MAX_RPM_SLEW_PER_S = 2000.0;
 
-    private static final double CLOSE_MIN_D = 18.0, CLOSE_MAX_D = 30.0;
-    private static final double MID_MIN_D   = 32.0, MID_MAX_D   = 50.0;
-    private static final double FAR_MIN_D   = 52.0, FAR_MAX_D   = 70.0;
+    private static final double CLOSE_MIN_D = 0, CLOSE_MAX_D = 30.0;
+    private static final double MID_MIN_D   = 30, MID_MAX_D   = 50.0;
+    private static final double FAR_MIN_D   = 50, FAR_MAX_D   = 70.0;
 
     private final Provider allianceProvider;
     private final PoseSupplier poseSupplier;
@@ -116,13 +122,17 @@ public class ShooterController {
         this(allianceProvider, () -> follower.getPose(), motorA, motorB, hood, gate);
     }
 
-    public static ShooterController create(HardwareMap hw, Follower follower, Provider allianceProvider) {
-        DcMotorEx motorA = hw.get(DcMotorEx.class, MOTOR_A_NAME);
-        DcMotorEx motorB = hw.get(DcMotorEx.class, MOTOR_B_NAME);
-        Servo hood       = hw.get(Servo.class,    HOOD_SERVO);
-        Servo gate       = hw.get(Servo.class,    GATE_SERVO);
-        return new ShooterController(allianceProvider, follower, motorA, motorB, hood, gate);
+    public static ShooterController create(HardwareMap hw, Follower follower, AllianceSelector.Alliance alliance) {
+        return new ShooterController(
+                () -> alliance,    // <-- tiny lambda providing the alliance
+                follower,
+                hw.get(DcMotorEx.class, MOTOR_A_NAME),
+                hw.get(DcMotorEx.class, MOTOR_B_NAME),
+                hw.get(Servo.class, HOOD_SERVO),
+                hw.get(Servo.class, GATE_SERVO)
+        );
     }
+
 
     public void setSpinEnabled(boolean on) {
         spinEnabled = on;
@@ -178,7 +188,7 @@ public class ShooterController {
         }
     }
 
-    private void driveToRpm(double targetRpm) {
+    public void driveToRpm(double targetRpm) {
         double actual = getShooterRpm();
         double err = targetRpm - actual;
         pidf.updateFeedForwardInput(targetRpm);
@@ -192,7 +202,16 @@ public class ShooterController {
         motorB.setPower(b);
     }
 
-    private double getShooterRpm() {
+    public void setPIDF(double p, double i, double d, double f) {
+        pidf.setCoefficients(new PIDFCoefficients(p, i, d, f));
+    }
+
+    public void tuneRPM(double rpm) {
+        driveToRpm(rpm);
+    }
+
+
+    public double getShooterRpm() {
         double rps = motorA.getVelocity() / (TICKS_PER_REV * GEAR_RATIO);
         return rps * 60.0;
     }
@@ -270,4 +289,16 @@ public class ShooterController {
         return String.format("Shooter[%s|%s] d=%.1f in, band=%s, spin=%s, hold=%s, cmdRPM=%.0f, actRPM=%.0f",
                 state, allianceProvider.getAlliance(), d, band, spinEnabled?"ON":"OFF", shootHold?"ON":"OFF", commandedRpm, rpm);
     }
+
+    public void addTuningTelemetry(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
+        double actual = getShooterRpm();
+        telemetry.addData("Target RPM", TARGET_RPM);
+        telemetry.addData("Actual RPM", actual);
+        telemetry.addData("Error", TARGET_RPM - actual);
+        telemetry.addData("P", CTRL_P);
+        telemetry.addData("I", CTRL_I);
+        telemetry.addData("D", CTRL_D);
+        telemetry.addData("F", CTRL_F);
+    }
+
 }
