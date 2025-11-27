@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.OpMode.Autonomous;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -16,13 +14,14 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
+import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 
 @Autonomous(name = "Test_auto_1st_meet", group = "Examples")
-public class Test_auto_1st_meet extends OpMode {
+public class auto_1st_meet extends OpMode {
 
     private Follower follower;
-    private HardwareMap hardwareMap;
     private IntakeMotor intkM;
+    private Shoot shootM;
     private Tuning tuning;
     private Robot init;
 
@@ -38,12 +37,12 @@ public class Test_auto_1st_meet extends OpMode {
 
     private final Pose startPose = new Pose(33, 136, Math.toRadians(90));
     private final Pose Shoot = new Pose(52, 92, Math.toRadians(139));
-    private final Pose IntkStart1 = new Pose(50, 90, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(30, 90, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(50, 65, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(30, 65, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(50, 50, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(30, 50, Math.toRadians(180));
+    private final Pose IntkStart1 = new Pose(50, 85, Math.toRadians(180));
+    private final Pose IntkFinal1 = new Pose(22, 85, Math.toRadians(180));
+    private final Pose IntkStart2 = new Pose(50, 60, Math.toRadians(180));
+    private final Pose IntkFinal2 = new Pose(15, 60, Math.toRadians(180));
+    private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
+    private final Pose IntkFinal3 = new Pose(24, 40, Math.toRadians(180));
     private final Pose FinalPose = new Pose(52, 80, Math.toRadians(135));
 
     private Path a;
@@ -126,6 +125,7 @@ public class Test_auto_1st_meet extends OpMode {
             case 1:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkSt1, 0.7, true);
+
                     setPathState(2);
 
                 }
@@ -134,7 +134,8 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 2:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi1, 0.7, true);
+                    follower.followPath(IntkFi1, 0.5, true);
+
                     setPathState(3);
 
                 }
@@ -143,6 +144,9 @@ public class Test_auto_1st_meet extends OpMode {
             case 3:
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot2, 0.7, true);
+
+                       // shootM.setTargetRPM( 10 );
+
                     setPathState(4);
 
                 }
@@ -158,6 +162,10 @@ public class Test_auto_1st_meet extends OpMode {
             case 5:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkSt2, 0.7, true);
+
+                      //  shootM.setTargetRPM(0);
+
+
                     setPathState(6);
 
 
@@ -168,7 +176,8 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 6:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi2, 0.7, true);
+                    follower.followPath(IntkFi2, 0.5, true);
+
                     setPathState(7);
 
 
@@ -179,8 +188,11 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 7:
                 if (!follower.isBusy()) {
-                    intkM.intake();{}{}{{}{}{}{}{}{{{{}}}}}
+
                     follower.followPath(Shoot3, 0.7, true);
+
+                        //shootM.setTargetRPM( RPM );
+
                     setPathState(8);
 
 
@@ -191,7 +203,11 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 8:
                 if (!follower.isBusy()) {
+                    //shootM.setTargetRPM(0);
                     follower.followPath(IntkSt3, 0.7, true);
+
+
+
                     setPathState(9);
 
 
@@ -202,7 +218,8 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi3, 0.7, true);
+                    follower.followPath(IntkFi3, 0.5, true);
+
                     setPathState(10);
 
 
@@ -214,6 +231,11 @@ public class Test_auto_1st_meet extends OpMode {
             case 10:
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot4, 0.7, true);
+
+
+
+                        // shootM.setTargetRPM( RPM );
+
                     setPathState(11);
 
 
@@ -224,6 +246,7 @@ public class Test_auto_1st_meet extends OpMode {
 
             case 11:
                 if (!follower.isBusy()) {
+                   // shootM.setTargetRPM(0);
                     follower.followPath(FiString, 0.7, true);
                     setPathState(-1);
 
@@ -258,17 +281,21 @@ public class Test_auto_1st_meet extends OpMode {
         telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.update();
 
+        intkM.intake();
+
+
 
     }
 
     /** This method is called once at the setup of the OpMode. **/
     @Override
     public void init() {
+        intkM = new IntakeMotor(hardwareMap);
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
+        init = new Robot(hardwareMap);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);
         follower.update();

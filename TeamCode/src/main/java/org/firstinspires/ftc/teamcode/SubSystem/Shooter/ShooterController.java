@@ -37,9 +37,9 @@ public class ShooterController {
     private static final double CTRL_T = 0.050;
     private static final double CTRL_F = 0.0005;
 
-    private static final double HOOD_CLOSE = 0.72;
+    private static final double HOOD_CLOSE = 0.82;
     private static final double HOOD_MID   = 0.56;
-    private static final double HOOD_FAR   = 0.41;
+    private static final double HOOD_FAR   = 0.15;
 
     private static final double GATE_CLOSED = 0.10;
     private static final double GATE_OPEN   = 0.65;
