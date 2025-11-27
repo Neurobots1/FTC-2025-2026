@@ -25,9 +25,9 @@ public class Shooter_Burst_Test extends OpMode {
 
     @Override
     public void init() {
-        alliance = new AllianceSelector.Manager(Alliance.BLUE);
+
         //follower = Constants.createFollower(hardwareMap);
-        shooter  = ShooterController.create(hardwareMap, follower, alliance);
+        shooter  = ShooterController.create(hardwareMap, follower, Alliance.RED);
         shooter.setSpinEnabled(false);
         shooter.setShootHold(false);
         rbTimer.reset();

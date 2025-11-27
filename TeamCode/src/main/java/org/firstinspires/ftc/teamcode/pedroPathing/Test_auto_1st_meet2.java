@@ -314,14 +314,6 @@ public class Test_auto_1st_meet2 extends OpMode {
     public void init() {
 
 //        intkM = new IntakeMotor(hardwareMap);
-        shootM = new Shoot(hardwareMap,
-                0.01,0.0001,0.001,
-                0.01, 0.001, 0.001);
-        robot = new Robot(hardwareMap);
-        this.servo = servo;
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startPose);
-        follower.update();
 
 
 

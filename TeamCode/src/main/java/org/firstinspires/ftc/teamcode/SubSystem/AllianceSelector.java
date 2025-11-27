@@ -8,14 +8,17 @@ public final class AllianceSelector {
 
     public interface Provider {
         Alliance getAlliance();
-        void setAlliance(Alliance a);
+
+        default void setAlliance(Alliance a) {}  // <-- FIXED: now default
+
         default void toggle() {
             setAlliance(getAlliance() == Alliance.BLUE ? Alliance.RED : Alliance.BLUE);
         }
     }
 
+
     public static final class Manager implements Provider {
-        private Alliance alliance;
+        public Alliance alliance;
         public Manager(Alliance start) { this.alliance = start; }
         @Override public Alliance getAlliance() { return alliance; }
         @Override public void setAlliance(Alliance a) { this.alliance = a; }
@@ -44,6 +47,21 @@ public final class AllianceSelector {
             return Math.atan2(dy, dx);
         }
     }
+
+    public static final Provider defaultProvider = new Provider() {
+        private Alliance alliance = Alliance.RED;
+
+        @Override
+        public Alliance getAlliance() {
+            return alliance;
+        }
+
+        @Override
+        public void setAlliance(Alliance a) {
+            alliance = a;
+        }
+    };
+
 
     private AllianceSelector() {}
 }

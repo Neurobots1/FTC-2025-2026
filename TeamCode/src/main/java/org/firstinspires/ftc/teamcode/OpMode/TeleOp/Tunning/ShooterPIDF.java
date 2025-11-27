@@ -1,7 +1,10 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp.Tunning;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
+import com.pedropathing.control.PIDFCoefficients;
+import com.pedropathing.control.PIDFController;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,7 +13,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.FilteredPIDFController;
 
-@TeleOp(name = "Shooter_PIDF_Minimal", group = "Tuning")
+@Configurable
+@TeleOp(name = "ShooterPIDF", group = "Tuning")
 public class ShooterPIDF extends OpMode {
 
     private DcMotorEx mA, mB;
@@ -23,12 +27,12 @@ public class ShooterPIDF extends OpMode {
     private static final double TICKS_PER_REV = 28.0;
     private static final double GEAR_RATIO    = 1.0;
 
-    private FilteredPIDFController pidf;
+    private PIDFController pidf;
 
-    private double targetRpm = 0.0;
+    public static double targetRpm = 0.0;
     private boolean spin = false;
 
-    private JoinedTelemetry jt; // init this in init()
+    private JoinedTelemetry jt;
 
     @Override
     public void init() {
@@ -36,17 +40,20 @@ public class ShooterPIDF extends OpMode {
 
         mA = hardwareMap.get(DcMotorEx.class, MOTOR_A_NAME);
         mB = hardwareMap.get(DcMotorEx.class, MOTOR_B_NAME);
-        mA.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        mB.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+        // External PIDF → don't use RUN_USING_ENCODER
+        mA.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        mB.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
         mA.setDirection(MOTOR_A_DIR);
         mB.setDirection(MOTOR_B_DIR);
-        // optional: smoother stop when spin=false
+
+        // Coast when off
         mA.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         mB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        pidf = new FilteredPIDFController(new FilteredPIDFCoefficients(
-                ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D,
-                ShooterTuningConfig.T, ShooterTuningConfig.F));
+        pidf = new PIDFController(new PIDFCoefficients(
+                ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D , ShooterTuningConfig.F));
     }
 
     @Override
@@ -61,33 +68,31 @@ public class ShooterPIDF extends OpMode {
         if (gamepad1.right_bumper) spin = true;
         if (gamepad1.left_bumper)  spin = false;
 
-        pidf.setCoefficients(new FilteredPIDFCoefficients(
-                ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D,
-                ShooterTuningConfig.T, ShooterTuningConfig.F));
+        // Live gains from Panels
+        pidf.setCoefficients(new PIDFCoefficients( ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D,ShooterTuningConfig.F));
 
-        double rpmA = (mA.getVelocity() / (TICKS_PER_REV * GEAR_RATIO)) * 60.0;
-        double rpmB = (mB.getVelocity() / (TICKS_PER_REV * GEAR_RATIO)) * 60.0;
-        double rpm  = (rpmA + rpmB) * 0.5;
+        // Measure RPM from ONE motor only (mA)
+        double rpm = (mB.getVelocity() / (TICKS_PER_REV * GEAR_RATIO)) * 60.0;
 
         double out = 0.0;
         if (spin) {
             double err = targetRpm - rpm;
             pidf.updateFeedForwardInput(targetRpm);
             pidf.updateError(err);
-            out = clip(pidf.run(), -1, 1); // small safety clamp
+            out = clip(pidf.run(), -1, 1);
         }
 
+        // Same magnitude, opposite direction on the second motor
         mA.setPower(out);
         mB.setPower(-out);
 
+        // Telemetry: single RPM only
         jt.addData("Target RPM", "%.0f", targetRpm);
-        jt.addData("Actual RPM (avg)", "%.0f", rpm);
-        jt.addData("RPM A / B", "%.0f / %.0f", rpmA, rpmB);
+        jt.addData("Actual RPM", "%.0f", rpm);
         jt.addData("Error RPM",  "%.0f", (targetRpm - rpm));
         jt.addData("Spin", spin ? "ON" : "OFF");
         jt.addData("PIDF", "P=%.6f I=%.6f D=%.6f T=%.3f F=%.6f",
-                ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D,
-                ShooterTuningConfig.T, ShooterTuningConfig.F);
+                ShooterTuningConfig.P, ShooterTuningConfig.I, ShooterTuningConfig.D, ShooterTuningConfig.F);
         jt.update();
     }
 

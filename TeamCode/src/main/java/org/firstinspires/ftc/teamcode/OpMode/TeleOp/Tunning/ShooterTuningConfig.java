@@ -10,7 +10,7 @@ public class ShooterTuningConfig {
     public static double P = 0.006;
     public static double I = 0.000;
     public static double D = 0.000;
-    public static double T = 0.050;
+
     public static double F = 0.0005;
 
     /** TeleOp target RPM step sizes */
