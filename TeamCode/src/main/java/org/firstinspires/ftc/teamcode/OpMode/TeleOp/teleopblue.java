@@ -91,8 +91,7 @@ public class teleopblue extends OpMode {
         Pose robotPose = follower.getPose();
 
         if (shooterEnabled) {
-            double distance = distanceToGoal(robotPose, goalPose);
-            targetTicksPerSecond = shooterLUT.getTicksForDistance(distance);
+            //targetTicksPerSecond = shooterLUT.getTicksForDistance(distance);
 
             launcher.setFlywheelTicks(targetTicksPerSecond);
         } else {
@@ -114,6 +113,7 @@ public class teleopblue extends OpMode {
         telemetryManager.debug("F", Launcher23511.F);
         telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
+        telemetryManager.debug("distance goal", distanceToGoal());
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
         jt.addData("currentVelocity", "%.0f", currentVelocity);
         telemetryManager.update();
@@ -157,12 +157,12 @@ public class teleopblue extends OpMode {
     public class ShooterTicksLUT {
         // Distances in SAME UNITS as follower.getPose() (your Pedro field units)
         private final double[] distances = {
-                10, 20, 30, 40, 50   // <-- put your tested distances here
+                91, 20, 30, 40, 50   // <-- put your tested distances here
         };
 
         // Matching flywheel target velocities in ticks/second
         private final double[] ticks = {
-                1500, 1700, 1900, 2100, 2300   // <-- your tuned values
+                800, 1700, 1900, 2100, 2300   // <-- your tuned values
         };
 
         public double getTicksForDistance(double d) {
@@ -189,11 +189,15 @@ public class teleopblue extends OpMode {
 
 
 
-    private double distanceToGoal(Pose robotPose, Pose goalPose) {
-        Pose currentPose = follower.getPose();   // Pedro pose
-        double dx = GOAL_X - currentPose.getX();
-        double dy = GOAL_Y - currentPose.getY();
+    public double distanceToGoal() {
+        // Goal coordinates (Pedro uses cm)
+        double goalX = 6;
+        double goalY = 136;
+        double dx = goalX - follower.getPose().getX();
+        double dy = goalY - follower.getPose().getY();
+
         return Math.hypot(dx, dy);
     }
+
 }
 

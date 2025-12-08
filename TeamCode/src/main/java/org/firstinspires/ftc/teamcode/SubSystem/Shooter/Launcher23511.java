@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.seattlesolvers.solverslib.controller.PIDFController;
@@ -40,8 +41,8 @@ public class Launcher23511 {
         this.flywheelMotorTwo = flywheelMotorTwo;
         this.voltageSensor = voltageSensor;
 
-        flywheelMotorOne.setDirection(MOTOR_ONE_REVERSED ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
-        flywheelMotorTwo.setDirection(MOTOR_TWO_REVERSED ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        flywheelMotorOne.setDirection(MOTOR_ONE_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
+        flywheelMotorTwo.setDirection(MOTOR_TWO_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
 
         flywheelController = new PIDFController(P, I, D, F);
         flywheelController.setTolerance(VELOCITY_TOLERANCE);
@@ -91,8 +92,8 @@ public class Launcher23511 {
 
         flywheelController.setPIDF(P, I, D, F / normalizedVoltage);
 
-        flywheelMotorOne.setDirection(MOTOR_ONE_REVERSED ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
-        flywheelMotorTwo.setDirection(MOTOR_TWO_REVERSED ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        flywheelMotorOne.setDirection(MOTOR_ONE_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
+        flywheelMotorTwo.setDirection(MOTOR_TWO_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
 
         if (activeControl) {
             double currentVelocity = flywheelMotorOne.getVelocity();
