@@ -14,10 +14,10 @@ public class Launcher23511 {
     public static double P = 0.002;
     public static double I = 0.0;
     public static double D = 0.0002;
-    public static double F = 0.0009;
+    public static double F = 0.00055;
 
     public static double VELOCITY_TOLERANCE = 25.0;
-    public static double MAX_FLYWHEEL_VELOCITY = 2200.0;
+    public static double MAX_FLYWHEEL_VELOCITY = 1860;
     public static double DEFAULT_ON_POWER = 0.75;
 
     public static double NOMINAL_VOLTAGE = 12.0;
@@ -59,8 +59,8 @@ public class Launcher23511 {
     }
 
     public static Launcher23511 create(HardwareMap hardwareMap) {
-        DcMotorEx flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "flywheel1");
-        DcMotorEx flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "flywheel2");
+        DcMotorEx flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
+        DcMotorEx flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
         Launcher23511 launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();

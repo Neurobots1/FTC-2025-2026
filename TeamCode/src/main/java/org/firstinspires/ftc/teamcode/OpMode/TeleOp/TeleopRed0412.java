@@ -18,12 +18,13 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
 @TeleOp
-public class TeleopFinalRed extends OpMode {
+public class TeleopRed0412 extends OpMode {
 
     private Follower follower;
     private IntakeMotor intkM;
     private Shoot shootM;
     private Robot init;
+    private  VoltageSensor voltageSensor;
 
     private boolean shootingMode = false;
     private boolean automatedHeading;
@@ -38,12 +39,13 @@ public class TeleopFinalRed extends OpMode {
     public static final double MAX_RPM = 6000.0;
 
     // PIDF GAINS
-    public static double kP = 0.10;
+    public static double kP = 0;
     public static double kI = 0;
-    public static double kD = 0.00004;
-    public static double kF = 0;       // ✔ proper feedforward
-    public static double kS = 0;
-    public static double kV = 0;
+    public static double kD = 0.0000;
+    //public static double kF = 0;       // ✔ proper feedforward
+    public static double kS = 0.017;
+    public static double kV = 0.00014;
+    public static double tuningVoltage = 12;
 
     public static double targetRpm = 1000;
 
@@ -52,6 +54,8 @@ public class TeleopFinalRed extends OpMode {
     private long lastTime;
 
     private final Pose startingPose = new Pose(63, 136, Math.toRadians(-90));
+    private static final double GOAL_X = 12; // Example: 72 inches
+    private static final double GOAL_Y = 132; // Example: 72 inches
     private PanelsTelemetry panelsTelemetry;
 
     @Override
@@ -63,6 +67,7 @@ public class TeleopFinalRed extends OpMode {
         intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");
         shooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterA");
         shooterRight = hardwareMap.get(DcMotorEx.class, "ShooterB");
+        voltageSensor = hardwareMap.get(VoltageSensor.class, "Control Hub");
 
         shooterLeft.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
         shooterRight.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
@@ -138,8 +143,8 @@ public class TeleopFinalRed extends OpMode {
         double derivative = (error - lastError) / dt;
         lastError = error;
 
-        // ✔ Correct feedforward: rpm/maxRPM
-        kF = kS + kV * targetRpm;
+
+        double kF = kS + kV * targetRpm;
 
         double power =
                 (kP * error) +
@@ -147,11 +152,11 @@ public class TeleopFinalRed extends OpMode {
                         (kD * derivative) +
                         kF;
 
-        double output = power * ;
+        double output = power * (tuningVoltage/voltageSensor.getVoltage());
 
 
 
-        output = Math.max(0, Math.min(output, 1));   // clamp 0–1
+        //output = Math.max(0, Math.min(output, 1));   // clamp 0–1
 
         shooterLeft.setPower(output);
         shooterRight.setPower(output);
@@ -159,23 +164,39 @@ public class TeleopFinalRed extends OpMode {
 
     // ================== HEADING TO GOAL ===================
     private double calculateTargetHeading() {
-        Pose p = follower.getPose();
-        double dx = 12 - p.getX();
-        double dy = 132 - p.getY();
-        return Math.atan2(dy, dx);
+        Pose currentPose = follower.getPose();
+        double deltaX = GOAL_X - currentPose.getX();
+        double deltaY = GOAL_Y - currentPose.getY();
+        return Math.atan2(deltaY, deltaX);
     }
 
     private double calculateHeadingToGoal() {
-        Pose p = follower.getPose();
-        double target = calculateTargetHeading();
-        double error = target - p.getHeading();
+        // Get current robot pose
+        Pose currentPose = follower.getPose();
 
-        while (error > Math.PI) error -= 2 * Math.PI;
-        while (error < -Math.PI) error += 2 * Math.PI;
+        // Calculate target heading (angle to goal)
+        double targetHeading = calculateTargetHeading();
 
-        double kP = 1.0;
-        double power = error * kP;
+        // Get current heading
+        double currentHeading = currentPose.getHeading();
 
-        return Math.max(-1, Math.min(1, power));
+        // Calculate heading error
+        double headingError = targetHeading - currentHeading;
+
+        // Normalize heading error to [-PI, PI]
+        while (headingError > Math.PI) headingError -= 2 * Math.PI;
+        while (headingError < -Math.PI) headingError += 2 * Math.PI;
+
+        // P controller for heading correction
+        // Tune this gain value to control how aggressively the robot turns
+        double kP = 1.0; // Adjust this value based on testing
+
+        // Calculate heading correction power
+        double headingPower = headingError * kP;
+
+        // Clamp the output to [-1, 1]
+        headingPower = Math.max(-1.0, Math.min(1.0, headingPower));
+
+        return headingPower;
     }
 }

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -16,8 +17,13 @@ public class ShooterTune23511 extends OpMode {
     public static boolean shooterEnabled = false;
     public static boolean rawPowerMode = false;
 
-    public static double targetTicksPerSecond = 1500.0;
+    public static double targetTicksPerSecond = 0;
     public static double testPower = 1.0;
+
+    private JoinedTelemetry jt;
+
+
+
 
     private Launcher23511 launcher;
     private DcMotorEx flywheelMotorOne;
@@ -27,8 +33,9 @@ public class ShooterTune23511 extends OpMode {
 
     @Override
     public void init() {
-        flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "flywheel1");
-        flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "flywheel2");
+        jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
+        flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
+        flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
@@ -67,6 +74,19 @@ public class ShooterTune23511 extends OpMode {
         telemetryManager.debug("D", Launcher23511.D);
         telemetryManager.debug("F", Launcher23511.F);
         telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
+        jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
+        jt.addData("currentVelocity", "%.0f", currentVelocity);
         telemetryManager.update();
     }
+
+
+
+
+
+
+
+
+
+
+
 }

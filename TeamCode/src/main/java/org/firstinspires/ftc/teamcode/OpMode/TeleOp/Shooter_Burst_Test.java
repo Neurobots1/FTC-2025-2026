@@ -1,5 +1,5 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+/*import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -9,6 +9,8 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.ShooterController;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector.Alliance;
+
+import java.security.Provider;
 
 @TeleOp(name = "Shooter_Burst_Test", group = "Test")
 public class Shooter_Burst_Test extends OpMode {
@@ -27,7 +29,7 @@ public class Shooter_Burst_Test extends OpMode {
     public void init() {
 
         //follower = Constants.createFollower(hardwareMap);
-        shooter  = ShooterController.create(hardwareMap, follower, Alliance.RED);
+        shooter  = ShooterController.create(hardwareMap, follower, , Alliance.RED);
         shooter.setSpinEnabled(false);
         shooter.setShootHold(false);
         rbTimer.reset();
@@ -67,4 +69,4 @@ public class Shooter_Burst_Test extends OpMode {
         bPrev  = b;
         yPrev  = y;
     }
-}
+}*/

@@ -1,15 +1,17 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
 
+import com.pedropathing.control.KalmanFilter;
+import com.pedropathing.control.LowPassFilter;
 import com.pedropathing.geometry.Pose;
 
 public class ConvertToPedroPose {
-    public Pose convertToPedroPose(Pose ftcPose) {
-        if (ftcPose == null) return null;
+    public Pose convertToPedroPose(Pose filterPose) {
+        if (filterPose == null) return null;
 
-        double x = ftcPose.getX();
-        double y = ftcPose.getY();
-        double headingDegrees = ftcPose.getHeading();
+        double x = filterPose.getX();
+        double y = filterPose.getY();
+        double headingDegrees = filterPose.getHeading();
 
         // --- Convert to Pedro coordinate system ---
         double xPedro = y + 72;
