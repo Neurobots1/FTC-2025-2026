@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.seattlesolvers.solverslib.util.InterpLUT;
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
@@ -32,6 +33,8 @@ public class teleopblue extends OpMode {
     private static final double GOAL_Y = 132; // Example: 72 inches
     private final Pose goalPose = new Pose(12, 132, 0.0);
     private ShooterTicksLUT shooterLUT = new ShooterTicksLUT();
+
+    private final InterpLUT lut = new InterpLUT();
 
 
 
@@ -91,7 +94,7 @@ public class teleopblue extends OpMode {
         Pose robotPose = follower.getPose();
 
         if (shooterEnabled) {
-            //targetTicksPerSecond = shooterLUT.getTicksForDistance(distance);
+            targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
 
             launcher.setFlywheelTicks(targetTicksPerSecond);
         } else {
@@ -157,12 +160,12 @@ public class teleopblue extends OpMode {
     public class ShooterTicksLUT {
         // Distances in SAME UNITS as follower.getPose() (your Pedro field units)
         private final double[] distances = {
-                91, 20, 30, 40, 50   // <-- put your tested distances here
+               44, 51, 63, 71, 91, 101   // <-- put your tested distances here
         };
 
         // Matching flywheel target velocities in ticks/second
         private final double[] ticks = {
-                800, 1700, 1900, 2100, 2300   // <-- your tuned values
+               600, 670, 720, 780, 820, 850   // <-- your tuned values
         };
 
         public double getTicksForDistance(double d) {
