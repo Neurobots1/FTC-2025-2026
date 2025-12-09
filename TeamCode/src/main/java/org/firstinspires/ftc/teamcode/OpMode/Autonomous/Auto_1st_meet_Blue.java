@@ -1,14 +1,10 @@
 package org.firstinspires.ftc.teamcode.OpMode.Autonomous;
 
-import static org.firstinspires.ftc.teamcode.SubSystem.Shooter.ShooterTune23511.targetTicksPerSecond;
-import static org.firstinspires.ftc.teamcode.SubSystem.Shooter.ShooterTune23511.usePIDF;
-
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
@@ -16,10 +12,7 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
@@ -64,7 +57,7 @@ public class Auto_1st_meet_Blue extends OpMode {
     private final Pose IntkFinal2 = new Pose(14, 63, Math.toRadians(180));
     private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(12, 37.05, Math.toRadians(180));
-    private final Pose FinalPose = new Pose(52, 70, Math.toRadians(135));
+    private final Pose FinalShootPose = new Pose(52, 100, Math.toRadians(135));
 
     private Path a;
 
@@ -131,8 +124,8 @@ public class Auto_1st_meet_Blue extends OpMode {
 
 
         FiString = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot, FinalPose))
-                .setLinearHeadingInterpolation(Shoot.getHeading(), FinalPose.getHeading())
+                .addPath(new BezierLine(IntkFinal3, FinalShootPose))
+                .setLinearHeadingInterpolation(IntkFinal3.getHeading(), FinalShootPose.getHeading())
                 .build();
 
 
@@ -150,7 +143,7 @@ public class Auto_1st_meet_Blue extends OpMode {
 
             case 1:
                 if (!follower.isBusy()) {
-                   // intkM.slowOuttake();
+                    intkM.slowOuttake();
                     usePIDF = true;
                     rawPowerMode = false;
                    // shooterEnabled = true;
@@ -212,7 +205,7 @@ public class Auto_1st_meet_Blue extends OpMode {
 
             case 6:
                 if (!follower.isBusy()) {
-                    //intkM.slowOuttake();
+                    intkM.slowOuttake();
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
@@ -274,7 +267,8 @@ public class Auto_1st_meet_Blue extends OpMode {
 
             case 12:
                 if (!follower.isBusy()) {
-                    //intkM.slowOuttake();
+
+                    intkM.slowOuttake();
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
@@ -332,7 +326,7 @@ public class Auto_1st_meet_Blue extends OpMode {
 
             case 17:
                 if (!follower.isBusy()) {
-                    //intkM.slowOuttake();
+                    intkM.slowOuttake();
                     rawPowerMode = false;
                     usePIDF = true;
                    // shooterEnabled = true;
