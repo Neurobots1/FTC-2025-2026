@@ -188,7 +188,7 @@ public class Auto_1st_meet_Blue extends OpMode {
             case 4:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi1, 0.5, true);
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
 
                         setPathState(5);
                     }
@@ -208,21 +208,13 @@ public class Auto_1st_meet_Blue extends OpMode {
             case 6:
                 if (!follower.isBusy()) {
                     intkM.slowOuttake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5 ) {
-                        setPathState(20);
-                    }
-                }
-                break;
-
-            case 20:
-                if(!follower.isBusy()){
                     rawPowerMode = false;
                     usePIDF = true;
-                    //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 3.5 ) {
                         setPathState(68);
                     }
                 }
+                break;
 
             case 68:
                 intkM.intake();
@@ -339,7 +331,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3) {
+                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
                         setPathState(70);
                     }
                 }
@@ -348,7 +340,7 @@ public class Auto_1st_meet_Blue extends OpMode {
             case 70:
                 if (!follower.isBusy()){
                     intkM.intake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
                         setPathState(18);
                     }
                 }
@@ -417,7 +409,7 @@ public class Auto_1st_meet_Blue extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         Shooter = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Shooter.setFlywheelTicks(785);
+        Shooter.setFlywheelTicks(725);
         shooterEnabled = false;
 
         Shooter.init();
