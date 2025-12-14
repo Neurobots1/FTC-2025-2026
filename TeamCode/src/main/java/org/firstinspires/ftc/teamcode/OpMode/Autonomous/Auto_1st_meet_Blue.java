@@ -30,7 +30,7 @@ public class Auto_1st_meet_Blue extends OpMode {
     private  DcMotorEx flywheelMotorOne;
     private  DcMotorEx flywheelMotorTwo;
     public static boolean usePIDF = true;
-    public static double targetTicksPerSecond = 785;
+    public static double targetTicksPerSecond = 725;
     public static double rawPower = -0.5;
     public static boolean rawPowerMode = false;
     private VoltageSensor voltageSensor;

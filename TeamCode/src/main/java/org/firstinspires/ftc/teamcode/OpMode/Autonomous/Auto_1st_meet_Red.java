@@ -30,7 +30,7 @@ public class Auto_1st_meet_Red extends OpMode {
     private  DcMotorEx flywheelMotorOne;
     private  DcMotorEx flywheelMotorTwo;
     public static boolean usePIDF = true;
-    public static double targetTicksPerSecond = 785;
+    public static double targetTicksPerSecond = 725;
     public static double rawPower = -1;
     public static boolean rawPowerMode = false;
     private VoltageSensor voltageSensor;
@@ -410,7 +410,7 @@ public class Auto_1st_meet_Red extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         Shooter = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Shooter.setFlywheelTicks(785);
+        Shooter.setFlywheelTicks(725);
         shooterEnabled = false;
 
         Shooter.init();
