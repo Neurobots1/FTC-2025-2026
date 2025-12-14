@@ -112,6 +112,12 @@ public class Launcher23511 {
     }
 
     public boolean flywheelReady() {
-        return activeControl && flywheelController.atSetPoint();
+        if (!activeControl) return false;
+
+        double targetTPS = flywheelController.getSetPoint();
+        double currentTPS = flywheelMotorOne.getVelocity();
+
+        return Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
     }
+
 }
