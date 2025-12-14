@@ -149,7 +149,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     usePIDF = true;
                     rawPowerMode = false;
                    //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3) {
+                    if (Shooter.flywheelReady()) {
                         setPathState(67);
                     }
 
@@ -210,7 +210,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     intkM.slowOuttake();
                     rawPowerMode = false;
                     usePIDF = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5 ) {
+                    if (Shooter.flywheelReady()) {
                         setPathState(68);
                     }
                 }
@@ -273,7 +273,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (Shooter.flywheelReady()) {
                         setPathState(69);
                     }
                 }
@@ -331,7 +331,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (Shooter.flywheelReady()) {
                         setPathState(70);
                     }
                 }
