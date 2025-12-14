@@ -209,21 +209,13 @@ public class Auto_1st_meet_Red extends OpMode {
             case 6:
                 if (!follower.isBusy()) {
                     intkM.slowOuttake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5 ) {
-                        setPathState(20);
-                    }
-                }
-                break;
-
-            case 20:
-                if(!follower.isBusy()){
                     rawPowerMode = false;
                     usePIDF = true;
-                    //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 3.5 ) {
                         setPathState(68);
                     }
                 }
+                break;
 
             case 68:
                 intkM.intake();
@@ -340,7 +332,7 @@ public class Auto_1st_meet_Red extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3) {
+                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
                         setPathState(70);
                     }
                 }
@@ -349,7 +341,7 @@ public class Auto_1st_meet_Red extends OpMode {
             case 70:
                 if (!follower.isBusy()){
                     intkM.intake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
                         setPathState(18);
                     }
                 }
