@@ -59,6 +59,7 @@ public class Auto_1st_meet_Blue extends OpMode {
     private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
     private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(143));
+    public static Pose finalPose =new Pose();
 
     private Path a;
 
@@ -447,9 +448,8 @@ public class Auto_1st_meet_Blue extends OpMode {
         opmodeTimer.resetTimer();
         setPathState(0);
     }
-
-    public Pose finalPose(){
-       Pose currentPose = FinalShootPose.getPose();
-       return currentPose;
+    @Override
+    public void stop(){
+    finalPose = new Pose(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading());
     }
 }
