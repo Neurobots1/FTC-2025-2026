@@ -1,15 +1,16 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
+import com.pedropathing.control.KalmanFilter;
 import com.pedropathing.geometry.PedroCoordinates;
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-
 import java.util.List;
 
-
+@Disabled
 public class Relocalisation extends AprilTagPipeline {
 
 
@@ -65,30 +66,4 @@ public class Relocalisation extends AprilTagPipeline {
             return null;
 
         }
-
-    /**
-     * Converts an FTC field-space pose into PedroPathing field-space coordinates.
-     * Field is 144" x 144", rotated 90° CCW, origin moved from center to bottom-left corner.
-     */
-    /*public Pose convertToPedroPose(Pose ftcPose) {
-        if (ftcPose == null) return null;
-
-        double x = ftcPose.getX();
-        double y = ftcPose.getY();
-        double headingDegrees = ftcPose.getHeading();
-
-        // --- Convert to Pedro coordinate system ---
-        double xPedro = 72 - y;
-        double yPedro = x + 72;
-
-        // Adjust heading for 90° CCW rotation
-        double headingPedro = headingDegrees + 90.0;
-        headingPedro = ((headingPedro + 360) % 360);   // normalize to [0,360)
-
-        return new Pose(xPedro, yPedro, headingPedro);
-
-    } */
-
-
-
 }

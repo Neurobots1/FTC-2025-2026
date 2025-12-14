@@ -5,6 +5,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
@@ -16,12 +17,13 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 
-@Autonomous(name = "Test_auto_1st_meet", group = "Examples")
-public class auto_1st_meet extends OpMode {
+@Autonomous(name = "Auto_1st_meet_Red", group = "Examples")
+public class Auto_1st_meet_Red extends OpMode {
 
     private Follower follower;
+
     private IntakeMotor intkM;
-    private Shoot shootM;
+    //private Shoot shootM;
     private Tuning tuning;
     private Robot init;
 
@@ -32,23 +34,29 @@ public class auto_1st_meet extends OpMode {
 
 
     private TelemetryManager telemetryM;
+    private Shoot ShootM;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private final Pose startPose = new Pose(33, 136, Math.toRadians(90));
-    private final Pose Shoot = new Pose(52, 92, Math.toRadians(139));
-    private final Pose IntkStart1 = new Pose(50, 85, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(22, 85, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(50, 60, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(15, 60, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(24, 40, Math.toRadians(180));
-    private final Pose FinalPose = new Pose(52, 80, Math.toRadians(135));
+    private final Pose startPose = new Pose(110, 136, Math.toRadians(90));
+    private final Pose Shoot = new Pose(92, 92, Math.toRadians(50));
+    private final Pose IntkStart1 = new Pose(100, 85, Math.toRadians(0));
+    private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
+    private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
+    private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
+    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
+    private final Pose FinalPose = new Pose(89, 70, Math.toRadians(50));
+
 
     private Path a;
 
     private PathChain Shoot1,Shoot2,Shoot3,Shoot4,IntkSt1,IntkSt2,IntkSt3,IntkFi1,IntkFi2,IntkFi3,FiString;
     public void buildPaths() {
+
+        // Shoot PathBuild 1-4
+        // Intake PathBuild 5-10
+        //Final Pose PathBuild 11
 
         Shoot1 = follower.pathBuilder()
                 .addPath(new BezierLine(startPose,Shoot))
@@ -61,7 +69,7 @@ public class auto_1st_meet extends OpMode {
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal2,Shoot))
+                .addPath(new BezierLine(IntkFinal2, Shoot))
                 .setLinearHeadingInterpolation(IntkFinal2.getHeading() , Shoot.getHeading())
                 .build();
 
@@ -117,69 +125,67 @@ public class auto_1st_meet extends OpMode {
     }
     public void autonomousPathUpdate() {
         switch (pathState) {
+
             case 0:
-                follower.followPath(Shoot1, 0.7, true);
-                setPathState(1);
+                follower.followPath(Shoot1, 1, true);
+                if (actionTimer.getElapsedTimeSeconds() > 4) {
+                    setPathState(1);
+                }
                 break;
 
             case 1:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt1, 0.7, true);
-
-                    setPathState(2);
+                if (!follower.isBusy()){
+                    // mettre shooter(premier shoot)
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        //arreter shooter
+                        setPathState(2);
+                    }
 
                 }
                 break;
-
 
             case 2:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi1, 0.5, true);
-
+                    follower.followPath(IntkSt1, 1, true);
                     setPathState(3);
-
                 }
+
                 break;
 
             case 3:
-                if (!follower.isBusy()) {
-                    follower.followPath(Shoot2, 0.7, true);
-
-                       // shootM.setTargetRPM( 10 );
-
-                    setPathState(4);
+                if (!follower.isBusy()){
+                    intkM.intake();
+                        setPathState(4);
 
                 }
                 break;
 
-            case 4:
-                if (actionTimer.getElapsedTimeSeconds() > 0.5) {
-                    setPathState(5);
 
+            case 4:
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkFi1, 0.5, true);
+                    if (actionTimer.getElapsedTimeSeconds() > 4) {
+
+                        setPathState(5);
+                    }
                 }
                 break;
 
             case 5:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt2, 0.7, true);
-
-                      //  shootM.setTargetRPM(0);
-
-
-                    setPathState(6);
-
-
-
+                if (!follower.isBusy()){
+                    intkM.stop();
+                        setPathState(6);
 
                 }
                 break;
 
             case 6:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi2, 0.5, true);
+                    follower.followPath(Shoot2, 1, true);
 
-                    setPathState(7);
-
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        setPathState(7);
+                    }
 
 
 
@@ -187,74 +193,145 @@ public class auto_1st_meet extends OpMode {
                 break;
 
             case 7:
-                if (!follower.isBusy()) {
-
-                    follower.followPath(Shoot3, 0.7, true);
-
-                        //shootM.setTargetRPM( RPM );
-
-                    setPathState(8);
-
-
-
-
+                if (!follower.isBusy()){
+                    //mettre shooter(deuxieme shoot)
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        //arreter shooter
+                        setPathState(8);
+                    }
                 }
                 break;
 
+
+
+
             case 8:
-                if (!follower.isBusy()) {
-                    //shootM.setTargetRPM(0);
-                    follower.followPath(IntkSt3, 0.7, true);
-
-
+                if (actionTimer.getElapsedTimeSeconds() > 0.5) {
 
                     setPathState(9);
-
-
-
 
                 }
                 break;
 
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi3, 0.5, true);
+                    follower.followPath(IntkSt2, 1, true);
+
 
                     setPathState(10);
-
-
 
 
                 }
                 break;
 
             case 10:
-                if (!follower.isBusy()) {
-                    follower.followPath(Shoot4, 0.7, true);
-
-
-
-                        // shootM.setTargetRPM( RPM );
-
+                if (!follower.isBusy()){
+                    intkM.intake();
                     setPathState(11);
-
-
-
-
                 }
                 break;
 
             case 11:
                 if (!follower.isBusy()) {
-                   // shootM.setTargetRPM(0);
-                    follower.followPath(FiString, 0.7, true);
-                    setPathState(-1);
+                    follower.followPath(IntkFi2, 0.5, true);
+                    if (actionTimer.getElapsedTimeSeconds() > 4) {
 
-
+                        setPathState(12);
+                    }
 
 
                 }
                 break;
+
+            case 12:
+                if (!follower.isBusy()){
+                    intkM.stop();
+                        setPathState(13);
+
+                }
+                break;
+
+            case 13:
+                if (!follower.isBusy()) {
+
+                    follower.followPath(Shoot3, 1, true);
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        setPathState(14);
+                    }
+                }
+                break;
+
+            case 14:
+                if (!follower.isBusy()){
+                    //mettre shooter(troisieme shoot)
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        //arreter shooter
+                        setPathState(15);
+                    }
+                }
+
+            case 15:
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkSt3, 1, true);
+
+                    setPathState(16);
+
+                }
+                break;
+
+            case 16:
+                if (!follower.isBusy()){
+                    intkM.intake();
+                        setPathState(17);
+                }
+                break;
+
+            case 17:
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkFi3, 0.5, true);
+                    if (actionTimer.getElapsedTimeSeconds() > 4) {
+
+                        setPathState(18);
+                    }
+                }
+                break;
+
+            case 18:
+                if (!follower.isBusy()){
+                    intkM.stop();
+                        setPathState(19);
+                }
+                break;
+
+
+            case 19:
+                if (!follower.isBusy()) {
+                    follower.followPath(Shoot4, 1, true);
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        setPathState(20);
+                    }
+
+
+                }
+                break;
+
+            case 20:
+                if (!follower.isBusy()){
+                    //mettre shooter(quatrieme shoot)
+                    if (actionTimer.getElapsedTimeSeconds() > 4){
+                        //arreter shooter
+                        setPathState(21);
+
+                    }
+                }
+
+            case 21:
+                if (!follower.isBusy()) {
+                    follower.followPath(FiString, 1, true);
+                    setPathState(-1);
+                }
+                break;
+
 
         }
 
@@ -269,7 +346,6 @@ public class auto_1st_meet extends OpMode {
 
     @Override
     public void loop() {
-
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         autonomousPathUpdate();
@@ -280,8 +356,6 @@ public class auto_1st_meet extends OpMode {
         telemetry.addData("y", follower.getPose().getY());
         telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.update();
-
-        intkM.intake();
 
 
 
