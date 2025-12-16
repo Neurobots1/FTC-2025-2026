@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Blue.finalPose;
+import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Red.finalPose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -19,8 +19,8 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
-@TeleOp(name = "teleopblue1214", group = "Tuning")
-public class teleopblue1214 extends OpMode {
+@TeleOp(name = "TeleopRed1214_N_debug", group = "Tuning")
+public class TeleopRed1214_N_debug extends OpMode {
 
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
@@ -30,7 +30,7 @@ public class teleopblue1214 extends OpMode {
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(finalPose.getX(), finalPose.getY(), finalPose.getHeading());
-    private static final double GOAL_X = 12;
+    private static final double GOAL_X = 132;
     private static final double GOAL_Y = 132;
     private final Pose goalPose = new Pose(12, 132, 0.0);
     // 🔹 This stays the same, but now uses Hermite inside
