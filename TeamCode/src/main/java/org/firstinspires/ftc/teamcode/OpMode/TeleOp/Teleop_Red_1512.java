@@ -16,6 +16,13 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
+import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+
+import java.util.List;
+
+import kotlin.jvm.internal.PropertyReference0Impl;
+
 @TeleOp
 public class Teleop_Red_1512 extends OpMode {
     public static boolean usePIDF = true;
@@ -24,6 +31,7 @@ public class Teleop_Red_1512 extends OpMode {
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
     private Relocalisationfilter relocalisationfilter;
+    private AprilTagPipeline aprilTagPipeline;
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(72,72,Math.toRadians(90));
@@ -56,6 +64,11 @@ public class Teleop_Red_1512 extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
         init = new Robot(hardwareMap);
+        //aprilTagPipeline = new AprilTagPipeline();
+        aprilTagPipeline = new AprilTagPipeline(hardwareMap); // nouveau
+        convertToPedroPose = new ConvertToPedroPose();
+        aprilTagPipeline.startCamera(); // nouveau
+        relocalisationfilter = new Relocalisationfilter(hardwareMap, aprilTagPipeline); // nouveau
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
@@ -72,6 +85,8 @@ public class Teleop_Red_1512 extends OpMode {
     public void loop(){
 
         follower.update();
+
+        List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
 
         double headingInput =
                 -gamepad1.right_stick_x;
@@ -94,6 +109,25 @@ public class Teleop_Red_1512 extends OpMode {
         if (gamepad1.right_bumper) intkM.intake();
         else if (gamepad1.left_bumper) intkM.outtake();
         else intkM.stop();
+
+        if (gamepad1.start)relocalisationfilter.relocalisation();
+        else if (gamepad1.options) {
+            if (convertToPedroPose == null) {
+                telemetry.addLine("convertToPedroPose is NULL");
+            } else if (relocalisationfilter.filteredPose == null) {
+                telemetry.addLine("filteredPose is NULL (no pose yet)");
+            } else {
+                Pose pedroPose = convertToPedroPose.convertToPedroPose(relocalisationfilter.filteredPose);
+                follower.setPose(pedroPose);
+            }
+        }
+
+
+        else if (detections.isEmpty()){
+            telemetry.addLine("no AprilTag Detected");
+        }
+
+
 
         if (gamepad1.a) shooterEnabled = true;
         if (gamepad1.b) shooterEnabled = false;

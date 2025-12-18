@@ -23,6 +23,7 @@ import org.opencv.imgproc.Imgproc;
 
 import org.openftc.easyopencv.OpenCvPipeline;
 
+import java.util.Collections;
 import java.util.List;
 
 public class AprilTagPipeline extends OpenCvPipeline {
@@ -33,9 +34,10 @@ public class AprilTagPipeline extends OpenCvPipeline {
     private HardwareMap hardwareMap;
 
     private Position cameraPosition = new Position(DistanceUnit.INCH,
-            0, 9, 8, 0);
+            4.875, 8.4375, 10, 0);
+    private YawPitchRollAngles cameraorientation =
+            new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 180, 0);
 
-    private YawPitchRollAngles cameraorientation = new YawPitchRollAngles(AngleUnit.DEGREES,0,-90,0, 0);
 
 
 
@@ -43,15 +45,14 @@ public class AprilTagPipeline extends OpenCvPipeline {
         this.hardwareMap = hardwareMap;
 
 
-        aprilTag = new AprilTagProcessorImpl.Builder()
+       /* aprilTag = new AprilTagProcessorImpl.Builder()
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
                 .setDrawTagOutline(true)
-                .build();
+                .build(); */
     }
 
-    public AprilTagPipeline() {
-    }
+
 
     public void startCamera() {
         aprilTag = new AprilTagProcessor.Builder()
@@ -60,7 +61,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .setDrawCubeProjection(true)
                 .setDrawTagOutline(true)
                 .setLensIntrinsics(549.651, 549.651, 317.108, 236.644)
-                .setCameraPose(cameraPosition, cameraorientation)
+                .setCameraPose(cameraPosition,cameraorientation)
                 .build();
 
         visionPortal = new VisionPortal.Builder()
@@ -76,8 +77,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
 
     @Override
     public Mat processFrame(Mat input) {
-        // Since your input is already grayscale, no need to convert.
-        // This is just for visual feedback
+        if (aprilTag == null) return input; // nouveau
         List<AprilTagDetection> detections = aprilTag.getDetections();
 
         for (AprilTagDetection tag : detections) {
@@ -107,6 +107,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
     }
 
     public List<AprilTagDetection> getAllDetections() {
+        if (aprilTag == null) return Collections.emptyList();
         return aprilTag.getDetections();
     }
 }
