@@ -14,7 +14,6 @@ public class Indexer {
 
     public static double indexer1_Left = 0.0;//Indexer1 Left
     public static double indexer1_Center = 1;//Indexer1 Center
-
     public static double indexer2_Center = 1;//Indexer2 Center
     public static double indexer2_Right = 1.0;//Indexer2 Right
 
