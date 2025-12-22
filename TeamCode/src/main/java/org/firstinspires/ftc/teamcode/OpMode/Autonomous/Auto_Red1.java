@@ -133,7 +133,7 @@ public class Auto_Red1 extends OpMode {
 
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() { // Change the cases because of the Indexer
         switch (pathState) {
 
             case 0:

@@ -132,7 +132,7 @@ public class Auto_Blue1 extends OpMode {
 
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() {  //Change the cases because of the indexer
         switch (pathState) {
 
             case 0:

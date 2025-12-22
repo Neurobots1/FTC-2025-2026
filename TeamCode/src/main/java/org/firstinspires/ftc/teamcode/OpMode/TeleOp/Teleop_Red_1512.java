@@ -92,7 +92,6 @@ public class Teleop_Red_1512 extends OpMode {
             );
         }
 
-        // Intake Control
         if (gamepad1.right_bumper) intkM.intake();
         else if (gamepad1.left_bumper) intkM.outtake();
         else intkM.stop();
