@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 
-@TeleOp
+@TeleOp(name = "Test_Teleop_Indexer")
 public class Test_Teleop_Indexer extends OpMode {
 
     private IntakeMotor intkM;
