@@ -19,10 +19,9 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
-import org.firstinspires.ftc.teamcode.OpMode.TeleOp.HeadingLockOJB;
 
-@Autonomous(name = "Auto_1st_meet_blue", group = "Examples")
-public class Auto_1st_meet_Blue extends OpMode {
+@Autonomous(name = "Auto_blue1", group = "Examples")
+public class Auto_Blue1 extends OpMode {
 
     private Follower follower;
 

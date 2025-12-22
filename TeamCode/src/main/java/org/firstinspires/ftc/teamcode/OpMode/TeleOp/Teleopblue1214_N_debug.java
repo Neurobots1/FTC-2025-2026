@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Blue.finalPose;
+import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Blue1.finalPose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;

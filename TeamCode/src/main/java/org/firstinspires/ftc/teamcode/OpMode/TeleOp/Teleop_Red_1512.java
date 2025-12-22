@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
+//All the differents import of our code
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
@@ -8,6 +9,7 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
@@ -18,6 +20,9 @@ import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
 @TeleOp
 public class Teleop_Red_1512 extends OpMode {
+
+    //How we call the motor and functions in our code
+
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
@@ -46,7 +51,7 @@ public class Teleop_Red_1512 extends OpMode {
 
 
     @Override
-    public void init() {
+    public void init() {//Init of our Robot(all the motors and functions)
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose);
         follower.update();
@@ -56,6 +61,8 @@ public class Teleop_Red_1512 extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
         init = new Robot(hardwareMap);
+        relocalisationfilter = new Relocalisationfilter(hardwareMap);
+        convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
@@ -73,6 +80,7 @@ public class Teleop_Red_1512 extends OpMode {
 
         follower.update();
 
+        //Drive control
         double headingInput =
                 -gamepad1.right_stick_x;
 
@@ -84,22 +92,47 @@ public class Teleop_Red_1512 extends OpMode {
 
 
         );
-
         else follower.setTeleOpDrive(
                 -gamepad1.left_stick_y * slowModeMultiplier,
                 -gamepad1.left_stick_x * slowModeMultiplier,
                 -gamepad1.right_stick_x * slowModeMultiplier
         );
 
+
+
+
+        //Intake Control
         if (gamepad1.right_bumper) intkM.intake();
         else if (gamepad1.left_bumper) intkM.outtake();
         else intkM.stop();
 
+
+
+
+
+        //Relocalisation Control
+        Pose relocalisedPose = null;
+
+        if (gamepad1.y) {
+            relocalisedPose = relocalisationfilter.relocalisation();
+            if (relocalisedPose != null) {
+                follower.setPose(relocalisedPose);
+                telemetryManager.addLine("Relocalisation: ACTIVE");
+            }
+
+            } else  {
+            telemetryManager.addLine("Relocalisation: OFF");
+        }
+
+
+        //Shooter control
         if (gamepad1.a) shooterEnabled = true;
         if (gamepad1.b) shooterEnabled = false;
 
 
 
+
+        //Telemetry
         telemetryManager.debug("shooterEnabled", shooterEnabled);
         telemetryManager.debug("usePIDF", usePIDF);
         telemetryManager.debug("targetTicksPerSecond", targetTicksPerSecond);
@@ -114,6 +147,8 @@ public class Teleop_Red_1512 extends OpMode {
         jt.addData("PedroPose",relocalisationfilter.relocalisation());
         jt.addData("positon", follower.getPose());
         jt.addData("Power", intake.getPower());
+        jt.addData("Relocalised Pose", relocalisedPose != null ? relocalisedPose : "None");
+        jt.addData("Current Position", follower.getPose());
         jt.update();
         telemetryManager.update();
 

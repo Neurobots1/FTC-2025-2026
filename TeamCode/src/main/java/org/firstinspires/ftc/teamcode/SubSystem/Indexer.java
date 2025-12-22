@@ -13,13 +13,14 @@ public class Indexer {
     public Servo servoIntk;
 
     public static double indexer1_Left = 0.0;//Indexer1 Left
-    public static double indexer1_Center = 0.5;//Indexer1 Center
+    public static double indexer1_Center = 1;//Indexer1 Center
 
-    public static double indexer2_Center = 0.5;//Indexer2 Center
+    public static double indexer2_Center = 1;//Indexer2 Center
     public static double indexer2_Right = 1.0;//Indexer2 Right
 
     public static double servointk_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
     public static double servointk_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
+
 
     public boolean isIndexer_1_AtCenter() {
         return servoindexer1.getPosition() >= indexer1_Center - 0.05
