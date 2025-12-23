@@ -6,6 +6,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
 public class Indexer {
+
+    private enum ActionState { IDLE, START, COLLECTING, DONE }
+    private ActionState rightPickState = ActionState.IDLE;
+    private ActionState leftPickState  = ActionState.IDLE;
+
+    private boolean rightAutoIdle = false;
+    private boolean leftAutoIdle  = false;
+
+
     public IntakeMotor intkM;
     public Servo indexLeftServo;
     public Servo indexRightServo;
@@ -20,8 +29,8 @@ public class Indexer {
     public static double servointkF_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
     public static double servointkF_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
 
-    public static double servointkB_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointkB_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
+    public static double servointkB_Closed = 0;//Servo Intk ferme(les balles ne peuvent pas passer)
+    public static double servointkB_Open = 1;//Servo Intk ouver(les balles peuvent passer)
 
 
     public boolean isIndexer_1_AtCenter() {
@@ -30,11 +39,11 @@ public class Indexer {
     }
     public boolean isIndexer_2_AtCenter() {
         return indexRightServo.getPosition() >= indexer_R_Engage - 0.05
-                && indexRightServo.getPosition() <= indexer_R_Retracted + 0.05; // Tolerance de 0.05
+                && indexRightServo.getPosition() <= indexer_R_Engage + 0.05; // Tolerance de 0.05
     }
 
     public static double INDEXER_MOVE_TIME = 0.5;      // Temps pour deplacer le rail (secondes)
-    public static double INDEXER_COLLECT_TIME = 2; // Temps de collecte (secondes)
+    public static double INDEXER_COLLECT_TIME = 1; // Temps de collecte (secondes)
     public static double INDEXER_ROTATE_TIME = 0.2;  // Temps de rotation (secondes)
 
     private ElapsedTime ballEntryTimer;
@@ -48,33 +57,107 @@ public class Indexer {
         intkM = new IntakeMotor(hardwareMap);
         ballEntryTimer = new ElapsedTime();
     }
-    public void IndexLeft_PickBall() { //Indexer left take a ball
-        indexGateBack.setPosition(servointkB_Closed);
-        indexLeftServo.setPosition(indexer_L_Engage);
-        intkM.intake();
-        indexGateFront.setPosition(servointkF_Open);
 
 
-        if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-            indexGateFront.setPosition(servointkF_Closed);
-            indexLeftServo.setPosition(indexer_L_Retracted);
+    public void StartIndexRightPick() {
+        if (isBusy()) return;
+        if (rightPickState == ActionState.IDLE || rightPickState == ActionState.DONE) {
+            rightPickState = ActionState.START;
         }
-
     }
 
-    public void IndexRight_PickBall(){ //Indexer right take a ball
-        indexGateBack.setPosition(servointkB_Closed);
-        indexRightServo.setPosition(indexer_R_Engage);
-        intkM.intake();
-        indexGateFront.setPosition(servointkF_Open);
 
-
-        if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-            indexGateFront.setPosition(servointkF_Closed);
-            indexRightServo.setPosition(indexer_R_Retracted);
+    public void StartIndexLeftPick() {
+        if (isBusy()) return;
+        if (leftPickState == ActionState.IDLE || leftPickState == ActionState.DONE) {
+            leftPickState = ActionState.START;
         }
-
     }
+
+
+    public void CancelIndexerActions() {
+        rightPickState = ActionState.IDLE;
+        leftPickState = ActionState.IDLE;
+    }
+
+    public void IndexRight_PickBall() {
+        switch (rightPickState) {
+            case IDLE:
+                break;
+
+            case START:
+                rightAutoIdle = false;
+                indexGateBack.setPosition(servointkB_Closed);
+                indexRightServo.setPosition(indexer_R_Engage);
+                indexGateFront.setPosition(servointkF_Open);
+                indexGateBack.setPosition(servointkB_Closed);
+                intkM.intake();
+                ballEntryTimer.reset();
+                rightPickState = ActionState.COLLECTING;
+                break;
+
+            case COLLECTING:
+                //intkM.intake();
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    indexGateFront.setPosition(servointkF_Closed);
+                    indexRightServo.setPosition(indexer_R_Retracted);
+                    rightAutoIdle = true;
+                    rightPickState = ActionState.DONE;
+                }
+
+                break;
+
+            case DONE:
+                if (rightAutoIdle) {
+                    rightAutoIdle = false;
+                    intkM.stop();
+                    rightPickState = ActionState.IDLE;
+                }
+                break;
+
+        }
+    }
+
+
+    public void IndexLeft_PickBall() {
+        switch (leftPickState) {
+            case IDLE:
+                break;
+
+            case START:
+                leftAutoIdle = false;
+
+                indexGateBack.setPosition(servointkB_Closed);
+                indexLeftServo.setPosition(indexer_L_Engage);
+                indexGateFront.setPosition(servointkF_Open);
+                indexGateBack.setPosition(servointkB_Closed);
+                intkM.intake();
+                ballEntryTimer.reset();
+                leftPickState = ActionState.COLLECTING;
+                break;
+
+            case COLLECTING:
+                //intkM.intake();
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    indexGateFront.setPosition(servointkF_Closed);
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    leftAutoIdle = true;
+                    leftPickState = ActionState.DONE;
+                }
+
+                break;
+
+            case DONE:
+                if (leftAutoIdle) {
+                    leftAutoIdle = false;
+                    intkM.stop();
+                    leftPickState = ActionState.IDLE;
+                }
+                break;
+
+        }
+    }
+
     public void Indexer_Switch(){
         indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
@@ -108,6 +191,25 @@ public class Indexer {
         indexLeftServo.setPosition(1);
         indexRightServo.setPosition(0);
     }
+
+    public boolean isBusy() {
+        return rightPickState == ActionState.START || rightPickState == ActionState.COLLECTING
+                || leftPickState  == ActionState.START || leftPickState  == ActionState.COLLECTING;
+    }
+
+    public double getTimerSeconds() {
+        return ballEntryTimer.seconds();
+    }
+
+    public String getLeftState() {
+        return leftPickState.toString();
+    }
+
+    public String getRightState() {
+        return rightPickState.toString();
+    }
+
+
 
 
 
