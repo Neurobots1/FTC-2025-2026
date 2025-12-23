@@ -19,10 +19,9 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
-import org.firstinspires.ftc.teamcode.OpMode.TeleOp.HeadingLockOJB;
 
-@Autonomous(name = "Auto_1st_meet_blue", group = "Examples")
-public class Auto_1st_meet_Blue extends OpMode {
+@Autonomous(name = "Auto_red1", group = "Examples")
+public class Auto_Red1 extends OpMode {
 
     private Follower follower;
 
@@ -31,7 +30,7 @@ public class Auto_1st_meet_Blue extends OpMode {
     private  DcMotorEx flywheelMotorTwo;
     public static boolean usePIDF = true;
     public static double targetTicksPerSecond = 725;
-    public static double rawPower = -0.5;
+    public static double rawPower = -1;
     public static boolean rawPowerMode = false;
     private VoltageSensor voltageSensor;
     //private Shoot shootM;
@@ -50,16 +49,17 @@ public class Auto_1st_meet_Blue extends OpMode {
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
-    private final Pose startPose = new Pose(33, 136, Math.toRadians(88));
-    private final Pose Shoot = new Pose(49, 95, Math.toRadians(136));
-    private final Pose IntkStart1 = new Pose(50, 85, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(16, 85, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(50, 63, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(10, 63, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(143));
+    private final Pose startPose = new Pose(110, 136, Math.toRadians(90));
+    private final Pose Shoot = new Pose(92, 92, Math.toRadians(50));
+    private final Pose IntkStart1 = new Pose(100, 85, Math.toRadians(0));
+    private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
+    private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
+    private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
+    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
+    private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
     public static Pose finalPose = new Pose();
+
 
     private Path a;
 
@@ -133,7 +133,7 @@ public class Auto_1st_meet_Blue extends OpMode {
 
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() { // Change the cases because of the Indexer
         switch (pathState) {
 
             case 0:
@@ -148,7 +148,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     intkM.slowOuttake();
                     usePIDF = true;
                     rawPowerMode = false;
-                   //shooterEnabled = true;
+                    //shooterEnabled = true;
                     if (Shooter.flywheelReady() && !follower.isBusy()) {
                         setPathState(67);
                     }
@@ -188,7 +188,7 @@ public class Auto_1st_meet_Blue extends OpMode {
             case 4:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi1, 0.5, true);
-                    if (actionTimer.getElapsedTimeSeconds() > 2) {
+                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
 
                         setPathState(5);
                     }
@@ -273,7 +273,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (Shooter.flywheelReady()) {
+                    if (Shooter.flywheelReady()  && !follower.isBusy()) {
                         setPathState(69);
                     }
                 }
@@ -331,7 +331,7 @@ public class Auto_1st_meet_Blue extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (Shooter.flywheelReady() && !follower.isBusy()) {
+                    if (Shooter.flywheelReady()  && !follower.isBusy()) {
                         setPathState(70);
                     }
                 }
@@ -440,9 +440,9 @@ public class Auto_1st_meet_Blue extends OpMode {
         opmodeTimer.resetTimer();
         setPathState(0);
     }
-@Override
+
+    @Override
     public void stop(){
         finalPose = new Pose(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading());
-}
-
+    }
 }

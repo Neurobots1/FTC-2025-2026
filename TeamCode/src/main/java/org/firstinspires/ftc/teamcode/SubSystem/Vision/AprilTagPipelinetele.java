@@ -1,10 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
-//import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
@@ -13,7 +10,7 @@ import java.util.List;
 public class AprilTagPipelinetele extends LinearOpMode {
 
     private AprilTagPipeline aprilTagPipeline;
-    Relocalisation relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
+    private Relocalisation relocalisation;
 
     @Override
     public void runOpMode() {
@@ -25,28 +22,34 @@ public class AprilTagPipelinetele extends LinearOpMode {
         aprilTagPipeline = new AprilTagPipeline(hardwareMap);
         aprilTagPipeline.startCamera();
 
-        telemetry.addLine("Ready. Press Play to start.");
+        // Initialiser la relocalisation APRÈS que hardwareMap et aprilTagPipeline soient prêts
+        relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
+
+        telemetry.addLine("AprilTag Pipeline Ready!");
         telemetry.update();
 
         waitForStart();
 
         while (opModeIsActive()) {
-            // Get all current detections
             List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
 
-            if (detections.isEmpty()) {
+            if (detections == null || detections.isEmpty()) {
                 telemetry.addLine("No AprilTags Detected.");
             } else {
                 telemetry.addData("Detections", detections.size());
                 for (AprilTagDetection detection : detections) {
-                    telemetry.addLine(String.format("ID: %d | ftcpose: (%.2f, %.2f)",
-                            detection.id,
-                            detection.ftcPose.x,
-                            detection.ftcPose.y));
+                    if (detection.ftcPose != null) {
+                        telemetry.addLine(String.format("ID: %d | Pose: (%.2f, %.2f)",
+                                detection.id,
+                                detection.ftcPose.x,
+                                detection.ftcPose.y));
+                    } else {
+                        telemetry.addLine(String.format("ID: %d | Pose: unavailable", detection.id));
+                    }
                 }
             }
+
+            telemetry.update();
+        }
         }
     }
-}
-
-
