@@ -16,17 +16,16 @@ public class Test_Teleop_Indexer extends OpMode {
     public void init() {
         indexer = new Indexer(hardwareMap);
         intkM = new IntakeMotor(hardwareMap);
-        indexer.indexLeftServo.setPosition(1);
-        indexer.indexRightServo.setPosition(0);
+        indexer.StartIndexPose();
     }
 
     @Override
     public void loop() {
         if (gamepad1.x){
-            indexer.Caroussel1PickBall();
+            indexer.IndexLeft_PickBall();
         }
         else if (gamepad1.y){
-            indexer.Caroussel_2_PickBall();
+            indexer.IndexRight_PickBall();
         }
         else indexer.Not_active();
 
