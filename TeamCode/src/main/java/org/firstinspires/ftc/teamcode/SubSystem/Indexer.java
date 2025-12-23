@@ -7,7 +7,6 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
 public class Indexer {
     public IntakeMotor intkM;
-
     public Servo indexLeftServo;
     public Servo indexRightServo;
     public Servo indexGateFront;
@@ -49,7 +48,7 @@ public class Indexer {
         intkM = new IntakeMotor(hardwareMap);
         ballEntryTimer = new ElapsedTime();
     }
-    public void Caroussel1PickBall() {
+    public void IndexLeft_PickBall() { //Indexer left take a ball
         indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
         intkM.intake();
@@ -63,7 +62,7 @@ public class Indexer {
 
     }
 
-    public void Caroussel_2_PickBall(){
+    public void IndexRight_PickBall(){ //Indexer right take a ball
         indexGateBack.setPosition(servointkB_Closed);
         indexRightServo.setPosition(indexer_R_Engage);
         intkM.intake();
@@ -76,7 +75,7 @@ public class Indexer {
         }
 
     }
-    public void Switch(){
+    public void Indexer_Switch(){
         indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
         indexGateFront.setPosition(servointkF_Open);
@@ -97,13 +96,17 @@ public class Indexer {
         }
 
     }
-
     public void Not_active(){
         indexGateBack.setPosition(servointkB_Closed);
         indexGateFront.setPosition(servointkF_Open);
 
         indexRightServo.setPosition(indexer_R_Retracted);
         indexLeftServo.setPosition(indexer_L_Retracted);
+    }
+
+    public void StartIndexPose(){
+        indexLeftServo.setPosition(1);
+        indexRightServo.setPosition(0);
     }
 
 
