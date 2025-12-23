@@ -14,6 +14,10 @@ public class Test_Teleop_Indexer extends OpMode {
     private IntakeMotor intkM;
     private Indexer indexer;
 
+    private boolean lastX = false;
+    private boolean lastY = false;
+
+
     public enum IndexState {
         IndexRight,
         IndexLeft,
@@ -34,39 +38,44 @@ public class Test_Teleop_Indexer extends OpMode {
         indexer.StartIndexPose();
         indexTimer = new ElapsedTime();
         indexTimer.reset();
+
+
     }
 
     @Override
     public void loop() {
-            switch (indexState) {
-                case IndexLeft:
-                    indexer.IndexLeft_PickBall();
-                    indexTimer.reset();
-                    indexState = IndexState.Wait;
 
-                    break;
+        boolean xPressed = gamepad1.x && !lastX;
+        boolean yPressed = gamepad1.y && !lastY;
 
-                case  IndexRight:
-                    indexer.IndexRight_PickBall();
-                    break;
+        lastX = gamepad1.x;
+        lastY = gamepad1.y;
 
-                case Wait:
-                    if (indexTimer.seconds()>2) {
-                        indexState = IndexState.Idle;
-                    }
-                    break;
+        if (xPressed) indexer.StartIndexLeftPick();
+        if (yPressed) indexer.StartIndexRightPick();
+        if (!indexer.isBusy()) { indexer.Not_active();}
 
-                case Idle:
-                    indexer.Not_active();
-                    if (gamepad1.x){
-                        indexState = IndexState.IndexLeft;
-                    }
-                    if (gamepad1.y){
-                        indexState = IndexState.IndexRight;
-                    }
-                    break;
+        if (!indexer.isBusy()) {
+            if (gamepad1.a) {
+                indexer.indexLeftServo.setPosition(Indexer.indexer_L_Engage);
+            } else {
+                indexer.indexLeftServo.setPosition(Indexer.indexer_L_Retracted);
             }
+        }
 
+
+
+        indexer.IndexLeft_PickBall();
+        indexer.IndexRight_PickBall();
+
+        telemetry.addData("xPressed", xPressed);
+        telemetry.addData("yPressed", yPressed);
+        telemetry.addData("Left FSM", indexer.getLeftState());
+        telemetry.addData("Right FSM", indexer.getRightState());
+        telemetry.addData("Ball Timer", indexer.getTimerSeconds());
+        telemetry.update();
 
     }
+
 }
+
