@@ -13,13 +13,16 @@ public class Indexer {
     public Servo indexGateFront;
     public Servo indexGateBack;
 
-    public static double indexer_L_Retracted = 0.0;//Indexer1 Left
-    public static double indexer_L_Engage = 1;//Indexer1 Center
-    public static double indexer_R_Engage = 0.0;//Indexer2 Center
-    public static double indexer_R_Retracted = 1.0;//Indexer2 Right
+    public static double indexer_L_Retracted = 1;//Indexer1 Left
+    public static double indexer_L_Engage = 0.0;//Indexer1 Center
+    public static double indexer_R_Engage = 1.0;//Indexer2 Center
+    public static double indexer_R_Retracted = 0.0;//Indexer2 Right
 
-    public static double servointk_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointk_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
+    public static double servointkF_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
+    public static double servointkF_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
+
+    public static double servointkB_Closed = 1.0;//Servo Intk ferme(les balles ne peuvent pas passer)
+    public static double servointkB_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
 
 
     public boolean isIndexer_1_AtCenter() {
@@ -39,57 +42,66 @@ public class Indexer {
 
 
     public Indexer(HardwareMap hardwareMap) {
-        indexLeftServo = hardwareMap.get(Servo.class, "servoindexer1");
-        indexRightServo = hardwareMap.get(Servo.class, "servoindexer2");
+        indexLeftServo = hardwareMap.get(Servo.class, "indexLeftServo");
+        indexRightServo = hardwareMap.get(Servo.class, "indexRightServo");
+        indexGateFront = hardwareMap.get(Servo.class,"indexGateFront");
+        indexGateBack = hardwareMap.get(Servo.class,"indexGateBack");
+        intkM = new IntakeMotor(hardwareMap);
         ballEntryTimer = new ElapsedTime();
     }
     public void Caroussel1PickBall() {
+        indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
         intkM.intake();
-        indexGateFront.setPosition(servointk_Open);
+        indexGateFront.setPosition(servointkF_Open);
 
 
         if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-            indexGateFront.setPosition(servointk_Closed);
+            indexGateFront.setPosition(servointkF_Closed);
             indexLeftServo.setPosition(indexer_L_Retracted);
         }
 
     }
 
     public void Caroussel_2_PickBall(){
+        indexGateBack.setPosition(servointkB_Closed);
         indexRightServo.setPosition(indexer_R_Engage);
         intkM.intake();
-        indexGateFront.setPosition(servointk_Open);
+        indexGateFront.setPosition(servointkF_Open);
 
 
         if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-            indexGateFront.setPosition(servointk_Closed);
+            indexGateFront.setPosition(servointkF_Closed);
             indexRightServo.setPosition(indexer_R_Retracted);
         }
 
     }
     public void Switch(){
+        indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
-        indexGateFront.setPosition(servointk_Open);
+        indexGateFront.setPosition(servointkF_Open);
         intkM.intake();
 
         if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-            indexGateFront.setPosition(servointk_Closed);
+            indexGateFront.setPosition(servointkF_Closed);
         }
 
         indexLeftServo.setPosition(indexer_L_Retracted);
         indexRightServo.setPosition(indexer_R_Engage);
         intkM.intake();
         ballEntryTimer.reset();
-        indexGateFront.setPosition(servointk_Open);
+        indexGateFront.setPosition(servointkF_Open);
 
         if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME){
-            indexGateFront.setPosition(servointk_Closed);
+            indexGateFront.setPosition(servointkF_Closed);
         }
 
     }
 
     public void Not_active(){
+        indexGateBack.setPosition(servointkB_Closed);
+        indexGateFront.setPosition(servointkF_Open);
+
         indexRightServo.setPosition(indexer_R_Retracted);
         indexLeftServo.setPosition(indexer_L_Retracted);
     }

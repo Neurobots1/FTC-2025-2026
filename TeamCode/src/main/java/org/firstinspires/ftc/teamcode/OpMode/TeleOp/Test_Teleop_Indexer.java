@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
@@ -15,11 +14,10 @@ public class Test_Teleop_Indexer extends OpMode {
 
     @Override
     public void init() {
-        indexer.indexLeftServo.setPosition(0);
-        indexer.indexRightServo.setPosition(0);
         indexer = new Indexer(hardwareMap);
         intkM = new IntakeMotor(hardwareMap);
-
+        indexer.indexLeftServo.setPosition(1);
+        indexer.indexRightServo.setPosition(0);
     }
 
     @Override
