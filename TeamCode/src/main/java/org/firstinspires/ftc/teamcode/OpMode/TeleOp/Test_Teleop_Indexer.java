@@ -15,6 +15,8 @@ public class Test_Teleop_Indexer extends OpMode {
 
     @Override
     public void init() {
+        indexer.servoindexer1.setPosition(0);
+        indexer.servoindexer2.setPosition(0);
         indexer = new Indexer(hardwareMap);
         intkM = new IntakeMotor(hardwareMap);
 
