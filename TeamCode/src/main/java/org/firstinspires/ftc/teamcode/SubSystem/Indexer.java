@@ -34,7 +34,7 @@ public class Indexer {
     }
 
     public static double INDEXER_MOVE_TIME = 0.5;      // Temps pour deplacer le rail (secondes)
-    public static double INDEXER_COLLECT_TIME = 0.3; // Temps de collecte (secondes)
+    public static double INDEXER_COLLECT_TIME = 2; // Temps de collecte (secondes)
     public static double INDEXER_ROTATE_TIME = 0.2;  // Temps de rotation (secondes)
 
     private ElapsedTime ballEntryTimer;

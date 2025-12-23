@@ -16,8 +16,10 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
+
 @TeleOp
 public class Teleop_Red_1512 extends OpMode {
+
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
@@ -39,11 +41,10 @@ public class Teleop_Red_1512 extends OpMode {
     private IntakeMotor intkM;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
+    private Pose relocalisedPose = null;
+    private boolean relocalisationActive = false;
 
     private Robot init;
-
-
-
 
     @Override
     public void init() {
@@ -56,6 +57,8 @@ public class Teleop_Red_1512 extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
         init = new Robot(hardwareMap);
+        relocalisationfilter = new Relocalisationfilter(hardwareMap);
+        convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
@@ -73,27 +76,46 @@ public class Teleop_Red_1512 extends OpMode {
 
         follower.update();
 
-        double headingInput =
-                -gamepad1.right_stick_x;
 
-        if (!slowMode)follower.setTeleOpDrive(
-               - gamepad1.left_stick_y,
-               - gamepad1.left_stick_x,
-                -gamepad1.right_stick_x,
-                false,0 // Doit etre a 0 pour rouge , mais pour bleu c'est 3.142 radian ( 180 degree)
-
-
-        );
-
-        else follower.setTeleOpDrive(
-                -gamepad1.left_stick_y * slowModeMultiplier,
-                -gamepad1.left_stick_x * slowModeMultiplier,
-                -gamepad1.right_stick_x * slowModeMultiplier
-        );
+        if (!slowMode) {
+            follower.setTeleOpDrive(
+                    - gamepad1.left_stick_y,
+                    - gamepad1.left_stick_x,
+                    - gamepad1.right_stick_x,
+                    false, 0
+            );
+        } else {
+            follower.setTeleOpDrive(
+                    - gamepad1.left_stick_y * slowModeMultiplier,
+                    - gamepad1.left_stick_x * slowModeMultiplier,
+                    - gamepad1.right_stick_x * slowModeMultiplier
+            );
+        }
 
         if (gamepad1.right_bumper) intkM.intake();
         else if (gamepad1.left_bumper) intkM.outtake();
         else intkM.stop();
+
+
+        if (gamepad1.y) {
+            relocalisedPose = relocalisationfilter.relocalisation();
+
+            if (relocalisedPose != null) {
+                follower.setPose(relocalisedPose);
+                relocalisationActive = true;
+                telemetryManager.addLine("Relocalisation: ACTIVE ✓");
+            } else {
+                telemetryManager.addLine("Relocalisation: FAILED (No Tag)");
+                relocalisationActive = false;
+            }
+        } else {
+            // Ne pas afficher "OFF" si la relocalisation a déjà été faite
+            if (relocalisationActive) {
+                telemetryManager.addLine("Relocalisation: DONE");
+            } else {
+                telemetryManager.addLine("Relocalisation: Press Y");
+            }
+        }
 
         if (gamepad1.a) shooterEnabled = true;
         if (gamepad1.b) shooterEnabled = false;
@@ -110,13 +132,19 @@ public class Teleop_Red_1512 extends OpMode {
         telemetryManager.debug("F", Launcher23511.F);
         telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
+
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
-        jt.addData("PedroPose",relocalisationfilter.relocalisation());
-        jt.addData("positon", follower.getPose());
+        jt.addData("Current Position", follower.getPose());
         jt.addData("Power", intake.getPower());
+
+
+        if (relocalisedPose != null) {
+            jt.addData("Relocalised Pose", relocalisedPose);
+        } else {
+            jt.addData("Relocalised Pose", "None");
+        }
+
         jt.update();
         telemetryManager.update();
-
     }
-
 }
