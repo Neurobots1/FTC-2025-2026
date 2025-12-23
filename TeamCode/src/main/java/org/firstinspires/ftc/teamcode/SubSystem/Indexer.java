@@ -48,7 +48,7 @@ public class Indexer {
         intkM = new IntakeMotor(hardwareMap);
         ballEntryTimer = new ElapsedTime();
     }
-    public void IndexLeft_PickBall() {
+    public void IndexLeft_PickBall() { //Indexer left take a ball
         indexGateBack.setPosition(servointkB_Closed);
         indexLeftServo.setPosition(indexer_L_Engage);
         intkM.intake();
@@ -62,7 +62,7 @@ public class Indexer {
 
     }
 
-    public void IndexRight_PickBall(){
+    public void IndexRight_PickBall(){ //Indexer right take a ball
         indexGateBack.setPosition(servointkB_Closed);
         indexRightServo.setPosition(indexer_R_Engage);
         intkM.intake();
