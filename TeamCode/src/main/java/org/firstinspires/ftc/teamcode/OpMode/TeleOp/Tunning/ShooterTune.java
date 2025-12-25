@@ -1,9 +1,9 @@
-package org.firstinspires.ftc.teamcode.OpMode.TeleOp.Tunning;
+/*package org.firstinspires.ftc.teamcode.OpMode.TeleOp.Tunning;
 
 
 
 
-/*import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -52,6 +52,8 @@ public class ShooterTune  extends OpMode {
         shooter.tuneRPM(0);
         shooter.setSpinEnabled(false);
     }
-    }*/
+    }
+
+ */
 
 
