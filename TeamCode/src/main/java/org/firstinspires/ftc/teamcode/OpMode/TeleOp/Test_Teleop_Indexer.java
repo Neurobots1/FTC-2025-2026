@@ -16,30 +16,13 @@ public class Test_Teleop_Indexer extends OpMode {
 
     private boolean lastX = false;
     private boolean lastY = false;
-
-
-    public enum IndexState {
-        IndexRight,
-        IndexLeft,
-        Idle,
-
-        Wait
-
-    }
-
-    ElapsedTime indexTimer = new ElapsedTime();
-
-    IndexState indexState = IndexState.Idle;
+    private boolean lastB = false;   // NEW
 
     @Override
     public void init() {
         indexer = new Indexer(hardwareMap);
         intkM = new IntakeMotor(hardwareMap);
         indexer.StartIndexPose();
-        indexTimer = new ElapsedTime();
-        indexTimer.reset();
-
-
     }
 
     @Override
@@ -47,35 +30,42 @@ public class Test_Teleop_Indexer extends OpMode {
 
         boolean xPressed = gamepad1.x && !lastX;
         boolean yPressed = gamepad1.y && !lastY;
+        boolean bPressed = gamepad1.b && !lastB;   // NEW
 
         lastX = gamepad1.x;
         lastY = gamepad1.y;
+        lastB = gamepad1.b;                        // NEW
 
+        // Existing picks
         if (xPressed) indexer.StartIndexLeftPick();
         if (yPressed) indexer.StartIndexRightPick();
-        if (!indexer.isBusy()) { indexer.Not_active();}
+        if (bPressed) {indexer.startIndexIntake();}
 
-        if (!indexer.isBusy()) {
+        // Let FSMs run every loop
+        indexer.IndexLeft_PickBall();
+        indexer.IndexRight_PickBall();
+        indexer.indexIntake();
+
+        // Only do Not_active / manual servo when nothing is running
+         /* if (!indexer.isBusy()) {
+            indexer.Not_active();
+
             if (gamepad1.a) {
                 indexer.indexLeftServo.setPosition(Indexer.indexer_L_Engage);
             } else {
                 indexer.indexLeftServo.setPosition(Indexer.indexer_L_Retracted);
             }
-        }
-
-
-
-        indexer.IndexLeft_PickBall();
-        indexer.IndexRight_PickBall();
+        } */
 
         telemetry.addData("xPressed", xPressed);
         telemetry.addData("yPressed", yPressed);
+        telemetry.addData("bPressed", bPressed);
         telemetry.addData("Left FSM", indexer.getLeftState());
         telemetry.addData("Right FSM", indexer.getRightState());
-        telemetry.addData("Ball Timer", indexer.getTimerSeconds());
+        telemetry.addData("Intake FSM", indexer.getIndexIntakeState());
+        telemetry.addData("Busy", indexer.isBusy());
+        telemetry.addData("Timer", indexer.getTimerSeconds());
         telemetry.update();
-
     }
-
 }
 
