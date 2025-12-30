@@ -259,3 +259,9 @@ public class Auto_Shoot {
                 pose.getX(), pose.getY(), GOAL_X, GOAL_Y, distanceToGoal);
     }
 }
+
+
+
+
+
+//.

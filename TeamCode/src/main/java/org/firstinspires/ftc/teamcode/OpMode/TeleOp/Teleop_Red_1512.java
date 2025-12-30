@@ -103,13 +103,12 @@ public class Teleop_Red_1512 extends OpMode {
             if (relocalisedPose != null) {
                 follower.setPose(relocalisedPose);
                 relocalisationActive = true;
-                telemetryManager.addLine("Relocalisation: ACTIVE ✓");
+                telemetryManager.addLine("Relocalisation: ACTIVE");
             } else {
                 telemetryManager.addLine("Relocalisation: FAILED (No Tag)");
                 relocalisationActive = false;
             }
         } else {
-            // Ne pas afficher "OFF" si la relocalisation a déjà été faite
             if (relocalisationActive) {
                 telemetryManager.addLine("Relocalisation: DONE");
             } else {
