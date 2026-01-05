@@ -42,6 +42,7 @@ public class ShooterTune23511 extends OpMode {
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
     }
 
+
     @Override
     public void loop() {
         if (gamepad1.a) shooterEnabled = true;
@@ -60,6 +61,8 @@ public class ShooterTune23511 extends OpMode {
             }
             launcher.update();
         }
+
+
 
         double currentVelocity = flywheelMotorOne.getVelocity();
 

@@ -9,25 +9,23 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
-public class Relocalisationfilter extends AprilTagPipeline {
+public class Relocalisationfilter {
 
-    private final HardwareMap hardwareMap;
     private final AprilTagPipeline aprilTagPipeline;
 
-    public Pose ftcpose;        // Raw FTC AprilTag pose
-    public Pose kalmanPose;     // Kalman-filtered pose
-    public Pose filteredPose;   // Kalman + Low-pass final pose
+    public Pose ftcpose;
+    public Pose kalmanPose;
+    public Pose filteredPose;
 
     private static final double ALPHA = 0.25;
+    private static final double INCHES_TO_MM = 25.4; // Si Pedro utilise mm
 
-    // Pedro Pathing Kalman filters
     private final KalmanFilter xFilter;
     private final KalmanFilter yFilter;
     private final KalmanFilter headingFilter;
 
-    public Relocalisationfilter(HardwareMap hardwareMap, AprilTagPipeline aprilTagPipeline) {
-        this.hardwareMap = hardwareMap;
-        this.aprilTagPipeline = aprilTagPipeline;
+    public Relocalisationfilter(HardwareMap hardwareMap) {
+        this.aprilTagPipeline = new AprilTagPipeline(hardwareMap);
 
         KalmanFilterParameters params = new KalmanFilterParameters(2.0, 10.0);
 
@@ -47,9 +45,11 @@ public class Relocalisationfilter extends AprilTagPipeline {
             if (detection.metadata.name.contains("Obelisk")) continue;
             if (detection.robotPose == null) continue;
 
-            double x = detection.robotPose.getPosition().x;
-            double y = detection.robotPose.getPosition().y;
-            double heading = detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+            // Conversion correcte des unités
+            double x = detection.robotPose.getPosition().x * INCHES_TO_MM;
+            double y = detection.robotPose.getPosition().y * INCHES_TO_MM;
+            double heading = Math.toRadians(detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES));
+
             ftcpose = new Pose(x, y, heading);
 
             // --- STEP 1: Kalman Filter ---
@@ -57,7 +57,6 @@ public class Relocalisationfilter extends AprilTagPipeline {
             double prevY = (kalmanPose == null) ? y : kalmanPose.getY();
             double prevH = (kalmanPose == null) ? heading : kalmanPose.getHeading();
 
-            // Update filters (void) then read estimate
             xFilter.update(prevX, x);
             double kX = xFilter.getState();
 
@@ -66,8 +65,8 @@ public class Relocalisationfilter extends AprilTagPipeline {
 
             // Handle heading wrap-around
             double deltaH = heading - prevH;
-            if (deltaH > 180) deltaH -= 360;
-            if (deltaH < -180) deltaH += 360;
+            if (deltaH > Math.PI) deltaH -= 2 * Math.PI;
+            if (deltaH < -Math.PI) deltaH += 2 * Math.PI;
 
             headingFilter.update(prevH, prevH + deltaH);
             double kHeading = headingFilter.getState();
@@ -82,8 +81,8 @@ public class Relocalisationfilter extends AprilTagPipeline {
                 double smoothY = filteredPose.getY() + ALPHA * (kY - filteredPose.getY());
 
                 double hDelta = kHeading - filteredPose.getHeading();
-                if (hDelta > 180) hDelta -= 360;
-                if (hDelta < -180) hDelta += 360;
+                if (hDelta > Math.PI) hDelta -= 2 * Math.PI;
+                if (hDelta < -Math.PI) hDelta += 2 * Math.PI;
 
                 double smoothHeading = filteredPose.getHeading() + ALPHA * hDelta;
 

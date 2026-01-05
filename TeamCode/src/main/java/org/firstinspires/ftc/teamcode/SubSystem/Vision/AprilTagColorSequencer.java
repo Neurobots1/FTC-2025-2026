@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
+import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+
+import java.util.List;
+
 public class AprilTagColorSequencer {
 
     /*AprilTagColorSequencer sequencer = new AprilTagColorSequencer();
@@ -8,20 +12,37 @@ public class AprilTagColorSequencer {
     String sequence = sequencer.getColorSequence(detectedId);
     System.out.println("Color sequence for tag " + detectedId + ": " + sequence);*/
 
-    public String getColorSequence(int tagId) {
-        switch (tagId) {
-            case 20:
+    private AprilTagPipeline aprilTagPipeline;
+
+    public String getColorSequence() {
+        List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
+
+        for (AprilTagDetection detection : detections) {
+
+            if (detection.metadata.id == 20) {
                 return "blue";
-            case 21:
+            }
+
+            if (detection.metadata.id == 21) {
+
                 return "green purple purple";  // gpp
-            case 22:
-                return "purple green purple";  // pgp
-            case 23:
+            }
+
+            if (detection.metadata.id == 22) {
+
                 return "purple purple green";  // ppg
-            case 34:
+            }
+
+            if (detection.metadata.id == 23) {
+
+                return "purple purple green";  // ppg
+            }
+
+            if (detection.metadata.id == 34) {
+
                 return "red";
-            default:
-                return "Unknown";
+            }
         }
+        return "unknown";
     }
 }

@@ -11,7 +11,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.List;
 
 @Disabled
-public class Relocalisation extends AprilTagPipeline {
+public class Relocalisation  /*extends AprilTagPipeline */{
 
 
         private final HardwareMap hardwareMap;
@@ -20,15 +20,15 @@ public class Relocalisation extends AprilTagPipeline {
         public Pose ftcpose;     // Pose from FTC AprilTag system (in field coords)
         public Pose pedroPose;   // Pose converted to Pedro coordinates (optional)
 
-        public Relocalisation(HardwareMap hardwareMap, AprilTagPipeline aprilTagPipeline) {
+          public Relocalisation(HardwareMap hardwareMap, AprilTagPipeline aprilTagPipeline) {
             this.hardwareMap = hardwareMap;
             this.aprilTagPipeline = aprilTagPipeline;
         }
 
         /**
          * Runs one relocalization step using AprilTag detections.
-         * Returns Pedro coordinate pose if available, otherwise null.
-         */
+         * Returns Pedro coordinate pose if available, otherwise null. **/
+
         public Pose relocalisation() {
             if (aprilTagPipeline == null) {
                 return null;

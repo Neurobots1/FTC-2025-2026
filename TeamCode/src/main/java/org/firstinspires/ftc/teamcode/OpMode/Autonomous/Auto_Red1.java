@@ -19,10 +19,9 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
-import org.firstinspires.ftc.teamcode.OpMode.TeleOp.HeadingLockOJB;
 
-@Autonomous(name = "Auto_1st_meet_red", group = "Examples")
-public class Auto_1st_meet_Red extends OpMode {
+@Autonomous(name = "Auto_red1", group = "Examples")
+public class Auto_Red1 extends OpMode {
 
     private Follower follower;
 
@@ -30,7 +29,7 @@ public class Auto_1st_meet_Red extends OpMode {
     private  DcMotorEx flywheelMotorOne;
     private  DcMotorEx flywheelMotorTwo;
     public static boolean usePIDF = true;
-    public static double targetTicksPerSecond = 785;
+    public static double targetTicksPerSecond = 725;
     public static double rawPower = -1;
     public static boolean rawPowerMode = false;
     private VoltageSensor voltageSensor;
@@ -134,7 +133,7 @@ public class Auto_1st_meet_Red extends OpMode {
 
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() { // Change the cases because of the Indexer
         switch (pathState) {
 
             case 0:
@@ -150,7 +149,7 @@ public class Auto_1st_meet_Red extends OpMode {
                     usePIDF = true;
                     rawPowerMode = false;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3) {
+                    if (Shooter.flywheelReady() && !follower.isBusy()) {
                         setPathState(67);
                     }
 
@@ -209,21 +208,13 @@ public class Auto_1st_meet_Red extends OpMode {
             case 6:
                 if (!follower.isBusy()) {
                     intkM.slowOuttake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5 ) {
-                        setPathState(20);
-                    }
-                }
-                break;
-
-            case 20:
-                if(!follower.isBusy()){
                     rawPowerMode = false;
                     usePIDF = true;
-                    //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (Shooter.flywheelReady() && !follower.isBusy()) {
                         setPathState(68);
                     }
                 }
+                break;
 
             case 68:
                 intkM.intake();
@@ -282,7 +273,7 @@ public class Auto_1st_meet_Red extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3.5) {
+                    if (Shooter.flywheelReady()  && !follower.isBusy()) {
                         setPathState(69);
                     }
                 }
@@ -340,7 +331,7 @@ public class Auto_1st_meet_Red extends OpMode {
                     rawPowerMode = false;
                     usePIDF = true;
                     //shooterEnabled = true;
-                    if (actionTimer.getElapsedTimeSeconds() > 3) {
+                    if (Shooter.flywheelReady()  && !follower.isBusy()) {
                         setPathState(70);
                     }
                 }
@@ -349,7 +340,7 @@ public class Auto_1st_meet_Red extends OpMode {
             case 70:
                 if (!follower.isBusy()){
                     intkM.intake();
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
                         setPathState(18);
                     }
                 }
@@ -418,7 +409,7 @@ public class Auto_1st_meet_Red extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         Shooter = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Shooter.setFlywheelTicks(785);
+        Shooter.setFlywheelTicks(725);
         shooterEnabled = false;
 
         Shooter.init();

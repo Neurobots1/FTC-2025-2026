@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Blue.finalPose;
+import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Blue1.finalPose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -19,8 +19,8 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
-@TeleOp(name = "teleopblue1214", group = "Tuning")
-public class teleopblue1214 extends OpMode {
+@TeleOp(name = "teleopblue1214_N_debug", group = "Tuning")
+public class Teleopblue1214_N_debug extends OpMode {
 
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
