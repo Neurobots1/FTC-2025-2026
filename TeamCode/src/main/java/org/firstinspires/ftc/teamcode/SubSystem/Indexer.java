@@ -132,6 +132,9 @@ public class Indexer {
     }
 
 
+
+
+
     public void IndexLeft_PickBall() {
         switch (leftPickState) {
             case IDLE:
@@ -230,6 +233,120 @@ public class Indexer {
                 break;
         }
     }
+
+    public void GPP() {
+        switch (indexIntakeState) {
+
+            case IDLE:
+
+                break;
+
+            case START:
+                indexLeftServo.setPosition(indexer_L_Retracted);
+                indexRightServo.setPosition(indexer_R_Engage);
+                indexGateBack.setPosition(servointkB_Closed);
+                intkM.intake();
+                ballEntryTimer.reset();
+                indexIntakeState = IndexIntakeState.SWAP_TO_LEFT;
+                break;
+
+            case SWAP_TO_LEFT:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    indexRightServo.setPosition(indexer_R_Retracted);
+                    indexLeftServo.setPosition(indexer_L_Engage);
+                    ballEntryTimer.reset();
+                    indexIntakeState = IndexIntakeState.FINISH;
+                }
+                break;
+
+
+            case FINISH:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    intkM.stop();
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexIntakeState = IndexIntakeState.IDLE;
+
+                }
+                break;
+        }
+    }
+
+    public void PGP() {
+        switch (indexIntakeState) {
+
+            case IDLE:
+
+                break;
+
+            case START:
+                indexLeftServo.setPosition(indexer_L_Retracted);
+                indexRightServo.setPosition(indexer_R_Engage);
+                indexGateBack.setPosition(servointkB_Open);
+                intkM.intake();
+                ballEntryTimer.reset();
+                indexIntakeState = IndexIntakeState.SWAP_TO_LEFT;
+                break;
+
+            case SWAP_TO_LEFT:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    indexRightServo.setPosition(indexer_R_Retracted);
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    ballEntryTimer.reset();
+                    indexIntakeState = IndexIntakeState.FINISH;
+                }
+                break;
+
+
+            case FINISH:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    intkM.stop();
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexIntakeState = IndexIntakeState.IDLE;
+
+                }
+                break;
+        }
+    }
+
+    public void PPG() {
+        switch (indexIntakeState) {
+
+            case IDLE:
+
+                break;
+
+            case START:
+                indexLeftServo.setPosition(indexer_L_Retracted);
+                indexRightServo.setPosition(indexer_R_Retracted);
+                indexGateBack.setPosition(servointkB_Open);
+                intkM.intake();
+                ballEntryTimer.reset();
+                indexIntakeState = IndexIntakeState.SWAP_TO_LEFT;
+                break;
+
+            case SWAP_TO_LEFT:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    indexRightServo.setPosition(indexer_R_Engage);
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexGateBack.setPosition(servointkB_Closed);
+                    ballEntryTimer.reset();
+                    indexIntakeState = IndexIntakeState.FINISH;
+                }
+                break;
+
+
+            case FINISH:
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                    intkM.stop();
+                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexIntakeState = IndexIntakeState.IDLE;
+
+                }
+                break;
+        }
+    }
+
+
 
 
 
