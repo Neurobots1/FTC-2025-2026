@@ -12,16 +12,16 @@ import com.seattlesolvers.solverslib.util.InterpLUT;
 @Configurable
 public class Launcher23511 {
 
-    public static double P = 0.002;
-    public static double I = 0.0;
-    public static double D = 0.0002;
-    public static double F = 0.00055;
+    public static double P = 0.03;
+    public static double I = 0.003;
+    public static double D = 0.00004;
+    public static double F = 0.000039;
 
-    public static double VELOCITY_TOLERANCE = 25.0;
+    public static double VELOCITY_TOLERANCE = 100;
     public static double MAX_FLYWHEEL_VELOCITY = 1860;
     public static double DEFAULT_ON_POWER = 0.75;
 
-    public static double NOMINAL_VOLTAGE = 12.0;
+    public static double NOMINAL_VOLTAGE = 12.82;
 
     public static boolean MOTOR_ONE_REVERSED = false;
     public static boolean MOTOR_TWO_REVERSED = true;
@@ -109,10 +109,20 @@ public class Launcher23511 {
                 flywheelMotorTwo.setPower(DEFAULT_ON_POWER);
             }
         }
+
     }
+
+        public void stop(){
+        setFlywheelTicks(0);
+        flywheelMotorOne.setPower(0);
+        flywheelMotorTwo.setPower(0);
+        }
 
     public boolean flywheelReady() {
         if (!activeControl) return false;
+        if (flywheelMotorOne.getVelocity() <= 20){
+            return false;
+        }
 
         double targetTPS = flywheelController.getSetPoint();
         double currentTPS = flywheelMotorOne.getVelocity();

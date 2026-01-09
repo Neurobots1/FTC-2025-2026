@@ -12,11 +12,10 @@ public class Auto_Index extends OpMode {
 
 
     public void init(){
+        indexer = new Indexer(hardwareMap);
 
     }
     public void loop(){
         indexer.GPP();
-        indexer.PGP();
-        indexer.PPG();
     }
 }

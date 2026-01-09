@@ -25,6 +25,10 @@ public class IntakeMotor {
         intakeMotor.setPower(0.5);  // Run motor at full speed forward for intake
     }
 
+    public void SlowIntk(){
+        intakeMotor.setPower(-0.7); // Run motor at low speed for shooting
+    }
+
     // Method to run the motor for outtaking at half speed (negative power)
     public void outtake() {
         intakeMotor.setPower(-0.7);  // Run motor at 3/4 speed in reverse for outtake
