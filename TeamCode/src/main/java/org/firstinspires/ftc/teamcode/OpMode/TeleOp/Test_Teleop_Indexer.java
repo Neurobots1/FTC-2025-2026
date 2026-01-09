@@ -2,11 +2,9 @@ package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 
 @TeleOp(name = "Test_Teleop_Indexer")
 public class Test_Teleop_Indexer extends OpMode {
@@ -37,13 +35,13 @@ public class Test_Teleop_Indexer extends OpMode {
         lastB = gamepad1.b;                        // NEW
 
         // Existing picks
-        if (xPressed) indexer.StartIndexLeftPick();
-        if (yPressed) indexer.StartIndexRightPick();
+        if (xPressed) indexer.indexIntake();
+        if (yPressed) indexer.OutTake();
         if (bPressed) {indexer.startIndexIntake();}
 
         // Let FSMs run every loop
         indexer.IndexLeft_PickBall();
-        indexer.IndexRight_PickBall();
+        indexer.OutTake();
         indexer.indexIntake();
 
         // Only do Not_active / manual servo when nothing is running
