@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
@@ -21,6 +22,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 import java.util.List;
 
+@Configurable
 @TeleOp
 public class Teleop_Blue_06_01_26 extends OpMode {
 
@@ -29,6 +31,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
+    public static double currentVelocity = 0;
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
     private Relocalisationfilter relocalisationfilter;
@@ -69,7 +72,6 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
         init = new Robot(hardwareMap);
-        aprilTagPipeline = new AprilTagPipeline();
         convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
@@ -87,8 +89,6 @@ public class Teleop_Blue_06_01_26 extends OpMode {
     public void loop(){
 
         follower.update();
-
-        List<AprilTagDetection> detections = aprilTagPipeline.getAllDetections();
 
         if (!slowMode)follower.setTeleOpDrive(
                 - gamepad1.left_stick_y,
@@ -109,20 +109,6 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         else if (gamepad1.left_bumper) intkM.outtake();
         else intkM.stop();
 
-        if(gamepad1.start) relocalisationfilter.relocalisation();
-        convertToPedroPose.convertToPedroPose(relocalisationfilter.filteredPose.getPose());
-
-        if (detections.isEmpty()){
-            telemetry.addLine("No AprilTags Detected");
-        } else {
-            telemetry.addData("Detections", detections.size());
-            for (AprilTagDetection detection : detections) {
-                telemetry.addLine(String.format("ID: %d | ftcpose: (%.2f, %.2f)",
-                        detection.id,
-                        detection.ftcPose.x,
-                        detection.ftcPose.y));
-            }
-        }
 
         if (gamepad1.dpad_up) {
             rawPowerMode = false;
@@ -141,7 +127,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
             flywheelMotorTwo.setPower(rawPower);
         } else {
             if (shooterEnabled) {
-                //targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
+                targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
                 launcher.setFlywheelTicks(targetTicksPerSecond);
             } else {
                 launcher.stop();
@@ -149,11 +135,17 @@ public class Teleop_Blue_06_01_26 extends OpMode {
             launcher.update();
         }
 
+        if (targetTicksPerSecond == 0){
+            launcher.stop();
+        }
+
 
         if (gamepad1.share){
             Pose middlePose = new Pose(follower.getPose().getX(),follower.getPose().getY(),90);
             follower.setPose(middlePose);
         }
+
+        double currentVelocity = flywheelMotorOne.getVelocity();
 
 
         telemetryManager.debug("shooterEnabled", shooterEnabled);
@@ -167,7 +159,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
-        jt.addData("PedroPose",relocalisationfilter.relocalisation());
+        jt.addData("currentVelocity", "%.0f", currentVelocity);
         jt.addData("positon", follower.getPose());
         jt.addData("Power", intake.getPower());
         jt.update();
