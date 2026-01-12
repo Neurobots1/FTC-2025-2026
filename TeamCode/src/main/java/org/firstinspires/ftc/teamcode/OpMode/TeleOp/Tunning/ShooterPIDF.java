@@ -19,8 +19,8 @@ public class ShooterPIDF extends OpMode {
 
     private DcMotorEx mA, mB;
 
-    private static final String MOTOR_A_NAME = "shootMotor1";
-    private static final String MOTOR_B_NAME = "shootMotor2";
+    private static final String MOTOR_A_NAME = "ShooterA";
+    private static final String MOTOR_B_NAME = "ShooterB";
     private static final DcMotorSimple.Direction MOTOR_A_DIR = DcMotorSimple.Direction.FORWARD;
     private static final DcMotorSimple.Direction MOTOR_B_DIR = DcMotorSimple.Direction.FORWARD;
 

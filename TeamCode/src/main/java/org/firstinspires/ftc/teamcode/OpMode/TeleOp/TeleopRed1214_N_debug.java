@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
 
 @Configurable
 @TeleOp(name = "TeleopRed1214_N_debug", group = "Tuning")
@@ -27,6 +28,7 @@ public class TeleopRed1214_N_debug extends OpMode {
     public static double targetTicksPerSecond = 0;
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
+    private ConvertToPedroPose convertToPedroPose;
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(finalPose.getX(), finalPose.getY(), finalPose.getHeading());
@@ -97,11 +99,6 @@ public class TeleopRed1214_N_debug extends OpMode {
             launcher.setFlywheelTicks(0);
         }
         launcher.update();
-
-        if (gamepad1.options){
-            Pose middlePose = new Pose(72,72,follower.getHeading());
-            follower.setPose(middlePose);
-        }
 
 
         double currentVelocity = flywheelMotorOne.getVelocity();

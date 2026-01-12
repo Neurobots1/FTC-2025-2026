@@ -46,17 +46,6 @@ public class Launcher23511 {
 
         flywheelController = new PIDFController(P, I, D, F);
         flywheelController.setTolerance(VELOCITY_TOLERANCE);
-
-        lut.add(-0.01, 0.0);
-        lut.add(0.0,   0.0);
-        lut.add(4.29,  1267.0);
-        lut.add(4.76,  1367.0);
-        lut.add(5.22,  1500.0);
-        lut.add(5.65,  1667.0);
-        lut.add(6.06,  1790.0);
-        lut.add(6.48,  1967.0);
-        lut.add(10.0,  2000.0);
-        lut.createLUT();
     }
 
     public static Launcher23511 create(HardwareMap hardwareMap) {

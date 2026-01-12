@@ -50,7 +50,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
     private Launcher23511 launcher;
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
-    private Servo blocker;
+    private Servo Blocker;
     private VoltageSensor voltageSensor;
     private TelemetryManager telemetryManager;
     private IntakeMotor intkM;
@@ -83,8 +83,8 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         aprilTagPipeline.startCamera();
         relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
         currentPosition = new Teleopblue1214_N_debug();
-        blocker = hardwareMap.get(Servo.class, "Blocker");
-        blocker.setPosition(1);
+        Blocker = hardwareMap.get(Servo.class, "Blocker");
+        Blocker.setPosition(1);
 
     }
 
@@ -197,12 +197,12 @@ public class Teleop_Blue_12_01_26 extends OpMode {
 
         // Distances in SAME UNITS as follower.getPose()
         private final double[] distances = {
-
+            40, 50
         };
 
         // Matching flywheel target velocities in ticks/second
         private final double[] ticks = {
-
+            600, 700
         };
 
         private final Teleop_Blue_12_01_26.ShooterTicksLUT.CubicHermiteInterpolator hermite;
@@ -302,7 +302,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         }
     }
 
-    public double distanceToGoal() {
+  /*  public double distanceToGoal() {
         double goalX = 12;
         double goalY = 136;
         double dx = goalX - follower.getPose().getX();
@@ -320,7 +320,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
 
         public static boolean isInFrontZone(double x, double y) {
         return y >= -x + 144 && y >= x;
-    }
+    } */
 
     private double calculateTargetHeading() {
         Pose currentPose = follower.getPose();

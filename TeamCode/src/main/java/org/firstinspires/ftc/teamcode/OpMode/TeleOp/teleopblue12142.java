@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Blue.finalPose;
+import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Blue1.finalPose;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
-import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
+import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
@@ -54,7 +54,7 @@ public class teleopblue12142 extends OpMode {
     private IntakeMotor intkM;
     private Robot init;
     private AprilTagPipeline aprilTagPipeline;
-    private Relocalisationfilter relocaliser;
+    private Relocalisation relocaliser;
 
     private boolean lastOptions = false;
 
@@ -74,7 +74,7 @@ public class teleopblue12142 extends OpMode {
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         aprilTagPipeline = new AprilTagPipeline(hardwareMap); // <-- replace with YOUR pipeline creation if different
-        relocaliser = new Relocalisationfilter(hardwareMap, aprilTagPipeline);
+        relocaliser = new Relocalisation(hardwareMap, aprilTagPipeline);
 
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();

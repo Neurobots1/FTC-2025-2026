@@ -157,7 +157,7 @@ public class teleopblue extends OpMode {
 
         return headingPower;
     }
-    public class ShooterTicksLUT {
+    public static class ShooterTicksLUT {
         // Distances in SAME UNITS as follower.getPose() (your Pedro field units)
         private final double[] distances = {
                44, 51, 63, 71, 91, 101   // <-- put your tested distances here

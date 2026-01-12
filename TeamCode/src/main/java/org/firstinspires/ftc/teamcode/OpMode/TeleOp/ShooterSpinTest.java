@@ -15,7 +15,7 @@ public class ShooterSpinTest extends OpMode {
     public void init() {
         // Initialize motors from hardware map
         shootMotor1 = hardwareMap.get(DcMotorEx.class, "shootMotor1");
-        shootMotor2 = hardwareMap.get(DcMotorEx.class, "shootMotor2");
+        shootMotor2 = hardwareMap.get(DcMotorEx.class, "ShooterB");
 
         // Set motor directions
         shootMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
