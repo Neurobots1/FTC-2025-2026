@@ -6,9 +6,11 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Vector;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.seattlesolvers.solverslib.util.InterpLUT;
 
@@ -16,15 +18,12 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
+import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-
-import java.util.List;
 
 @Configurable
 @TeleOp
-public class Teleop_Blue_06_01_26 extends OpMode {
+public class Teleop_Blue_12_01_26 extends OpMode {
 
 
     public static double rawPower = -1;
@@ -33,24 +32,25 @@ public class Teleop_Blue_06_01_26 extends OpMode {
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
     public static double currentVelocity = 0;
+    public ConvertToPedroPose convertToPedroPose;
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
-    private Relocalisationfilter relocalisationfilter;
+    private Relocalisation relocalisation;
     private AprilTagPipeline aprilTagPipeline;
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(72,72,Math.toRadians(90));
-    private ConvertToPedroPose convertToPedroPose;
     private static final double GOAL_X = 12;
     private static final double GOAL_Y = 132;
     private final Pose goalPose = new Pose(12, 132, 0.0);
-    private Teleop_Blue_06_01_26.ShooterTicksLUT shooterLUT = new Teleop_Blue_06_01_26.ShooterTicksLUT();
+    private Teleop_Blue_12_01_26.ShooterTicksLUT shooterLUT = new Teleop_Blue_12_01_26.ShooterTicksLUT();
 
     private final InterpLUT lut = new InterpLUT();
 
     private Launcher23511 launcher;
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
+    private Servo blocker;
     private VoltageSensor voltageSensor;
     private TelemetryManager telemetryManager;
     private IntakeMotor intkM;
@@ -58,6 +58,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
     private double slowModeMultiplier = 0.5;
 
     private Robot init;
+    private Teleopblue1214_N_debug currentPosition;
 
 
 
@@ -78,18 +79,42 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
+        aprilTagPipeline = new AprilTagPipeline(hardwareMap);
+        aprilTagPipeline.startCamera();
+        relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
+        currentPosition = new Teleopblue1214_N_debug();
+        blocker = hardwareMap.get(Servo.class, "Blocker");
+        blocker.setPosition(1);
+
     }
 
     @Override
     public void start() {
         follower.startTeleopDrive();
         follower.setStartingPose(startingPose);
+
     }
 
     @Override
     public void loop(){
-
         follower.update();
+
+
+
+        if (gamepad1.options && follower.getVelocity().getMagnitude()<0.3) {
+            Pose tagPose = relocalisation.relocalisation();
+
+            if (tagPose != null) {
+                Pose pedroPose = ConvertToPedroPose.convertToPedroPose(tagPose);
+                if (pedroPose != null) {
+                    follower.setPose(pedroPose);
+                }
+            }
+        } else {
+            telemetryManager.addData("NePeuxReset",true);
+        }
+
+
 
         if (!slowMode)follower.setTeleOpDrive(
                 - gamepad1.left_stick_y,
@@ -111,6 +136,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         else intkM.stop();
 
 
+
         if (gamepad1.dpad_up) {
             rawPowerMode = false;
             usePIDF = true;
@@ -128,7 +154,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
             flywheelMotorTwo.setPower(rawPower);
         } else {
             if (shooterEnabled) {
-                targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
+                //targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
                 launcher.setFlywheelTicks(targetTicksPerSecond);
             } else {
                 launcher.stop();
@@ -141,10 +167,7 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         }
 
 
-        if (gamepad1.share){
-            Pose middlePose = new Pose(follower.getPose().getX(),follower.getPose().getY(),90);
-            follower.setPose(middlePose);
-        }
+
 
         double currentVelocity = flywheelMotorOne.getVelocity();
 
@@ -163,27 +186,29 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         jt.addData("currentVelocity", "%.0f", currentVelocity);
         jt.addData("positon", follower.getPose());
         jt.addData("Power", intake.getPower());
+        jt.addData("Velocity", follower.getVelocity().getMagnitude());
         jt.update();
         telemetryManager.update();
 
     }
 
+
     private static class ShooterTicksLUT {
 
         // Distances in SAME UNITS as follower.getPose()
         private final double[] distances = {
-                44, 51, 63, 71, 91, 101, 137
+
         };
 
         // Matching flywheel target velocities in ticks/second
         private final double[] ticks = {
-                600, 650, 700, 750, 800, 850, 970
+
         };
 
-        private final Teleop_Blue_06_01_26.ShooterTicksLUT.CubicHermiteInterpolator hermite;
+        private final Teleop_Blue_12_01_26.ShooterTicksLUT.CubicHermiteInterpolator hermite;
 
         ShooterTicksLUT() {
-            hermite = new Teleop_Blue_06_01_26.ShooterTicksLUT.CubicHermiteInterpolator(distances, ticks);
+            hermite = new Teleop_Blue_12_01_26.ShooterTicksLUT.CubicHermiteInterpolator(distances, ticks);
         }
 
         public double getTicksForDistance(double d) {
@@ -285,4 +310,53 @@ public class Teleop_Blue_06_01_26 extends OpMode {
         return Math.hypot(dx, dy);
     }
 
-}
+        public static boolean isInShootingZone(double x, double y) {
+        return isInBackZone(x, y) || isInFrontZone(x, y);
+    }
+
+        public static boolean isInBackZone(double x, double y) {
+        return y <= x - 48 && y <= -x + 96;
+    }
+
+        public static boolean isInFrontZone(double x, double y) {
+        return y >= -x + 144 && y >= x;
+    }
+
+    private double calculateTargetHeading() {
+        Pose currentPose = follower.getPose();
+        double deltaX = GOAL_X - currentPose.getX();
+        double deltaY = GOAL_Y - currentPose.getY();
+        return Math.atan2(deltaY, deltaX);
+    }
+
+    private double calculateHeadingToGoal() {
+        // Get current robot pose
+        Pose currentPose = follower.getPose();
+
+        // Calculate target heading (angle to goal)
+        double targetHeading = calculateTargetHeading();
+
+        // Get current heading
+        double currentHeading = currentPose.getHeading();
+
+        // Calculate heading error
+        double headingError = targetHeading - currentHeading;
+
+        // Normalize heading error to [-PI, PI]
+        while (headingError > Math.PI) headingError -= 2 * Math.PI;
+        while (headingError < -Math.PI) headingError += 2 * Math.PI;
+
+        // P controller for heading correction
+        // Tune this gain value to control how aggressively the robot turns
+        double kP = 1.0; // Adjust this value based on testing
+
+        // Calculate heading correction power
+        double headingPower = headingError * kP;
+
+        // Clamp the output to [-1, 1]
+        headingPower = Math.max(-1.0, Math.min(1.0, headingPower));
+
+        return headingPower;
+    }
+
+    }
