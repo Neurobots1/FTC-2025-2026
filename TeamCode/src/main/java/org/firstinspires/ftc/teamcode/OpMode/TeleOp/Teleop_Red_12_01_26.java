@@ -120,7 +120,7 @@ public class Teleop_Red_12_01_26 extends OpMode {
                 - gamepad1.left_stick_y,
                 - gamepad1.left_stick_x,
                 -gamepad1.right_stick_x,
-                false, 3.142 // Doit etre a 0 pour rouge , mais pour bleu c'est 3.142 radian ( 180 degree)
+                false, 0 // Doit etre a 0 pour rouge , mais pour bleu c'est 3.142 radian ( 180 degree)
 
 
         );
