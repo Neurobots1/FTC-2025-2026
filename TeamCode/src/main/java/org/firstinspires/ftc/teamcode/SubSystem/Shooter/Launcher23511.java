@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.seattlesolvers.solverslib.controller.PIDFController;
-import com.seattlesolvers.solverslib.util.InterpLUT;
+// import com.seattlesolvers.solverslib.util.InterpLUT;  // <-- removed
 
 @Configurable
 public class Launcher23511 {
@@ -17,7 +17,7 @@ public class Launcher23511 {
     public static double D = 0.00004;
     public static double F = 0.000039;
 
-    public static double VELOCITY_TOLERANCE = 100;
+    public static double VELOCITY_TOLERANCE = 40;
     public static double MAX_FLYWHEEL_VELOCITY = 1860;
     public static double DEFAULT_ON_POWER = 0.75;
 
@@ -34,7 +34,7 @@ public class Launcher23511 {
     private boolean activeControl = false;
     private double targetVelocityInput = 0.0;
 
-    private final InterpLUT lut = new InterpLUT();
+    // private final InterpLUT lut = new InterpLUT();  // <-- removed
 
     public Launcher23511(DcMotorEx flywheelMotorOne, DcMotorEx flywheelMotorTwo, VoltageSensor voltageSensor) {
         this.flywheelMotorOne = flywheelMotorOne;
@@ -46,6 +46,10 @@ public class Launcher23511 {
 
         flywheelController = new PIDFController(P, I, D, F);
         flywheelController.setTolerance(VELOCITY_TOLERANCE);
+
+        // All LUT setup removed:
+        // lut.add(...);
+        // lut.createLUT();
     }
 
     public static Launcher23511 create(HardwareMap hardwareMap) {
@@ -61,9 +65,10 @@ public class Launcher23511 {
         setFlywheel(0, false);
     }
 
+    // velInput is now interpreted directly as ticksPerSecond
     public void setFlywheel(double velInput, boolean usePIDF) {
         targetVelocityInput = velInput;
-        double ticksPerSecond = lut.get(velInput);
+        double ticksPerSecond = velInput;  // <-- direct, no LUT
         if (ticksPerSecond > MAX_FLYWHEEL_VELOCITY) ticksPerSecond = MAX_FLYWHEEL_VELOCITY;
         flywheelController.setSetPoint(ticksPerSecond);
         activeControl = usePIDF;
@@ -75,6 +80,14 @@ public class Launcher23511 {
     }
 
     public void update() {
+        // If target is 0, don't control anything, just make sure we're off
+        if (flywheelController.getSetPoint() == 0 || targetVelocityInput == 0) {
+            activeControl = false;
+            flywheelMotorOne.setPower(0);
+            flywheelMotorTwo.setPower(0);
+            return;
+        }
+
         double voltage = voltageSensor.getVoltage();
         double normalizedVoltage = voltage / NOMINAL_VOLTAGE;
         if (normalizedVoltage <= 0) normalizedVoltage = 1.0;
@@ -98,18 +111,17 @@ public class Launcher23511 {
                 flywheelMotorTwo.setPower(DEFAULT_ON_POWER);
             }
         }
-
     }
 
-        public void stop(){
+    public void stop() {
         setFlywheelTicks(0);
         flywheelMotorOne.setPower(0);
         flywheelMotorTwo.setPower(0);
-        }
+    }
 
     public boolean flywheelReady() {
         if (!activeControl) return false;
-        if (flywheelMotorOne.getVelocity() <= 20){
+        if (flywheelMotorOne.getVelocity() <= VELOCITY_TOLERANCE) {
             return false;
         }
 
@@ -118,5 +130,4 @@ public class Launcher23511 {
 
         return Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
     }
-
 }
