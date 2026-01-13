@@ -73,7 +73,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
+        //init = new Robot(hardwareMap);
         convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
@@ -197,12 +197,12 @@ public class Teleop_Blue_12_01_26 extends OpMode {
 
         // Distances in SAME UNITS as follower.getPose()
         private final double[] distances = {
-            40, 50
+                40, 50
         };
 
         // Matching flywheel target velocities in ticks/second
         private final double[] ticks = {
-            600, 700
+                600, 700
         };
 
         private final Teleop_Blue_12_01_26.ShooterTicksLUT.CubicHermiteInterpolator hermite;
@@ -359,4 +359,4 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         return headingPower;
     }
 
-    }
+}

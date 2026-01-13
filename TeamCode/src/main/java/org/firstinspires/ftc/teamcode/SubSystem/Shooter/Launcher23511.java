@@ -5,9 +5,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.seattlesolvers.solverslib.controller.PIDFController;
-// import com.seattlesolvers.solverslib.util.InterpLUT;  // <-- removed
 
 @Configurable
 public class Launcher23511 {
@@ -26,6 +26,9 @@ public class Launcher23511 {
     public static boolean MOTOR_ONE_REVERSED = false;
     public static boolean MOTOR_TWO_REVERSED = true;
 
+    // default target when we auto-shoot (you can set from TeleOp too)
+    public static double DEFAULT_TARGET_TPS = 1600;
+
     private final DcMotorEx flywheelMotorOne;
     private final DcMotorEx flywheelMotorTwo;
     private final VoltageSensor voltageSensor;
@@ -34,7 +37,19 @@ public class Launcher23511 {
     private boolean activeControl = false;
     private double targetVelocityInput = 0.0;
 
-    // private final InterpLUT lut = new InterpLUT();  // <-- removed
+    // Blocker servo (set from TeleOp)
+    private Servo blocker = null;
+
+    // Simple state machine for shooting
+    private enum ShootState {
+        IDLE,      // not shooting
+        ARMING,    // spinning up flywheel, waiting to be ready
+        FIRING     // flywheel ready, blocker open
+    }
+
+    private ShootState shootState = ShootState.IDLE;
+    private boolean shootButtonLast = false;   // for rising edge
+    private boolean headingLock = false;       // TeleOp can read this
 
     public Launcher23511(DcMotorEx flywheelMotorOne, DcMotorEx flywheelMotorTwo, VoltageSensor voltageSensor) {
         this.flywheelMotorOne = flywheelMotorOne;
@@ -46,10 +61,6 @@ public class Launcher23511 {
 
         flywheelController = new PIDFController(P, I, D, F);
         flywheelController.setTolerance(VELOCITY_TOLERANCE);
-
-        // All LUT setup removed:
-        // lut.add(...);
-        // lut.createLUT();
     }
 
     public static Launcher23511 create(HardwareMap hardwareMap) {
@@ -62,26 +73,44 @@ public class Launcher23511 {
     }
 
     public void init() {
-        setFlywheel(0, false);
+        setFlywheelTicks(0);
+        if (blocker != null) blocker.setPosition(1); // closed
+        shootState = ShootState.IDLE;
+        headingLock = false;
     }
 
-    // velInput is now interpreted directly as ticksPerSecond
+    // Let TeleOp give us the blocker servo
+    public void setBlocker(Servo blocker) {
+        this.blocker = blocker;
+        if (this.blocker != null) {
+            this.blocker.setPosition(1); // closed by default
+        }
+    }
+
+    // velInput is interpreted directly as ticksPerSecond (legacy API)
     public void setFlywheel(double velInput, boolean usePIDF) {
         targetVelocityInput = velInput;
-        double ticksPerSecond = velInput;  // <-- direct, no LUT
+        double ticksPerSecond = velInput;
         if (ticksPerSecond > MAX_FLYWHEEL_VELOCITY) ticksPerSecond = MAX_FLYWHEEL_VELOCITY;
         flywheelController.setSetPoint(ticksPerSecond);
-        activeControl = usePIDF;
+        activeControl = usePIDF && ticksPerSecond > 0;
     }
 
     public void setFlywheelTicks(double ticksPerSecond) {
+        if (ticksPerSecond < 0) ticksPerSecond = 0;
+        if (ticksPerSecond > MAX_FLYWHEEL_VELOCITY) ticksPerSecond = MAX_FLYWHEEL_VELOCITY;
+
+        targetVelocityInput = ticksPerSecond;
         flywheelController.setSetPoint(ticksPerSecond);
-        activeControl = true;
+        activeControl = ticksPerSecond > 0;
     }
 
+    // Low-level flywheel control (PID + voltage comp)
     public void update() {
-        // If target is 0, don't control anything, just make sure we're off
-        if (flywheelController.getSetPoint() == 0 || targetVelocityInput == 0) {
+        double setPoint = flywheelController.getSetPoint();
+
+        // If target is 0, just make sure we're off
+        if (setPoint == 0) {
             activeControl = false;
             flywheelMotorOne.setPower(0);
             flywheelMotorTwo.setPower(0);
@@ -103,13 +132,9 @@ public class Launcher23511 {
             flywheelMotorOne.setPower(power);
             flywheelMotorTwo.setPower(power);
         } else {
-            if (flywheelController.getSetPoint() == 0) {
-                flywheelMotorOne.setPower(0);
-                flywheelMotorTwo.setPower(0);
-            } else {
-                flywheelMotorOne.setPower(DEFAULT_ON_POWER);
-                flywheelMotorTwo.setPower(DEFAULT_ON_POWER);
-            }
+            // fallback "on" behavior without PIDF (if you ever use it)
+            flywheelMotorOne.setPower(DEFAULT_ON_POWER);
+            flywheelMotorTwo.setPower(DEFAULT_ON_POWER);
         }
     }
 
@@ -117,17 +142,104 @@ public class Launcher23511 {
         setFlywheelTicks(0);
         flywheelMotorOne.setPower(0);
         flywheelMotorTwo.setPower(0);
+        activeControl = false;
     }
 
     public boolean flywheelReady() {
         if (!activeControl) return false;
-        if (flywheelMotorOne.getVelocity() <= VELOCITY_TOLERANCE) {
-            return false;
-        }
 
         double targetTPS = flywheelController.getSetPoint();
+        if (targetTPS <= 0) return false;
+
         double currentTPS = flywheelMotorOne.getVelocity();
 
         return Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
+    }
+
+    public double getCurrentVelocity() {
+        return flywheelMotorOne.getVelocity();
+    }
+
+    public double getTargetTicksPerSecond() {
+        return flywheelController.getSetPoint();
+    }
+
+
+
+
+    /************************* Shooting state machine ***************************************/
+    public void updateShooting(boolean shootButton, double x, double y) {
+        boolean inZone = isInShootingZone(x, y);
+
+        // Rising edge on shoot button
+        if (shootButton && !shootButtonLast) {
+            switch (shootState) {
+                case IDLE:
+                    // only enter shooting if we are in zone
+                    if (inZone) {
+                        shootState = ShootState.ARMING;
+                        headingLock = true;
+                        setFlywheelTicks(DEFAULT_TARGET_TPS);
+                    }
+                    break;
+
+                case ARMING:
+                case FIRING:
+                    // any press while active cancels
+                    cancelShooting();
+                    break;
+            }
+        }
+        shootButtonLast = shootButton;
+
+        // State actions
+        switch (shootState) {
+            case IDLE:
+                headingLock = false;
+                if (blocker != null) blocker.setPosition(1); // closed
+                stop();
+                break;
+
+            case ARMING:
+                headingLock = true;
+                if (blocker != null) blocker.setPosition(1); // closed while spinning up
+                update(); // run PID
+
+                if (flywheelReady()) {
+                    shootState = ShootState.FIRING;
+                }
+                break;
+
+            case FIRING:
+                headingLock = true;
+                update(); // keep speed
+                if (blocker != null) blocker.setPosition(0); // fire
+                break;
+        }
+    }
+
+    private void cancelShooting() {
+        shootState = ShootState.IDLE;
+        headingLock = false;
+        stop();
+        if (blocker != null) blocker.setPosition(1);
+    }
+
+    public boolean isHeadingLockEnabled() {
+        return headingLock;
+    }
+
+    // ------------- Shooting zone logic -------------
+
+    public static boolean isInShootingZone(double x, double y) {
+        return isInBackZone(x, y) || isInFrontZone(x, y);
+    }
+
+    public static boolean isInBackZone(double x, double y) {
+        return y <= x - 48 && y <= -x + 96;
+    }
+
+    public static boolean isInFrontZone(double x, double y) {
+        return y >= -x + 144 && y >= x;
     }
 }
