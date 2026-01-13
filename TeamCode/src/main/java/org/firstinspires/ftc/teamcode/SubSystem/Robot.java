@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
+import static org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController.GOAL_X;
+import static org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController.GOAL_Y;
+
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -27,11 +30,12 @@ public class Robot {
     private AprilTagPipeline aprilTag;
     private Relocalisation relocalisation;
 
+    public static double DEFAULT_TARGET_TPS = 400;
+
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
     public void init(HardwareMap hw) {
         follower = Constants.createFollower(hw);
-        follower.setStartingPose(startingPose);
         follower.update();
 
         intake = new IntakeMotor(hw);
@@ -40,6 +44,7 @@ public class Robot {
 
         Servo blocker = hw.get(Servo.class, "Blocker");
         launcher.setBlocker(blocker);
+        blocker.setPosition(0);
 
         PIDFController pid = new PIDFController(follower.constants.coefficientsHeadingPIDF);
         headingLockController = new HeadingLockController(pid, follower);
@@ -63,6 +68,8 @@ public class Robot {
         follower.update();
         launcher.update();
 
+
+
         if (gamepad.options
                 && follower.getVelocity().getMagnitude() < 0.3
                 && tagResetTimer.seconds() > tagCooldown) {
@@ -83,7 +90,7 @@ public class Robot {
         Pose pose = follower.getPose();
         boolean shootButton = gamepad.y;
 
-        launcher.updateShooting(shootButton, pose.getX(), pose.getY());
+        launcher.updateShooting(shootButton, pose.getX(), pose.getY() );
         boolean headingLock = launcher.isHeadingLockEnabled();
 
         double manualTurn = -gamepad.right_stick_x;
@@ -106,6 +113,7 @@ public class Robot {
         jt.addData("currentVelocity", "%.0f", currentVel);
         jt.addData("position", follower.getPose());
         jt.addData("Velocity", follower.getVelocity().getMagnitude());
+        jt.addData("distance to goal", getDistanceToGoal());
         jt.update();
         telemetryManager.update();
     }
@@ -132,5 +140,11 @@ public class Robot {
 
     public AprilTagPipeline aprilTag() {
         return aprilTag;
+    }
+
+    public double getDistanceToGoal() {
+        double dx = GOAL_X - follower.getPose().getX();
+        double dy = GOAL_Y - follower.getPose().getY();
+        return Math.hypot(dx, dy);
     }
 }

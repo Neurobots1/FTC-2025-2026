@@ -18,6 +18,7 @@ public class Teleop_Blue_13_01_26 extends OpMode {
     private TelemetryManager telemetryManager;
     private final ElapsedTime tagResetTimer = new ElapsedTime();
     private static final double TAG_RESET_COOLDOWN = 5;
+    public static double DEFAULT_TARGET_TPS = 400;
 
     @Override
     public void init() {
