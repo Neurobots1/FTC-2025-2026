@@ -12,6 +12,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 
 import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
+import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
@@ -33,7 +34,7 @@ public class Robot {
     private IntakeMotor intake;
     private AprilTagPipeline aprilTag;
     private Relocalisation relocalisation;
-    private Indexer indexer;
+    private Indexer_Base indexerBase;
 
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
@@ -58,8 +59,8 @@ public class Robot {
         aprilTag.startCamera();
         relocalisation = new Relocalisation(hw, aprilTag);
 
-        indexer = new Indexer(hw);
-        indexer.StartIndexPose();
+        indexerBase = new Indexer_Base(hw);
+        indexerBase.StartIndexPose();
     }
 
     public void startTeleop() {
@@ -110,17 +111,17 @@ public class Robot {
                 Math.toRadians(180)
         );
 
-        if (!indexer.isBusy()) {
+        if (!indexerBase.isBusy()) {
             if (gamepad.right_bumper) intake.intake();
             else if (gamepad.left_bumper) intake.outtake();
             else intake.stop();
         }
 
         if (gamepad.dpad_down) {
-            indexer.startOutTake();
+            indexerBase.startOutTake();
         }
 
-        indexer.OutTake();
+        indexerBase.OutTake();
 
         double targetTPS = Launcher23511.targetTPS;
         double currentVel = launcher.getCurentRPM();

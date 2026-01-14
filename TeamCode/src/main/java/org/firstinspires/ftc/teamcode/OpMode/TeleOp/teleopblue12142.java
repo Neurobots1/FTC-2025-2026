@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Blue1.finalPose;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
@@ -20,6 +19,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild;
 
 @Configurable
 @TeleOp(name = "teleopblueNOHEADING", group = "Tuning")
@@ -38,7 +38,6 @@ public class teleopblue12142 extends OpMode {
     private boolean ready = false;
     private Follower follower;
     private DcMotorEx intake;
-    private final Pose startingPose = new Pose(finalPose.getX(), finalPose.getY(), finalPose.getHeading());
     private static final double GOAL_X = 12;
     private static final double GOAL_Y = 132;
     private final Pose goalPose = new Pose(12, 132, 0.0);
@@ -56,6 +55,7 @@ public class teleopblue12142 extends OpMode {
     private Robot init;
     private AprilTagPipeline aprilTagPipeline;
     private Relocalisation relocaliser;
+    private Auto_pathBuild autoPathBuild;
 
     private boolean lastOptions = false;
 
@@ -64,7 +64,7 @@ public class teleopblue12142 extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose);
+        follower.setStartingPose(autoPathBuild.startPose);
         follower.update();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
         intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");

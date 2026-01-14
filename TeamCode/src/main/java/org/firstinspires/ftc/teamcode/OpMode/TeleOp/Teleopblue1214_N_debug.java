@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Blue1.finalPose;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -30,7 +29,6 @@ public class Teleopblue1214_N_debug extends OpMode {
     private JoinedTelemetry jt;
     private Follower follower;
     private DcMotorEx intake;
-    private final Pose startingPose = new Pose(finalPose.getX(), finalPose.getY(), finalPose.getHeading());
     private static final double GOAL_X = 12;
     private static final double GOAL_Y = 132;
     private final Pose goalPose = new Pose(12, 132, 0.0);
@@ -51,7 +49,6 @@ public class Teleopblue1214_N_debug extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose);
         follower.update();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
         intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");

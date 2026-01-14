@@ -1,16 +1,14 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer;
+import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 
 @TeleOp(name = "Index_Test")
 public class Index_Test extends OpMode {
 
-    private Indexer indexer;
+    private Indexer_Base indexerBase;
 
     // previous states
     private boolean lastRight = false;
@@ -20,8 +18,8 @@ public class Index_Test extends OpMode {
 
     @Override
     public void init() {
-        indexer = new Indexer(hardwareMap);
-        indexer.StartIndexPose();
+        indexerBase = new Indexer_Base(hardwareMap);
+        indexerBase.StartIndexPose();
     }
 
     @Override
@@ -35,19 +33,19 @@ public class Index_Test extends OpMode {
 
         // rising edges
         if (right && !lastRight) {
-            indexer.indexRightServo.setPosition(1);
+            indexerBase.indexRightServo.setPosition(1);
         }
 
         if (up && !lastUp) {
-            indexer.indexRightServo.setPosition(0);
+            indexerBase.indexRightServo.setPosition(0);
         }
 
         if (down && !lastDown) {
-            indexer.indexLeftServo.setPosition(1);
+            indexerBase.indexLeftServo.setPosition(1);
         }
 
         if (left && !lastLeft) {
-            indexer.indexLeftServo.setPosition(0);
+            indexerBase.indexLeftServo.setPosition(0);
         }
 
         // update last states

@@ -15,7 +15,6 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
-import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 
@@ -28,7 +27,6 @@ public class Teleop_Red_1512 extends OpMode {
     public static double targetTicksPerSecond = 0;
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
-    private Relocalisationfilter relocalisationfilter;
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(72,72,Math.toRadians(90));
@@ -61,7 +59,6 @@ public class Teleop_Red_1512 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
@@ -106,8 +103,6 @@ public class Teleop_Red_1512 extends OpMode {
         if (gamepad1.a) shooterEnabled = true;
         if (gamepad1.b) shooterEnabled = false;
 
-        if(gamepad1.start) relocalisationfilter.relocalisation();
-        convertToPedroPose.convertToPedroPose(relocalisationfilter.filteredPose.getPose());
 
         if (detections.isEmpty()){
             telemetry.addLine("No AprilTags Detected");
@@ -134,7 +129,6 @@ public class Teleop_Red_1512 extends OpMode {
         telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
-        jt.addData("PedroPose",relocalisationfilter.relocalisation());
         jt.addData("positon", follower.getPose());
         jt.addData("Power", intake.getPower());
         jt.update();
