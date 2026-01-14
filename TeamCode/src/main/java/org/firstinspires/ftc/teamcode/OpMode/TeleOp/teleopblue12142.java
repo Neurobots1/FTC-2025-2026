@@ -28,6 +28,7 @@ public class teleopblue12142 extends OpMode {
     public static double rawPower = -1;
 
     public static boolean usePIDF = true;
+    private Robot robot;
     public static boolean rawPowerMode = false;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
@@ -70,7 +71,8 @@ public class teleopblue12142 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
+        robot = new Robot();
+        robot.init(hardwareMap);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         aprilTagPipeline = new AprilTagPipeline(hardwareMap); // <-- replace with YOUR pipeline creation if different

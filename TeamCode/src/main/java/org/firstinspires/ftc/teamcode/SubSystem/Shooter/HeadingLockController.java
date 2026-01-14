@@ -7,8 +7,14 @@ import com.pedropathing.math.MathFunctions;
 
 public class HeadingLockController {
 
-    public static final double GOAL_X = 12;
-    public static final double GOAL_Y = 132;
+    public static final double BLUE_GOAL_X = 12;
+    public static final double BLUE_GOAL_Y = 132;
+
+    public static final double RED_GOAL_X = 132;
+    public static final double RED_GOAL_Y = 132;
+
+    private double goalX = BLUE_GOAL_X;
+    private double goalY = BLUE_GOAL_Y;
 
     private final PIDFController headingController;
     private final Follower follower;
@@ -20,8 +26,8 @@ public class HeadingLockController {
     }
 
     private double calculateTargetHeadingToGoal(Pose pose) {
-        double dx = GOAL_X - pose.getX();
-        double dy = GOAL_Y - pose.getY();
+        double dx = goalX - pose.getX();
+        double dy = goalY - pose.getY();
         return Math.atan2(dy, dx);
     }
 
@@ -45,5 +51,23 @@ public class HeadingLockController {
 
     public double getHeadingGoal() {
         return headingGoal;
+    }
+
+    public void setGoalBlue() {
+        goalX = BLUE_GOAL_X;
+        goalY = BLUE_GOAL_Y;
+    }
+
+    public void setGoalRed() {
+        goalX = RED_GOAL_X;
+        goalY = RED_GOAL_Y;
+    }
+
+    public double getGoalX() {
+        return goalX;
+    }
+
+    public double getGoalY() {
+        return goalY;
     }
 }

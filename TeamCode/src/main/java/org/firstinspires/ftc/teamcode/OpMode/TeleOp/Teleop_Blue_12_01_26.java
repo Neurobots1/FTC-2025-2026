@@ -157,13 +157,9 @@ public class Teleop_Blue_12_01_26 extends OpMode {
                 //targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
                 launcher.setFlywheelTicks(targetTicksPerSecond);
             } else {
-                launcher.stop();
+                launcher.setFlywheelTicks(0);
             }
             launcher.update();
-        }
-
-        if (targetTicksPerSecond == 0){
-            launcher.stop();
         }
 
 

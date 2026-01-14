@@ -26,6 +26,7 @@ public class Auto_Blue2 extends OpMode {
     private Follower follower;
 
     private IntakeMotor intkM;
+    private Robot robot;
     private  DcMotorEx flywheelMotorOne;
     private  DcMotorEx flywheelMotorTwo;
     public static boolean usePIDF = true;
@@ -196,7 +197,8 @@ public class Auto_Blue2 extends OpMode {
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
-        init = new Robot(hardwareMap);
+        robot = new Robot();
+        robot.init(hardwareMap);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startPose);

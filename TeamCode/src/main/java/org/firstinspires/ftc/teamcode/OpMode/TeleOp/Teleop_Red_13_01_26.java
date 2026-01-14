@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -12,7 +13,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 
 @Configurable
 @TeleOp
-public class Teleop_Blue_13_01_26 extends OpMode {
+public class Teleop_Red_13_01_26 extends OpMode {
 
     private Robot robot;
     private JoinedTelemetry jt;
@@ -25,7 +26,7 @@ public class Teleop_Blue_13_01_26 extends OpMode {
         robot = new Robot();
         robot.init(hardwareMap);
 
-        robot.setAlliance(Robot.Alliance.BLUE);
+        robot.setAlliance(Robot.Alliance.RED);
 
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
@@ -43,3 +44,4 @@ public class Teleop_Blue_13_01_26 extends OpMode {
         robot.teleopLoop(gamepad1, tagResetTimer, TAG_RESET_COOLDOWN, jt, telemetryManager);
     }
 }
+

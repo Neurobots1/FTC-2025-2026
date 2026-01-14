@@ -26,6 +26,7 @@ public class teleopblue extends OpMode {
     public static double targetTicksPerSecond = 0;
     public static double testPower = 1.0;
     private JoinedTelemetry jt;
+    private Robot robot;
     private Follower follower;
     private DcMotorEx intake;
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
@@ -59,7 +60,8 @@ public class teleopblue extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
+        robot = new Robot();
+        robot.init(hardwareMap);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();

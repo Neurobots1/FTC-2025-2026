@@ -26,6 +26,7 @@ public class Teleop_0601_camera extends OpMode {
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
+    private Robot robot;
     public static double testPower = 1.0;
     public ConvertToPedroPose convertToPedroPose;
 
@@ -64,7 +65,8 @@ public class Teleop_0601_camera extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
+        robot = new Robot();
+        robot.init(hardwareMap);
         currentPosition = new Teleopblue1214_N_debug();
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();

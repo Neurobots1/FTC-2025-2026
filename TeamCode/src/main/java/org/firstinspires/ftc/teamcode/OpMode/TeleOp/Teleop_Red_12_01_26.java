@@ -28,6 +28,7 @@ public class Teleop_Red_12_01_26 extends OpMode {
 
     public static double rawPower = -1;
     public static boolean rawPowerMode = false;
+    private Robot robot;
     public static boolean usePIDF = true;
     public static boolean shooterEnabled = false;
     public static double targetTicksPerSecond = 0;
@@ -73,7 +74,8 @@ public class Teleop_Red_12_01_26 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         intkM = new IntakeMotor(hardwareMap);
-        init = new Robot(hardwareMap);
+        robot = new Robot();
+        robot.init(hardwareMap);
         convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
@@ -157,14 +159,11 @@ public class Teleop_Red_12_01_26 extends OpMode {
                 //targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
                 launcher.setFlywheelTicks(targetTicksPerSecond);
             } else {
-                launcher.stop();
+                launcher.setFlywheelTicks(0);
             }
             launcher.update();
         }
 
-        if (targetTicksPerSecond == 0){
-            launcher.stop();
-        }
 
 
 

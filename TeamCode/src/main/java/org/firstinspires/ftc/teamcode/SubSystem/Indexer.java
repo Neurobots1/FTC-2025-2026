@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class Indexer {
 
     private enum ActionState { IDLE, START, COLLECTING, DONE }
-    private enum OutTakeState {IDLE, START, SWAP_TO_LEFT, FINISH}
+    private enum OutTakeState {IDLE,OUTAKE, START, SWAP_TO_LEFT, FINISH}
     private enum IndexIntakeState {IDLE, START, SWAP_TO_LEFT, CLOSE_FRONT_GATE,WAIT_FOR_GATE, FINISH}
 
     private ActionState rightPickState = ActionState.IDLE;
@@ -85,12 +85,20 @@ public class Indexer {
         }
     }
 
+    public void startOutTake() {
+        if (isBusy()) return;
+        if (outTakeState == OutTakeState.IDLE) {
+            outTakeState = OutTakeState.OUTAKE;
+        }
+    }
+
 
 
     public void CancelIndexerActions() {
         rightPickState = ActionState.IDLE;
         leftPickState  = ActionState.IDLE;
         indexIntakeState = IndexIntakeState.IDLE;
+        outTakeState = OutTakeState.IDLE;
         intkM.stop();
     }
 
@@ -98,37 +106,43 @@ public class Indexer {
     public void OutTake() {
         switch (outTakeState) {
             case IDLE:
+                ballEntryTimer.reset();
+                break;
+
+            case OUTAKE:
+                intkM.outtake();
+                if (ballEntryTimer.seconds()>1) {
+                    outTakeState = OutTakeState.START;
+                }
                 break;
 
             case START:
-                intkM.outtake();
-                indexGateBack.setPosition(servointkB_Closed);
+                indexGateBack.setPosition(servointkB_Open);
                 indexLeftServo.setPosition(indexer_L_Retracted);
                 indexRightServo.setPosition(indexer_R_Engage);
                 ballEntryTimer.reset();
-                indexIntakeState = IndexIntakeState.SWAP_TO_LEFT;
+                outTakeState = OutTakeState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
                 if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-                   indexRightServo.setPosition(indexer_R_Retracted);
-                   indexLeftServo.setPosition(indexer_L_Engage);
-                   ballEntryTimer.reset();
-                   indexIntakeState = IndexIntakeState.FINISH;
-
+                    indexRightServo.setPosition(indexer_R_Retracted);
+                    indexLeftServo.setPosition(indexer_L_Engage);
+                    ballEntryTimer.reset();
+                    outTakeState = OutTakeState.FINISH;
                 }
-
                 break;
 
             case FINISH:
-                if (ballEntryTimer.seconds()>= INDEXER_COLLECT_TIME) {
+                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     intkM.stop();
                     indexLeftServo.setPosition(indexer_L_Retracted);
-                    indexIntakeState = IndexIntakeState.IDLE;
+                    outTakeState = OutTakeState.IDLE;
                 }
-
+                break;
         }
     }
+
 
 
 
@@ -340,7 +354,7 @@ public class Indexer {
 
     public void StartIndexPose(){
         indexLeftServo.setPosition(indexer_L_Retracted);
-        indexRightServo.setPosition(indexer_R_Engage);
+        indexRightServo.setPosition(indexer_R_Retracted);
         indexGateBack.setPosition(servointkB_Open);
         indexGateFront.setPosition(servointkF_Open);
 
@@ -350,8 +364,9 @@ public class Indexer {
         boolean rightBusy = (rightPickState == ActionState.START || rightPickState == ActionState.COLLECTING);
         boolean leftBusy  = (leftPickState  == ActionState.START || leftPickState  == ActionState.COLLECTING);
         boolean intakeBusy = (indexIntakeState != IndexIntakeState.IDLE);
+        boolean outtakeBusy = (outTakeState != OutTakeState.IDLE);
 
-        return rightBusy || leftBusy || intakeBusy;
+        return rightBusy || leftBusy || intakeBusy || outtakeBusy;
     }
 
 
