@@ -153,7 +153,7 @@ public class Auto_Blue1 extends OpMode {
         shooterEnabled = false;
         Shooter.init();
 
-        aprilTag = new AprilTagPipeline();
+        //aprilTag = new AprilTagPipeline();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         pathTimer = new Timer();
         actionTimer = new Timer();

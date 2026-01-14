@@ -29,7 +29,7 @@ public class Constants {
 
     //PIDF
             .translationalPIDFCoefficients(new PIDFCoefficients(0.2,0,0.03,0))
-            .headingPIDFCoefficients(new PIDFCoefficients(1 ,0,0.1,0))
+            .headingPIDFCoefficients(new PIDFCoefficients(0.7 ,0,0.02,0.02))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.008,0,0,0.6,0))
             .useSecondaryTranslationalPIDF(false)
             .useSecondaryHeadingPIDF(false)

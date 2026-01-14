@@ -36,6 +36,11 @@ public class Robot {
     private Relocalisation relocalisation;
     private Indexer_Base indexerBase;
 
+    // Shooter ready → rumble state
+    private final ElapsedTime shooterReadyTimer = new ElapsedTime();
+    private boolean headingLockWasEnabled = false;
+    private boolean shooterReadyRumbleSent = false;
+
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
     public void init(HardwareMap hw) {
@@ -97,8 +102,38 @@ public class Robot {
         Pose pose = follower.getPose();
         boolean shootButton = gamepad.y;
 
-        launcher.updateShooting(shootButton, pose.getX(), pose.getY());
+        double distance = getDistanceToGoal();
+        launcher.updateShooting(shootButton, pose.getX(), pose.getY(), distance);
+
         boolean headingLock = launcher.isHeadingLockEnabled();
+
+        // ------------------------
+        //  SHOOTER READY → RUMBLE
+        //  one time per heading-lock cycle
+        // ------------------------
+        // Detect start/end of a shooting cycle via headingLock
+        if (headingLock && !headingLockWasEnabled) {
+            // just entered a shooting cycle (ARMING/FIRING)
+            shooterReadyTimer.reset();
+            shooterReadyRumbleSent = false;
+        } else if (!headingLock && headingLockWasEnabled) {
+            // exited shooting cycle (back to IDLE), allow rumble next time
+            shooterReadyRumbleSent = false;
+        }
+        headingLockWasEnabled = headingLock;
+
+        boolean shooterReady = launcher.flywheelReady();
+
+        // Only rumble once per cycle, when shooter is ready and delay passed
+        if (headingLock
+                && shooterReady
+                && !shooterReadyRumbleSent
+                && shooterReadyTimer.milliseconds() > 150) {
+
+            gamepad.rumble(300); // 0.3s rumble
+            shooterReadyRumbleSent = true;
+        }
+        // ------------------------
 
         double manualTurn = -gamepad.right_stick_x;
         double turn = headingLockController.update(pose, headingLock, manualTurn);

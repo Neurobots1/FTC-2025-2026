@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.seattlesolvers.solverslib.controller.PIDFController;
 
-
 @Configurable
 public class Launcher23511 {
 
@@ -28,16 +27,13 @@ public class Launcher23511 {
     public static boolean MOTOR_ONE_REVERSED = false;
     public static boolean MOTOR_TWO_REVERSED = true;
 
-    // Motors & Controller
     private final DcMotorEx flywheelMotorOne;
     private final DcMotorEx flywheelMotorTwo;
     private final VoltageSensor voltageSensor;
     private final PIDFController flywheelController;
 
-    // optional blocker
     private Servo blocker = null;
 
-    // For rising edge detection
     private boolean shootButtonLast = false;
     private boolean headingLock = false;
 
@@ -45,16 +41,17 @@ public class Launcher23511 {
 
     public static double LutTPS = 800;
 
-    // LUT stuff
-    // public static double LUT_TPS_SLOPE = 10.0;
-    // public static double LUT_TPS_INTERCEPT = 800.0;
-    //
-    // private static double computeLutTPS(double distance) {
-    //     double tps = LUT_TPS_SLOPE * distance + LUT_TPS_INTERCEPT;
-    //     if (tps < 0) tps = 0;
-    //     if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
-    //     return tps;
-    // }
+    // y = 399.5011 + 4.804155*x - 0.00739844*x^2
+    // y is RPM/TPS, x is distance
+    private static double computeLutTPS(double distance) {
+        double tps = 399.5011
+                + 4.804155 * distance
+                - 0.00739844 * distance * distance;
+
+        if (tps < 0) tps = 0;
+        if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
+        return tps;
+    }
 
     public double getTargetTPS() { return targetTPS; }
     public double getCurentRPM() { return flywheelMotorOne.getVelocity(); }
@@ -104,17 +101,13 @@ public class Launcher23511 {
         if (blocker != null) blocker.setPosition(BlockerClosedPosition);
     }
 
-    // still useful for TeleOp code that wants to set it in code
     public void setFlywheelTicks(double tps) {
         if (tps < 0) tps = 0;
         if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
-
-        targetTPS = tps;  // dashboard & code share this
-        // setPoint will be updated every loop in update()
+        targetTPS = tps;
     }
 
     public void update() {
-        // ---- APPLY DASHBOARD / CODE CHANGES TO PID EVERY LOOP ----
         double desiredTPS = targetTPS;
         if (desiredTPS < 0) desiredTPS = 0;
         if (desiredTPS > MAX_FLYWHEEL_VELOCITY) desiredTPS = MAX_FLYWHEEL_VELOCITY;
@@ -151,25 +144,20 @@ public class Launcher23511 {
     }
 
     /************************* SHOOTING STATE MACHINE *************************/
-    public void updateShooting(boolean shootButton, double x, double y) {
+    public void updateShooting(boolean shootButton, double x, double y, double distance) {
         boolean inZone = isInShootingZone(x, y);
 
         if (!inZone && shootState != ShootState.IDLE) {
             cancelShooting();
         }
 
-        // Rising edge
         if (shootButton && !shootButtonLast) {
             if (shootState == ShootState.IDLE && inZone) {
                 shootState = ShootState.ARMING;
 
-                // LUT
-                 //double dx = GOAL_X - x;
-                // double dy = GOAL_Y - y;
-                // double distance = Math.hypot(dx, dy);
-                // LutTPS = computeLutTPS(distance);
-
+                LutTPS = computeLutTPS(distance);
                 setFlywheelTicks(LutTPS);
+
                 headingLock = true;
             } else {
                 cancelShooting();
@@ -187,6 +175,11 @@ public class Launcher23511 {
             case ARMING:
                 headingLock = true;
                 if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+
+                // continuously update target based on current distance
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
                 update();
                 if (flywheelReady()) {
                     shootState = ShootState.FIRING;
@@ -195,6 +188,11 @@ public class Launcher23511 {
 
             case FIRING:
                 headingLock = true;
+
+                // still update target while firing (in case robot moves)
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
                 update();
                 if (blocker != null) blocker.setPosition(BlockerOpenPosition);
                 break;
@@ -213,18 +211,6 @@ public class Launcher23511 {
     }
 
     /************************* SHOOTING ZONE GEOMETRY *************************/
-    // Original:
-    // public static boolean isInShootingZone(double x, double y) {
-    //     return isInBackZone(x, y) || isInFrontZone(x, y);
-    // }
-    //
-    // public static boolean isInBackZone(double x, double y) {
-    //     return y <= x - 48 && y <= -x + 96;
-    // }
-    //
-    // public static boolean isInFrontZone(double x, double y) {
-    //     return y >= -x + 144 && y >= x;
-    // }
 
     public static double radius = 10.0;
 
