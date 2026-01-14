@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.OpMode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.pedroPathing.Tuning;
+
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
@@ -11,11 +11,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
-import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild;
+import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild_Blue;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.SubSystem.AutoCase.Case_GPP;
 import org.firstinspires.ftc.teamcode.SubSystem.AutoCase.Case_PGP;
@@ -28,7 +26,7 @@ import java.util.List;
 public class Auto_Blue1 extends OpMode {
 
     private Follower follower;
-    private Auto_pathBuild autoPathBuild;
+    private Auto_pathBuild_Blue autoPathBuild;
     private AprilTagPipeline aprilTag;
     private Case_GPP caseGPP;
     private Case_PGP casePGP;
@@ -62,54 +60,51 @@ public class Auto_Blue1 extends OpMode {
     private boolean ppgModeChecked = false;
 
     public void autonomousPathUpdate() {
+        switch (pathState) {
 
-        if (!gppModeChecked && !useGPPMode) {
-            int detectedID = getAprilTagID();
-            if (detectedID == 22) {
-                useGPPMode = true;
-                telemetry.addData("Mode", "GPP Mode Activé - ID 22 détecté");
+            case 0:
+                follower.followPath(autoPathBuild.TakePatern, 1, true);
+                setPathState(1);
+
+            case 1:
+
+
+            if (!gppModeChecked && !useGPPMode) {
+                int detectedID = getAprilTagID();
+                if (detectedID == 21) {
+                    useGPPMode = true;
+                    telemetry.addData("Mode", "GPP Mode Activé - ID 21 détecté");
+                }
+                gppModeChecked = true;
+            } else if (!pgpModeChecked && !usePGPMode) {
+                int detectedID = getAprilTagID();
+                if (detectedID == 22) {
+                    usePGPMode = true;
+                    telemetry.addData("Mode", "PGP Mode Activé - ID 22 détecté");
+                }
+                pgpModeChecked = true;
+            } else if (!ppgModeChecked && !usePPGMode) {
+                int detectedID = getAprilTagID();
+                if (detectedID == 23) {
+                    usePPGMode = true;
+                    telemetry.addData("Mode", "PPG Mode Activé - ID 23 détecté");
+                }
+                ppgModeChecked = true;
             }
-            gppModeChecked = true;
-        }
 
 
-        else if (!pgpModeChecked && !usePGPMode) {
-            int detectedID = getAprilTagID();
-            if (detectedID == 23) {
-                usePGPMode = true;
-                telemetry.addData("Mode", "PGP Mode Activé - ID 23 détecté");
+            if (useGPPMode) {
+                caseGPP.autonomousPathUpdate();
+                return;
+            } else if (usePGPMode) {
+                casePGP.autonomousPathUpdate();
+                return;
+            } else if (usePPGMode) {
+                casePPG.autonomousPathUpdate();
+                return;
             }
-            pgpModeChecked = true;
+
         }
-
-
-        else if (!ppgModeChecked && !usePPGMode) {
-            int detectedID = getAprilTagID();
-            if (detectedID == 24) {
-                usePPGMode = true;
-                telemetry.addData("Mode", "PPG Mode Activé - ID 24 détecté");
-            }
-            ppgModeChecked = true;
-        }
-
-
-
-
-        if (useGPPMode) {
-            caseGPP.autonomousPathUpdate();
-            return;
-        }
-
-        else if (usePGPMode) {
-            casePGP.autonomousPathUpdate();
-            return;
-        }
-
-        else if (usePPGMode) {
-            casePPG.autonomousPathUpdate();
-            return;
-        }
-
     }
 
     // Méthode pour récupérer l'ID de l'AprilTag
@@ -147,6 +142,7 @@ public class Auto_Blue1 extends OpMode {
 
     @Override
     public void init() {
+        setPathState(0);
         intkM = new IntakeMotor(hardwareMap);
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
@@ -157,7 +153,6 @@ public class Auto_Blue1 extends OpMode {
         shooterEnabled = false;
         Shooter.init();
 
-        // Initialiser AprilTag
         aprilTag = new AprilTagPipeline();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         pathTimer = new Timer();
@@ -166,8 +161,7 @@ public class Auto_Blue1 extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
 
-        // Créer Auto_pathBuild
-        autoPathBuild = new Auto_pathBuild(follower);
+        autoPathBuild = new Auto_pathBuild_Blue(follower);
         follower.setStartingPose(autoPathBuild.startPose);
         autoPathBuild.buildPaths();
 

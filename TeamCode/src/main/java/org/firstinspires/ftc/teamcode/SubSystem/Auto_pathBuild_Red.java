@@ -1,40 +1,40 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
-import com.pedropathing.follower.Follower;
 
-public class Auto_pathBuild {
-
+public class Auto_pathBuild_Red {
     private Follower follower;
 
-    // Rendre ces variables publiques pour y accéder depuis Auto_Blue1
-    public final Pose startPose = new Pose(33, 136, Math.toRadians(88));
-    private final Pose Shoot = new Pose(49, 95, Math.toRadians(136));
-    private final Pose IntkStart1 = new Pose(50, 85, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(16, 85, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(50, 63, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(10, 63, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(50, 40, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(143));
-    public static Pose finalPose = new Pose();
+    public PathChain TakePatern,Shoot1, Shoot2, Shoot3, Shoot4, IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3, FiString;
 
-    // Rendre les PathChains publics
-    public PathChain Shoot1, Shoot2, Shoot3, Shoot4, IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3, FiString;
-
-    // Constructeur qui prend le follower
-    public Auto_pathBuild(Follower follower) {
+    public Auto_pathBuild_Red(Follower follower) {
         this.follower = follower;
     }
 
+    private final Pose startPose = new Pose(110, 136, Math.toRadians(90));
+    private final Pose SeePatern = new Pose(92, 92,Math.toRadians(90) );
+    private final Pose Shoot = new Pose(92, 92, Math.toRadians(50));
+    private final Pose IntkStart1 = new Pose(100, 85, Math.toRadians(0));
+    private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
+    private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
+    private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
+    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
+    private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
+    public static Pose finalPose = new Pose();
+
     public void buildPaths() {
-        // Ton code existant reste identique
+        TakePatern = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, SeePatern))
+                .setLinearHeadingInterpolation(startPose.getHeading(), SeePatern.getHeading())
+                .build();
+
         Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, Shoot))
-                .setLinearHeadingInterpolation(startPose.getHeading(), Shoot.getHeading())
+                .addPath(new BezierLine(SeePatern, Shoot))
+                .setLinearHeadingInterpolation(SeePatern.getHeading(), Shoot.getHeading())
                 .build();
 
         Shoot2 = follower.pathBuilder()
@@ -87,4 +87,5 @@ public class Auto_pathBuild {
                 .setLinearHeadingInterpolation(IntkFinal3.getHeading(), FinalShootPose.getHeading())
                 .build();
     }
+
 }

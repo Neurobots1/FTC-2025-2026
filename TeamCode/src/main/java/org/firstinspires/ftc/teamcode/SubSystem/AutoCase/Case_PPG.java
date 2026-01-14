@@ -6,7 +6,7 @@ import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild;
+import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild_Blue;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
@@ -22,7 +22,7 @@ public class Case_PPG {
     public Robot robot;
 
     private Follower follower;
-    private Auto_pathBuild autoPathBuild;
+    private Auto_pathBuild_Blue autoPathBuild;
     private Indexer_PPG indexerPPG;
     AprilTagPipelinetele aprilTag;
     private DcMotorEx flywheelMotorOne;

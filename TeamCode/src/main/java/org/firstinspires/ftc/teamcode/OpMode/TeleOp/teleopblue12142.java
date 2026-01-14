@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild;
+import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild_Blue;
 
 @Configurable
 @TeleOp(name = "teleopblueNOHEADING", group = "Tuning")
@@ -55,7 +55,7 @@ public class teleopblue12142 extends OpMode {
     private Robot init;
     private AprilTagPipeline aprilTagPipeline;
     private Relocalisation relocaliser;
-    private Auto_pathBuild autoPathBuild;
+    private Auto_pathBuild_Blue autoPathBuild;
 
     private boolean lastOptions = false;
 
