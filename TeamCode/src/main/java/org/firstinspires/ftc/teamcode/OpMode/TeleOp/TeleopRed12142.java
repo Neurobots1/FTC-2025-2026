@@ -1,5 +1,10 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
+public class TeleopRed12142 {
+}
+
+/* import static org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_1st_meet_Red.finalPose;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -16,7 +21,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
-import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
+import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisationfilter;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
@@ -36,6 +41,7 @@ public class TeleopRed12142 extends OpMode {
     private boolean ready = false;
     private Follower follower;
     private DcMotorEx intake;
+    private final Pose startingPose = new Pose(finalPose.getX(), finalPose.getY(), finalPose.getHeading());
     private static final double GOAL_X = 132;
     private static final double GOAL_Y = 132;
     private final Pose goalPose = new Pose(132, 132, 0.0);
@@ -52,6 +58,7 @@ public class TeleopRed12142 extends OpMode {
     private IntakeMotor intkM;
     private Robot init;
     private AprilTagPipeline aprilTagPipeline;
+    private Relocalisationfilter relocaliser;
 
     private boolean lastOptions = false;
 
@@ -60,6 +67,7 @@ public class TeleopRed12142 extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(startingPose);
         follower.update();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
         intake = hardwareMap.get(DcMotorEx.class, "intakeMotor");
@@ -71,6 +79,7 @@ public class TeleopRed12142 extends OpMode {
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
         launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         aprilTagPipeline = new AprilTagPipeline(hardwareMap); // <-- replace with YOUR pipeline creation if different
+        relocaliser = new Relocalisationfilter(hardwareMap, aprilTagPipeline);
 
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -84,6 +93,13 @@ public class TeleopRed12142 extends OpMode {
     @Override
     public void loop() {
         follower.update();
+
+        if (gamepad1.options) { // just pressed
+            Pose tagPose = relocaliser.relocalisation(); // THIS is filteredPose
+            if (tagPose != null) {
+                follower.setPose(tagPose);
+            }
+        }
 
 
 
@@ -271,4 +287,4 @@ public class TeleopRed12142 extends OpMode {
         double dy = goalY - follower.getPose().getY();
         return Math.hypot(dx, dy);
     }
-}
+} */

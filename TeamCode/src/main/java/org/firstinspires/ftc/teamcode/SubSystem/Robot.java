@@ -89,7 +89,7 @@ public class Robot {
             Pose tagPose = relocalisation.relocalisation();
 
             if (tagPose != null) {
-                Pose pedroPose = ConvertToPedroPose.convertToPedroPose(tagPose);
+                Pose pedroPose = tagPose;
                 if (pedroPose != null) {
                     follower.setPose(pedroPose);
                     tagResetTimer.reset();
