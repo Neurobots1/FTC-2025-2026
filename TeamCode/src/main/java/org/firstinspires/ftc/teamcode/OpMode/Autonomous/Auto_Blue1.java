@@ -67,6 +67,8 @@ public class Auto_Blue1 extends OpMode {
                 follower.followPath(autoPathBuild.TakePatern, 1, true);
                 setPathState(1);
 
+                break;
+
             case 1:
 
 
@@ -95,6 +97,8 @@ public class Auto_Blue1 extends OpMode {
 
                 }
                 setPathState(2000);
+
+                break;
 
             case 2000:
                 follower.followPath(autoPathBuild.Shoot1, 1, true);
@@ -381,7 +385,20 @@ public class Auto_Blue1 extends OpMode {
 
     @Override
     public void init() {
+        pathTimer = new Timer();
+        actionTimer = new Timer();
+        opmodeTimer = new Timer();
         setPathState(0);
+
+        indexer     = new Indexer_Base(hardwareMap);
+        indexer_gpp = new Indexer_GPP(hardwareMap, indexer);
+        indexer_pgp = new Indexer_PGP(hardwareMap, indexer);
+        indexer_ppg = new Indexer_PPG(hardwareMap, indexer);
+
+
+        aprilTag = new AprilTagPipeline(hardwareMap);
+        aprilTag.startCamera();
+
         intkM = new IntakeMotor(hardwareMap);
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
@@ -394,9 +411,7 @@ public class Auto_Blue1 extends OpMode {
 
         //aprilTag = new AprilTagPipeline();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        pathTimer = new Timer();
-        actionTimer = new Timer();
-        opmodeTimer = new Timer();
+
 
         follower = Constants.createFollower(hardwareMap);
 

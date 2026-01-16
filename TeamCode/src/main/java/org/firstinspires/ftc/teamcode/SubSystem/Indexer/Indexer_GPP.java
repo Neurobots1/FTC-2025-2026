@@ -24,10 +24,23 @@ public class Indexer_GPP {
     public static double INDEXER_COLLECT_TIME = 0.5;
     private ElapsedTime ballEntryTimer;
 
-    public boolean isBusy() {
-        boolean isBusy = (gppState1 == ActionState.START ||gppState1 == ActionState.SWAP_TO_LEFT || gppState2 == ActionState.START || gppState2 == ActionState.SWAP_TO_LEFT);
-        return isBusy();
+    private final Indexer_Base base;
+
+    public Indexer_GPP(HardwareMap hardwareMap, Indexer_Base base) {
+        this.base = base;
+        this.intkM          = base.intkM;
+        this.indexLeftServo = base.indexLeftServo;
+        this.indexRightServo = base.indexRightServo;
+        this.indexGateFront = base.indexGateFront;
+        this.indexGateBack  = base.indexGateBack;
+        this.ballEntryTimer = new ElapsedTime();
     }
+
+    public boolean isBusy() {
+        return (gppState1 == ActionState.START || gppState1 == ActionState.SWAP_TO_LEFT
+                || gppState2 == ActionState.START || gppState2 == ActionState.SWAP_TO_LEFT);
+    }
+
 
     public void startLine1() {
         if (isBusy()) return;
@@ -48,6 +61,8 @@ public class Indexer_GPP {
 
 
 
+
+
     public void Line1() {
         switch (gppState1) {
 
@@ -61,7 +76,7 @@ public class Indexer_GPP {
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 intkM.intake();
                 ballEntryTimer.reset();
-                gppState1 = ActionState.SWAP_TO_LEFT.SWAP_TO_LEFT;
+                gppState1 = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:

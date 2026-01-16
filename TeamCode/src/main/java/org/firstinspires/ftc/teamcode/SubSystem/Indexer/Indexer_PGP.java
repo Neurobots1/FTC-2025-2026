@@ -21,10 +21,22 @@ public class Indexer_PGP {
     public Servo indexGateBack;
     public static double INDEXER_COLLECT_TIME = 0.5;
     private ElapsedTime ballEntryTimer;
-    public boolean isBusy() {
-        boolean isBusy = (pgpState1 == ActionState.START ||pgpState1 == ActionState.SWAP_TO_LEFT || pgpState3 == ActionState.START || pgpState3 == ActionState.SWAP_TO_LEFT);
-        return isBusy();
+
+    public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base) {
+        this.indexerBase    = base;
+        this.intkM          = base.intkM;
+        this.indexLeftServo = base.indexLeftServo;
+        this.indexRightServo = base.indexRightServo;
+        this.indexGateFront = base.indexGateFront;
+        this.indexGateBack  = base.indexGateBack;
+        this.ballEntryTimer = new ElapsedTime();
     }
+
+    public boolean isBusy() {
+        return (pgpState1 == ActionState.START || pgpState1 == ActionState.SWAP_TO_LEFT
+                || pgpState3 == ActionState.START || pgpState3 == ActionState.SWAP_TO_LEFT);
+    }
+
 
     public void startLine1() {
         if (isBusy()) return;

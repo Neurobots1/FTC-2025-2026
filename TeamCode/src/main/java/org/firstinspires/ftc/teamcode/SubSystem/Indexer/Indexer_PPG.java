@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -21,10 +22,22 @@ public class Indexer_PPG {
     public static double INDEXER_COLLECT_TIME = 0.5;
     private ElapsedTime ballEntryTimer;
 
-    public boolean isBusy() {
-        boolean isBusy = (ppgState2 == ActionState.START ||ppgState2 == ActionState.SWAP_TO_LEFT || ppgState3 == ActionState.START || ppgState3 == ActionState.SWAP_TO_LEFT);
-        return isBusy();
+    public Indexer_PPG(HardwareMap hardwareMap, Indexer_Base base) {
+        this.indexerBase    = base;
+        this.intkM          = base.intkM;
+        this.indexLeftServo = base.indexLeftServo;
+        this.indexRightServo = base.indexRightServo;
+        this.indexGateFront = base.indexGateFront;
+        this.indexGateBack  = base.indexGateBack;
+        this.ballEntryTimer = new ElapsedTime();
     }
+
+
+    public boolean isBusy() {
+        return (ppgState2 == ActionState.START || ppgState2 == ActionState.SWAP_TO_LEFT
+                || ppgState3 == ActionState.START || ppgState3 == ActionState.SWAP_TO_LEFT);
+    }
+
 
     public void startLine2() {
         if (isBusy()) return;
