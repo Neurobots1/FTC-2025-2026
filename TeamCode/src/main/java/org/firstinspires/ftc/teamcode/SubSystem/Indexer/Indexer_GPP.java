@@ -10,11 +10,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Indexer_GPP {
     private Indexer_Base indexerBase;
-    private enum GPPstate1 {IDLE, START, SWAP_TO_LEFT, FINISH}
-    public GPPstate1 gppState1 = GPPstate1.IDLE;
-
-    private enum GPPstate2 {IDLE, START, SWAP_TO_LEFT, FINISH}
-    public GPPstate2 gppState2 = GPPstate2.IDLE;
+    private enum ActionState {IDLE, START, SWAP_TO_LEFT, FINISH}
+    public ActionState gppState1 = ActionState.IDLE;
+    public ActionState gppState2 = ActionState.IDLE;
 
 
 
@@ -25,6 +23,25 @@ public class Indexer_GPP {
     public Servo indexGateBack;
     public static double INDEXER_COLLECT_TIME = 0.5;
     private ElapsedTime ballEntryTimer;
+
+    public boolean isBusy() {
+        boolean isBusy = (gppState1 == ActionState.START ||gppState1 == ActionState.SWAP_TO_LEFT || gppState2 == ActionState.START || gppState2 == ActionState.SWAP_TO_LEFT);
+        return isBusy();
+    }
+
+    public void startLine1() {
+        if (isBusy()) return;
+        if (gppState1 == ActionState.IDLE || gppState1 == ActionState.FINISH) {
+            gppState1 = ActionState.START;
+        }
+    }
+
+    public void startLine2() {
+        if (isBusy()) return;
+        if (gppState2 == ActionState.IDLE || gppState2 == ActionState.FINISH) {
+            gppState2 = ActionState.START;
+        }
+    }
 
 
 
@@ -44,7 +61,7 @@ public class Indexer_GPP {
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 intkM.intake();
                 ballEntryTimer.reset();
-                gppState1 = GPPstate1.SWAP_TO_LEFT;
+                gppState1 = ActionState.SWAP_TO_LEFT.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
@@ -53,7 +70,7 @@ public class Indexer_GPP {
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                     ballEntryTimer.reset();
-                    gppState1 = GPPstate1.FINISH;
+                    gppState1 = ActionState.FINISH;
                 }
                 break;
 
@@ -64,7 +81,7 @@ public class Indexer_GPP {
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    gppState1 = GPPstate1.IDLE;
+                    gppState1 = ActionState.IDLE;
 
                 }
                 break;
@@ -89,7 +106,7 @@ public class Indexer_GPP {
                     indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                     intkM.intake();
                     ballEntryTimer.reset();
-                    gppState2 = GPPstate2.SWAP_TO_LEFT;
+                    gppState2 = ActionState.SWAP_TO_LEFT;
                     break;
 
                 case SWAP_TO_LEFT:
@@ -98,7 +115,7 @@ public class Indexer_GPP {
                         indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                         indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                         ballEntryTimer.reset();
-                        gppState2 = GPPstate2.FINISH;
+                        gppState2 = ActionState.FINISH;
                     }
                     break;
 
@@ -109,11 +126,13 @@ public class Indexer_GPP {
                         indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                         indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                         intkM.stop();
-                        gppState2 = GPPstate2.IDLE;
+                        gppState2 = ActionState.IDLE;
 
                     }
                     break;
+
             }
+
         }
 
     }

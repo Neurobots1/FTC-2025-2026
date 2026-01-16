@@ -7,11 +7,9 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
 public class Indexer_PPG {
     private Indexer_Base indexerBase;
-    private enum PPGstate2 {IDLE, START, SWAP_TO_LEFT, FINISH}
-    public Indexer_PPG.PPGstate2 ppgState2 = Indexer_PPG.PPGstate2.IDLE;
-
-    private enum PPGstate3 {IDLE, START, SWAP_TO_LEFT, FINISH}
-    public Indexer_PPG.PPGstate3 ppgState3 = Indexer_PPG.PPGstate3.IDLE;
+    private enum ActionState {IDLE, START, SWAP_TO_LEFT, FINISH}
+    public ActionState ppgState2 = ActionState.IDLE;
+    public ActionState ppgState3 = ActionState.IDLE;
 
 
 
@@ -22,6 +20,25 @@ public class Indexer_PPG {
     public Servo indexGateBack;
     public static double INDEXER_COLLECT_TIME = 0.5;
     private ElapsedTime ballEntryTimer;
+
+    public boolean isBusy() {
+        boolean isBusy = (ppgState2 == ActionState.START ||ppgState2 == ActionState.SWAP_TO_LEFT || ppgState3 == ActionState.START || ppgState3 == ActionState.SWAP_TO_LEFT);
+        return isBusy();
+    }
+
+    public void startLine2() {
+        if (isBusy()) return;
+        if (ppgState2 == ActionState.IDLE || ppgState2 == ActionState.FINISH) {
+            ppgState2 = ActionState.START;
+        }
+    }
+
+    public void startLine3() {
+        if (isBusy()) return;
+        if (ppgState3 == ActionState.IDLE || ppgState3 == ActionState.FINISH) {
+            ppgState3 = ActionState.START;
+        }
+    }
 
     public void Line2() {
         switch (ppgState2) {
@@ -36,7 +53,7 @@ public class Indexer_PPG {
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 intkM.intake();
                 ballEntryTimer.reset();
-                ppgState2 = Indexer_PPG.PPGstate2.SWAP_TO_LEFT;
+                ppgState2 = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
@@ -45,7 +62,7 @@ public class Indexer_PPG {
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                     ballEntryTimer.reset();
-                    ppgState2 = Indexer_PPG.PPGstate2.FINISH;
+                    ppgState2 = ActionState.FINISH;
                 }
                 break;
 
@@ -56,7 +73,7 @@ public class Indexer_PPG {
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    ppgState2 = Indexer_PPG.PPGstate2.IDLE;
+                    ppgState2 = ActionState.IDLE;
 
                 }
                 break;
@@ -81,7 +98,7 @@ public class Indexer_PPG {
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 intkM.intake();
                 ballEntryTimer.reset();
-                ppgState3 = Indexer_PPG.PPGstate3.SWAP_TO_LEFT;
+                ppgState3 = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
@@ -90,7 +107,7 @@ public class Indexer_PPG {
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                     ballEntryTimer.reset();
-                    ppgState3 = Indexer_PPG.PPGstate3.FINISH;
+                    ppgState3 = ActionState.FINISH;
                 }
                 break;
 
@@ -101,7 +118,7 @@ public class Indexer_PPG {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     intkM.stop();
-                    ppgState3 = Indexer_PPG.PPGstate3.IDLE;
+                    ppgState3 = ActionState.IDLE;
 
                 }
                 break;
