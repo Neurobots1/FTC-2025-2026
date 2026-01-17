@@ -38,12 +38,8 @@ public class AprilTagPipeline extends OpenCvPipeline {
     private YawPitchRollAngles cameraorientation =
             new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 180, 0);
 
-
-
-
     public AprilTagPipeline(HardwareMap hardwareMap) {
         this.hardwareMap = hardwareMap;
-
 
        /* aprilTag = new AprilTagProcessorImpl.Builder()
                 .setDrawAxes(true)
@@ -52,16 +48,13 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .build(); */
     }
 
-
-
     public void startCamera() {
         aprilTag = new AprilTagProcessor.Builder()
-
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
                 .setDrawTagOutline(true)
                 .setLensIntrinsics(549.651, 549.651, 317.108, 236.644)
-                .setCameraPose(cameraPosition,cameraorientation)
+                .setCameraPose(cameraPosition, cameraorientation)
                 .build();
 
         visionPortal = new VisionPortal.Builder()
@@ -72,12 +65,45 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .enableLiveView(true)
                 .build();
 
-           visionPortal.setProcessorEnabled(aprilTag, true);
+        visionPortal.setProcessorEnabled(aprilTag, true);
+    }
+
+    /**
+     * Arrête la caméra et libère les ressources
+     * Cette méthode doit être appelée dans stop() de l'OpMode
+     */
+    public void stopCamera() {
+        if (visionPortal != null) {
+            // Désactive le processeur AprilTag
+            if (aprilTag != null) {
+                visionPortal.setProcessorEnabled(aprilTag, false);
+            }
+
+            // Arrête le streaming
+            visionPortal.stopStreaming();
+
+            // Ferme complètement le VisionPortal
+            visionPortal.close();
+
+            // Libère les références
+            visionPortal = null;
+        }
+
+        // Réinitialise la dernière détection
+        latestDetection = null;
+    }
+
+    /**
+     * Vérifie si la caméra est active
+     * @return true si la caméra est en cours d'exécution
+     */
+    public boolean isCameraActive() {
+        return visionPortal != null && visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING;
     }
 
     @Override
     public Mat processFrame(Mat input) {
-        if (aprilTag == null) return input; // nouveau
+        if (aprilTag == null) return input;
         List<AprilTagDetection> detections = aprilTag.getDetections();
 
         for (AprilTagDetection tag : detections) {
@@ -111,5 +137,3 @@ public class AprilTagPipeline extends OpenCvPipeline {
         return aprilTag.getDetections();
     }
 }
-
-

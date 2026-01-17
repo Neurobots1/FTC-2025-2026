@@ -68,7 +68,6 @@ public class Auto_Blue1 extends OpMode {
     private boolean usePPGMode = false;
     private boolean colorSensorActivate = false;
 
-    // on lock le mode une fois
     private boolean modeLocked = false;
     boolean AutoShoot = false;
 
@@ -154,7 +153,6 @@ public class Auto_Blue1 extends OpMode {
         switch (pathState) {
 
             case 0:
-                // démarre TakePatern une fois
                 if (!follower.isBusy()) {
                     follower.followPath(TakePatern, 1, true);
                     setPathState(1);
@@ -162,7 +160,6 @@ public class Auto_Blue1 extends OpMode {
                 break;
 
             case 1:
-                // Attends un peu pour laisser la cam détecter, puis lock le mode une fois
                 if (!modeLocked && pathTimer.getElapsedTimeSeconds() >= 3.0) {
                     int id = getAprilTagID();
 
@@ -176,7 +173,6 @@ public class Auto_Blue1 extends OpMode {
                         usePPGMode = true;
                         telemetry.addData("Mode", "PPG Mode Activé - ID 23 détecté");
                     } else {
-                        // aucun tag -> reste "normal" (aucun mode)
                         telemetry.addData("Mode", "Normal (aucun tag détecté)");
                     }
 
@@ -186,38 +182,31 @@ public class Auto_Blue1 extends OpMode {
                 break;
 
             case 40:
-
-                // sinon followPath peut être ignoré si follower est busy
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot1, 1, true);
                     shooterEnabled = true;
-
-
                     setPathState(3000);
                 }
                 break;
 
+            // PREMIER TIR - Specimen preload
             case 3000:
-                // Attends que le robot soit posé et que le flywheel soit ready
-                // (tu avais un >=3, je le garde)
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
                     AutoShoot = true;
-
-
-                    if (Shooter.flywheelReady()) {
-                        intkM.intake();
-                        setPathState(2);
-                    }
+                    intkM.intake();
+                    setPathState(2);
                 }
                 break;
 
             case 2:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 2) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
                     AutoShoot = false;
+                    intkM.stop();
                     setPathState(3);
                 }
                 break;
 
+            // ALLER CHERCHER SAMPLE 1
             case 3:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkSt1, 1, true);
@@ -228,209 +217,204 @@ public class Auto_Blue1 extends OpMode {
             case 4:
                 if (!follower.isBusy()) {
                     indexer.IndexBlocker();
-                    intkM.slowIntake();
                     follower.followPath(IntkFi1, 0.3, true);
+                    setPathState(401);
+                }
+                break;
 
-
-                    if (useGPPMode && indexer_gpp != null && colorSensor.getDistance(DistanceUnit.MM) <= 80) {
-                        intkM.intake();
+            // DÉTECTION SAMPLE 1 avec TIMEOUT
+            case 401:
+                if (colorSensor.getDistance(DistanceUnit.MM) <= 80) {
+                    // Sample détecté
+                    if (useGPPMode && indexer_gpp != null) {
                         indexer_gpp.startLine1();
-                        setPathState(5);
-                    } else if (usePGPMode && indexer_pgp != null && colorSensor.getDistance(DistanceUnit.MM) <= 80) {
-                        intkM.intake();
+                    } else if (usePGPMode && indexer_pgp != null) {
                         indexer.indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                         indexer_pgp.startLine1Intake();
-                        setPathState(5);
-                    } else if (usePPGMode && colorSensor.getDistance(DistanceUnit.MM) <= 80) {
-                        intkM.intake();
-                        setPathState(5);
+                    } else if (usePPGMode && indexer_ppg != null) {
+                        indexer_ppg.startLine2(); // PPG utilise Line2 pour le premier sample
                     }
-
-
+                    setPathState(5);
+                } else if (actionTimer.getElapsedTimeSeconds() > 4.0) {
+                    // TIMEOUT - continuer sans sample
+                    telemetry.addData("Warning", "Sample 1 non détecté - timeout");
+                    setPathState(5);
                 }
                 break;
 
             case 5:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 5)  {
+                boolean sample1Ready = true;
+                if (useGPPMode && indexer_gpp != null) {
+                    sample1Ready = !indexer_gpp.isBusy();
+                } else if (usePGPMode && indexer_pgp != null) {
+                    sample1Ready = !indexer_pgp.isBusy();
+                } else if (usePPGMode && indexer_ppg != null) {
+                    sample1Ready = !indexer_ppg.isBusy();
+                }
+
+                if (!follower.isBusy() && sample1Ready && actionTimer.getElapsedTimeSeconds() > 1.0) {
                     follower.followPath(Shoot2, 1, true);
                     setPathState(6);
-
-
-            }
-
-
+                }
                 break;
 
+            // TIR SAMPLE 1
             case 6:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
                     AutoShoot = true;
 
-                    if (Shooter != null && Shooter.flywheelReady() && !follower.isBusy()) {
-                        setPathState(68);
+                    if (usePGPMode && indexer_pgp != null) {
+                        indexer_pgp.startLine1Outtake();
+                    } else {
+                        intkM.intake();
                     }
+
+                    setPathState(68);
                 }
                 break;
 
             case 68:
-                intkM.intake();
-                indexer_pgp.startLine1Outtake();
-                setPathState(4000);
-
-                break;
-
-            case 4000:
-
-                if (actionTimer.getElapsedTimeSeconds() > 6) {
-                    setPathState(-1);
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
+                    setPathState(7);
                 }
-
                 break;
 
+            // ALLER CHERCHER SAMPLE 2
             case 7:
                 if (!follower.isBusy()) {
-                    AutoShoot = false;
+                    follower.followPath(IntkSt2, 1, true);
                     setPathState(9);
                 }
                 break;
 
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkSt2, 1, true);
+                    indexer.IndexBlocker();
+                    follower.followPath(IntkFi2, 0.7, true);
                     setPathState(10);
                 }
                 break;
 
             case 10:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkFi2, 0.7, true);
-
+                // Attendre d'être proche du sample avant de démarrer l'indexer
+                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
                     if (useGPPMode && indexer_gpp != null) {
                         indexer_gpp.startLine2();
-                    } else if (usePGPMode) {
-                        intkM.intake();
+                    } else if (usePGPMode && indexer_pgp != null) {
+                        indexer_pgp.startLine3Intake();
                     } else if (usePPGMode && indexer_ppg != null) {
                         indexer_ppg.startLine2();
                     }
-
                     setPathState(11);
                 }
                 break;
 
             case 11:
-                if (!follower.isBusy()) {
+                boolean sample2Ready = true;
+                if (useGPPMode && indexer_gpp != null) {
+                    sample2Ready = !indexer_gpp.isBusy();
+                } else if (usePGPMode && indexer_pgp != null) {
+                    sample2Ready = !indexer_pgp.isBusy();
+                } else if (usePPGMode && indexer_ppg != null) {
+                    sample2Ready = !indexer_ppg.isBusy();
+                }
+
+                if (!follower.isBusy() && sample2Ready) {
                     follower.followPath(Shoot3, 1, true);
                     setPathState(12);
                 }
-
-               else if (!follower.isBusy()) {
-                    follower.followPath(Shoot3, 1, true);
-                    setPathState(12);
-                }
-
-               else if (!follower.isBusy()) {
-                    follower.followPath(Shoot3, 1, true);
-                    setPathState(12);
-                }
-
                 break;
 
+            // TIR SAMPLE 2
             case 12:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
                     AutoShoot = true;
-                    intkM.slowOuttake();
-
-
-                    if (Shooter != null && Shooter.flywheelReady()) {
-                        setPathState(69);
-                    }
+                    intkM.intake();
+                    setPathState(69);
                 }
                 break;
 
             case 69:
-                intkM.intake();
-                if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
                     setPathState(13);
                 }
                 break;
 
+            // ALLER CHERCHER SAMPLE 3
             case 13:
                 if (!follower.isBusy()) {
-                    AutoShoot = false;
+                    follower.followPath(IntkSt3, 1, true);
                     setPathState(14);
                 }
                 break;
 
             case 14:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkSt3, 1, true);
-                    intkM.intake();
+                    indexer.IndexBlocker();
+                    follower.followPath(IntkFi3, 0.7, true);
                     setPathState(15);
                 }
                 break;
 
             case 15:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkFi3, 0.7, true);
-                    indexer.IndexBlocker();
-
-                    if (useGPPMode) {
-                        intkM.intake();
+                // Attendre d'être proche du sample
+                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
+                    if (useGPPMode && indexer_gpp != null) {
+                        indexer_gpp.startLine2(); // GPP n'a que 2 lignes
                     } else if (usePGPMode && indexer_pgp != null) {
                         indexer_pgp.startLine3Intake();
                     } else if (usePPGMode && indexer_ppg != null) {
                         indexer_ppg.startLine3();
                     }
-
                     setPathState(16);
                 }
                 break;
 
             case 16:
-                if (!follower.isBusy()) {
-                    follower.followPath(Shoot4, 1, true);
-                    setPathState(17);
+                boolean sample3Ready = true;
+                if (useGPPMode && indexer_gpp != null) {
+                    sample3Ready = !indexer_gpp.isBusy();
+                } else if (usePGPMode && indexer_pgp != null) {
+                    sample3Ready = !indexer_pgp.isBusy();
+                } else if (usePPGMode && indexer_ppg != null) {
+                    sample3Ready = !indexer_ppg.isBusy();
                 }
 
-                if (!follower.isBusy() && indexer_pgp.isBusy()) {
-                    follower.followPath(Shoot4, 1, true);
-                    setPathState(17);
-                }
-
-                if (!follower.isBusy() && indexer_ppg.isBusy()) {
+                if (!follower.isBusy() && sample3Ready) {
                     follower.followPath(Shoot4, 1, true);
                     setPathState(17);
                 }
                 break;
 
+            // TIR SAMPLE 3 (FINAL)
             case 17:
-                if (!follower.isBusy()) {
-                    intkM.slowOuttake();
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
                     AutoShoot = true;
-
-                    if (Shooter != null && Shooter.flywheelReady() && !follower.isBusy()) {
-                        setPathState(70);
-                    }
+                    intkM.intake();
+                    setPathState(70);
                 }
                 break;
 
             case 70:
-                if (!follower.isBusy()) {
-                    intkM.intake();
-                    if (actionTimer.getElapsedTimeSeconds() > 2) {
-                        setPathState(18);
-                    }
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
+                    setPathState(18);
                 }
                 break;
 
             case 18:
-                if (!follower.isBusy()) {
-                    AutoShoot = false;
-                    setPathState(-1);
-                }
+                // Autonomous terminé
+                shooterEnabled = false;
+                setPathState(-1);
                 break;
 
             case -1:
-                // idle
+                // Idle - Autonomous terminé
                 break;
         }
     }
@@ -452,8 +436,15 @@ public class Auto_Blue1 extends OpMode {
     }
 
     @Override
-    public void stop(){
-
+    public void stop() {
+        if (aprilTag != null) {
+            aprilTag.stopCamera();
+        }
+        if (intkM != null) {
+            intkM.stop();
+        }
+        shooterEnabled = false;
+        AutoShoot = false;
     }
 
     public void setPathState(int pState) {
@@ -464,9 +455,9 @@ public class Auto_Blue1 extends OpMode {
 
     @Override
     public void loop() {
-
         Shooter.update();
-        if (colorSensor.getDistance(DistanceUnit.MM) <= 70){
+
+        if (colorSensor.getDistance(DistanceUnit.MM) <= 70) {
             colorSensorActivate = true;
         }
 
@@ -475,6 +466,7 @@ public class Auto_Blue1 extends OpMode {
         Shooter.updateShooting(AutoShoot, pose.getX(), pose.getY(), distance);
         follower.update();
 
+        // Mise à jour des indexers selon le mode
         if (useGPPMode && indexer_gpp != null) {
             indexer_gpp.Line1();
             indexer_gpp.Line2();
@@ -491,14 +483,9 @@ public class Auto_Blue1 extends OpMode {
             indexer_ppg.Line3();
         }
 
-
-
-        // si ton Launcher a un update(), tu peux le mettre; sinon enlève
-        // (je ne l’ai pas forcé ici pour ne pas casser compilation)
-        // if (Shooter != null) Shooter.update();
-
         autonomousPathUpdate();
 
+        // Telemetry
         telemetry.addData("Mode", useGPPMode ? "GPP" : (usePGPMode ? "PGP" : (usePPGMode ? "PPG" : "Normal")));
         telemetry.addData("ModeLocked", modeLocked);
         telemetry.addData("AprilTag ID", getAprilTagID());
@@ -509,14 +496,32 @@ public class Auto_Blue1 extends OpMode {
 
         telemetry.addData("x", follower.getPose().getX());
         telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("heading", Math.toDegrees(follower.getPose().getHeading()));
 
         telemetry.addData("shooterEnabled", shooterEnabled);
-        telemetry.addData("usePIDF", usePIDF);
-        telemetry.addData("rawPowerMode", rawPowerMode);
-        telemetry.addData("targetTicksPerSecond", targetTicksPerSecond);
-        telemetry.addData("GPP State indxer", indexer_gpp.gppState1);
-        telemetry.addData("ColorSensorActivate", colorSensor);
+        telemetry.addData("AutoShoot", AutoShoot);
+
+        if (usePGPMode && indexer_pgp != null) {
+            telemetry.addData("PGP State1", indexer_pgp.pgpState1);
+            telemetry.addData("PGP State1_OT", indexer_pgp.pgpState1_OT);
+            telemetry.addData("PGP State3", indexer_pgp.pgpState3);
+            telemetry.addData("PGP isBusy", indexer_pgp.isBusy());
+        }
+
+        if (useGPPMode && indexer_gpp != null) {
+            telemetry.addData("GPP State1", indexer_gpp.gppState1);
+            telemetry.addData("GPP State2", indexer_gpp.gppState2);
+            telemetry.addData("GPP isBusy", indexer_gpp.isBusy());
+        }
+
+        if (usePPGMode && indexer_ppg != null) {
+            telemetry.addData("PPG State2", indexer_ppg.ppgState2);
+            telemetry.addData("PPG State3", indexer_ppg.ppgState3);
+            telemetry.addData("PPG isBusy", indexer_ppg.isBusy());
+        }
+
+        telemetry.addData("ColorSensor Distance", colorSensor.getDistance(DistanceUnit.MM));
+        telemetry.addData("ColorSensorActivate", colorSensorActivate);
 
         telemetry.update();
     }
@@ -526,7 +531,6 @@ public class Auto_Blue1 extends OpMode {
         pathTimer = new Timer();
         actionTimer = new Timer();
         opmodeTimer = new Timer();
-
 
         indexer = new Indexer_Base(hardwareMap);
         indexer_gpp = new Indexer_GPP(hardwareMap, indexer);
@@ -547,8 +551,6 @@ public class Auto_Blue1 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-
-
 
         Shooter = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         Servo blocker = hardwareMap.get(Servo.class, "Blocker");
@@ -576,6 +578,4 @@ public class Auto_Blue1 extends OpMode {
         double dy = gy - follower.getPose().getY();
         return Math.hypot(dx, dy);
     }
-
-
 }

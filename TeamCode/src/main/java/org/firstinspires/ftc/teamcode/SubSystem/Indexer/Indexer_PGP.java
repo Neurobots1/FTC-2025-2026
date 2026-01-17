@@ -13,16 +13,16 @@ public class Indexer_PGP {
     public ActionState pgpState3 = ActionState.IDLE;
     public ActionState pgpState1_OT = ActionState.IDLE;
 
-
-
-
     public IntakeMotor intkM;
     public Servo indexLeftServo;
     public Servo indexRightServo;
     public Servo indexGateFront;
     public Servo indexGateBack;
     public static double INDEXER_COLLECT_TIME = 1;
-    private ElapsedTime ballEntryTimer;
+
+    private ElapsedTime line1IntakeTimer;
+    private ElapsedTime line3IntakeTimer;
+    private ElapsedTime line1OuttakeTimer;
 
     public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base) {
         this.indexerBase    = base;
@@ -31,73 +31,67 @@ public class Indexer_PGP {
         this.indexRightServo = base.indexRightServo;
         this.indexGateFront = base.indexGateFront;
         this.indexGateBack  = base.indexGateBack;
-        this.ballEntryTimer = new ElapsedTime();
+        this.line1IntakeTimer = new ElapsedTime();
+        this.line3IntakeTimer = new ElapsedTime();
+        this.line1OuttakeTimer = new ElapsedTime();
     }
 
     public boolean isBusy() {
-        return (pgpState1 == ActionState.START || pgpState1 == ActionState.SWAP_TO_LEFT
-                || pgpState3 == ActionState.START || pgpState3 == ActionState.SWAP_TO_LEFT);
+        return (pgpState1 != ActionState.IDLE
+                || pgpState3 != ActionState.IDLE
+                || pgpState1_OT != ActionState.IDLE);
     }
 
-
     public void startLine1Intake() {
-        if (isBusy()) return;
-        if (pgpState1 == ActionState.IDLE || pgpState1 == ActionState.FINISH) {
-            pgpState1 = ActionState.START;
-        }
+        if (pgpState1 != ActionState.IDLE) return;
+        line1IntakeTimer.reset();
+        pgpState1 = ActionState.START;
     }
 
     public void startLine3Intake() {
-        if (isBusy()) return;
-        if (pgpState3 == ActionState.IDLE || pgpState3 == ActionState.FINISH) {
-            pgpState3 = ActionState.START;
-        }
+        if (pgpState3 != ActionState.IDLE) return;
+        line3IntakeTimer.reset();
+        pgpState3 = ActionState.START;
     }
+
     public void startLine1Outtake() {
-        if (isBusy()) return;
-        if (pgpState1_OT == ActionState.IDLE || pgpState1_OT == ActionState.FINISH) {
-            pgpState1_OT = ActionState.START;
-        }
+        if (pgpState1_OT != ActionState.IDLE) return;
+        line1OuttakeTimer.reset();
+        pgpState1_OT = ActionState.START;
     }
-
-
-
-
-
 
     public void Line1Intake() {
         switch (pgpState1) {
 
             case IDLE:
-
                 break;
 
             case START:
                 indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                 indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                ballEntryTimer.reset();
+                intkM.intake();
+                line1IntakeTimer.reset();
                 pgpState1 = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
-                if (ballEntryTimer.seconds() >= 1) {
+                if (line1IntakeTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    ballEntryTimer.reset();
+                    line1IntakeTimer.reset();
                     pgpState1 = ActionState.FINISH;
                 }
                 break;
 
-
             case FINISH:
-                if (ballEntryTimer.seconds() >= 1) {
+                if (line1IntakeTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     intkM.stop();
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                     pgpState1 = ActionState.IDLE;
-
                 }
                 break;
         }
@@ -107,45 +101,33 @@ public class Indexer_PGP {
         switch (pgpState1_OT) {
 
             case IDLE:
-                //ballEntryTimer.reset();
                 break;
 
             case START:
-                if (ballEntryTimer.seconds() >= 3) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-
-                    pgpState1_OT = ActionState.SWAP_TO_LEFT;
-                }
+                indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
+                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
+                indexGateBack.setPosition(Indexer_Base.servointkB_Open);
+                intkM.intake(); // Pousse la balle vers le shooter
+                line1OuttakeTimer.reset();
+                pgpState1_OT = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
-                if (ballEntryTimer.seconds() >= 3) {
+                if (line1OuttakeTimer.seconds() >= 1.5) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    ballEntryTimer.reset();
+                    intkM.stop();
                     pgpState1_OT = ActionState.IDLE;
                 }
                 break;
         }
     }
 
-
-
-
-
-
-
-
-
-
     public void Line3Intake() {
         switch (pgpState3) {
 
             case IDLE:
-
                 break;
 
             case START:
@@ -153,32 +135,29 @@ public class Indexer_PGP {
                 indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 intkM.intake();
-                ballEntryTimer.reset();
+                line3IntakeTimer.reset();
                 pgpState3 = ActionState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
-                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                if (line3IntakeTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                    ballEntryTimer.reset();
+                    line3IntakeTimer.reset();
                     pgpState3 = ActionState.FINISH;
                 }
                 break;
 
-
             case FINISH:
-                if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
+                if (line3IntakeTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    intkM.slowOuttake();
+                    intkM.stop();
                     pgpState3 = ActionState.IDLE;
-
                 }
                 break;
         }
     }
 }
-
