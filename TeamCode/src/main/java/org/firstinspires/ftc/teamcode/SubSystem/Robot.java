@@ -44,6 +44,11 @@ public class Robot {
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
     public void init(HardwareMap hw) {
+
+        aprilTag = new AprilTagPipeline(hw);
+        aprilTag.startCamera();
+        relocalisation = new Relocalisation(hw, aprilTag);
+
         follower = Constants.createFollower(hw);
         follower.update();
 
@@ -60,9 +65,7 @@ public class Robot {
         // default goal as blue until alliance is set
         headingLockController.setGoalBlue();
 
-        aprilTag = new AprilTagPipeline(hw);
-        aprilTag.startCamera();
-        relocalisation = new Relocalisation(hw, aprilTag);
+
 
         indexerBase = new Indexer_Base(hw);
         indexerBase.StartIndexPose();

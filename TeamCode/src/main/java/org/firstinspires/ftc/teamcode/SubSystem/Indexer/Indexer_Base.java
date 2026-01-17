@@ -36,6 +36,7 @@ public class Indexer_Base {
     public static double indexer_L_Retracted = 1;//Indexer1 Left
     public static double indexer_L_Engage = 0.0;//Indexer1 Center
     public static double indexer_R_Engage = 1.0;//Indexer2 Center
+    public static double indexer_R_Blocker = 0.5;//Indexer 2 Blocker
     public static double indexer_R_Retracted = 0.0;//Indexer2 Right
 
     public static double servointkF_Closed = 1;//Servo Intk ferme(les balles ne peuvent pas passer)
@@ -76,6 +77,10 @@ public class Indexer_Base {
         if (rightPickState == ActionState.IDLE || rightPickState == ActionState.DONE) {
             rightPickState = ActionState.START;
         }
+    }
+
+    public void IndexBlocker(){
+        indexRightServo.setPosition(indexer_R_Blocker);
     }
 
 
@@ -205,7 +210,7 @@ public class Indexer_Base {
 
     public void StartIndexPose(){
         indexLeftServo.setPosition(indexer_L_Retracted);
-        indexRightServo.setPosition(indexer_R_Retracted);
+        indexRightServo.setPosition(indexer_R_Engage);
         indexGateBack.setPosition(servointkB_Open);
         indexGateFront.setPosition(servointkF_Open);
 

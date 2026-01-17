@@ -18,7 +18,7 @@ public class IntakeMotor {
 
     // Method to run the motor for intaking at full speed (positive power)
     public void intake() {
-        intakeMotor.setPower(1.0);  // Run motor at full speed forward for intake
+        intakeMotor.setPower(1);  // Run motor at full speed forward for intake
     }
 
     public void slowIntake() {

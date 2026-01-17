@@ -10,7 +10,7 @@ public class Auto_pathBuild_Blue {
     private Follower follower;
 
     public final Pose startPose = new Pose(33, 136, Math.toRadians(88));
-    private final Pose SeePatern = new Pose(49, 95, Math.toRadians(90));
+    private final Pose SeePatern = new Pose(49, 95, Math.toRadians(70));
     private final Pose Shoot = new Pose(49, 95, Math.toRadians(136));
     private final Pose IntkStart1 = new Pose(50, 85, Math.toRadians(180));
     private final Pose IntkFinal1 = new Pose(16, 85, Math.toRadians(180));

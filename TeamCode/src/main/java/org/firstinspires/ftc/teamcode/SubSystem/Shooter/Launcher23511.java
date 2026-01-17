@@ -143,6 +143,61 @@ public class Launcher23511 {
         return Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
     }
 
+    public void updateShootingAuto(boolean AutoShoot, double x, double y, double distance) {
+        boolean inZone = isInShootingZone(x, y);
+
+        if (!inZone && shootState != ShootState.IDLE) {
+            cancelShooting();
+        }
+
+        if (AutoShoot && !shootButtonLast) {
+            if (shootState == ShootState.IDLE && inZone) {
+                shootState = ShootState.ARMING;
+
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
+
+            } else {
+                cancelShooting();
+            }
+        }
+
+
+        switch (shootState) {
+            case IDLE:
+                headingLock = false;
+                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+                setFlywheelTicks(0);
+                break;
+
+            case ARMING:
+                headingLock = false;
+                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+
+                // continuously update target based on current distance
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
+                update();
+                if (flywheelReady()) {
+                    shootState = ShootState.FIRING;
+                }
+                break;
+
+            case FIRING:
+                headingLock = false;
+
+                // still update target while firing (in case robot moves)
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
+                update();
+                if (blocker != null) blocker.setPosition(BlockerOpenPosition);
+                break;
+        }
+    }
+
     /************************* SHOOTING STATE MACHINE *************************/
     public void updateShooting(boolean shootButton, double x, double y, double distance) {
         boolean inZone = isInShootingZone(x, y);
