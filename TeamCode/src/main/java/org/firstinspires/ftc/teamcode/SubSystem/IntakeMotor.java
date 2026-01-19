@@ -12,24 +12,22 @@ public class IntakeMotor {
 
     public IntakeMotor(HardwareMap hardwareMap) {
         intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
-        // Set the motor direction to FORWARD or REVERSE based on your setup
 
     }
 
-    // Method to run the motor for intaking at full speed (positive power)
     public void intake() {
-        intakeMotor.setPower(1);  // Run motor at full speed forward for intake
+        intakeMotor.setPower(1);
     }
 
     public void slowIntake() {
-        intakeMotor.setPower(0.5);  // Run motor at full speed forward for intake
+        intakeMotor.setPower(0.7);
     }
 
     public void SlowIntk(){
-        intakeMotor.setPower(-0.7); // Run motor at low speed for shooting
+        intakeMotor.setPower(-0.7);
     }
 
-    // Method to run the motor for outtaking at half speed (negative power)
+
     public void outtake() {
         intakeMotor.setPower(-0.7);  // Run motor at 3/4 speed in reverse for outtake
     }

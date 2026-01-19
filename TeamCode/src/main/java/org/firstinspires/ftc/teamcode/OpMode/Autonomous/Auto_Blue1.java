@@ -191,14 +191,15 @@ public class Auto_Blue1 extends OpMode {
                 if (!follower.isBusy()) {
                     follower.followPath(Shoot1, 1, true);
                     shooterEnabled = true;
+                    AutoShoot = true;
                     setPathState(3);
                 }
                 break;
 
             case 3:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
-                    intkM.intake();
+
+                    intkM.slowIntake();
                     setPathState(4);
                 }
                 break;
@@ -220,6 +221,7 @@ public class Auto_Blue1 extends OpMode {
 
             case 6:
                 if (!follower.isBusy()) {
+                    intkM.intake();
                     indexer.IndexBlocker();
                     follower.followPath(IntkFi1, 0.3, true);
                     setPathState(7);
@@ -239,7 +241,7 @@ public class Auto_Blue1 extends OpMode {
                         }
                     }
                     setPathState(8);
-                } else if (actionTimer.getElapsedTimeSeconds() > 4.0) {
+                } else if (actionTimer.getElapsedTimeSeconds() > 3.0) {
                     telemetry.addData("Warning", "Sample 1 non détecté - timeout");
                     setPathState(8);
                 }
@@ -260,19 +262,30 @@ public class Auto_Blue1 extends OpMode {
 
                 if (!follower.isBusy() && sample1Ready && actionTimer.getElapsedTimeSeconds() > 1.0) {
                     follower.followPath(Shoot2, 1, true);
-                    setPathState(9);
+                    setPathState(200);
                 }
                 break;
             }
 
+
+            case 200:
+                if (!follower.isBusy()) {
+                    follower.followPath(Shoot2, 1, true);
+                    AutoShoot = true;
+                    intkM.slowIntake();
+                    setPathState(9);
+                }
+                break;
+
+
+
             case 9:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
 
                     if (!useNoSortMode && usePGPMode && indexer_pgp != null) {
                         indexer_pgp.startLine1Outtake();
                     } else {
-                        intkM.intake();
+                        intkM.slowIntake();
                     }
 
                     setPathState(10);
@@ -280,7 +293,7 @@ public class Auto_Blue1 extends OpMode {
                 break;
 
             case 10:
-                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                if (actionTimer.getElapsedTimeSeconds() > 3.0) {
                     AutoShoot = false;
                     intkM.stop();
                     setPathState(11);
@@ -332,6 +345,7 @@ public class Auto_Blue1 extends OpMode {
 
                 if (!follower.isBusy() && sample2Ready) {
                     follower.followPath(Shoot3, 1, true);
+                    AutoShoot = true;
                     setPathState(15);
                 }
                 break;
@@ -339,7 +353,6 @@ public class Auto_Blue1 extends OpMode {
 
             case 15:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
                     intkM.intake();
                     setPathState(16);
                 }
@@ -398,6 +411,7 @@ public class Auto_Blue1 extends OpMode {
 
                 if (!follower.isBusy() && sample3Ready) {
                     follower.followPath(Shoot4, 1, true);
+                    AutoShoot = true;
                     setPathState(21);
                 }
                 break;
@@ -405,7 +419,6 @@ public class Auto_Blue1 extends OpMode {
 
             case 21:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
                     intkM.intake();
                     setPathState(22);
                 }
@@ -554,7 +567,6 @@ public class Auto_Blue1 extends OpMode {
         indexer_gpp = new Indexer_GPP(hardwareMap, indexer);
         indexer_pgp = new Indexer_PGP(hardwareMap, indexer);
         indexer_ppg = new Indexer_PPG(hardwareMap, indexer);
-        indexer.IndexBlocker();
 
         robot = new Robot();
 
@@ -573,7 +585,7 @@ public class Auto_Blue1 extends OpMode {
         Shooter = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         Servo blocker = hardwareMap.get(Servo.class, "Blocker");
         Shooter.setBlocker(blocker);
-        Shooter.setFlywheelTicks(725);
+        Shooter.setFlywheelTicks(750);
         shooterEnabled = false;
         Shooter.init();
 

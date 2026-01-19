@@ -70,7 +70,6 @@ public class Indexer_PGP {
                 indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                 indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                intkM.intake();
                 line1IntakeTimer.reset();
                 pgpState1 = ActionState.SWAP_TO_LEFT;
                 break;
@@ -90,7 +89,7 @@ public class Indexer_PGP {
                     intkM.stop();
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                     pgpState1 = ActionState.IDLE;
                 }
                 break;
@@ -107,7 +106,6 @@ public class Indexer_PGP {
                 indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                 indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                intkM.intake(); // Pousse la balle vers le shooter
                 line1OuttakeTimer.reset();
                 pgpState1_OT = ActionState.SWAP_TO_LEFT;
                 break;
@@ -117,7 +115,6 @@ public class Indexer_PGP {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    intkM.stop();
                     pgpState1_OT = ActionState.IDLE;
                 }
                 break;
