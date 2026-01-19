@@ -198,7 +198,6 @@ public class Auto_Blue1 extends OpMode {
 
             case 3:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-
                     intkM.slowIntake();
                     setPathState(4);
                 }
@@ -223,7 +222,7 @@ public class Auto_Blue1 extends OpMode {
                 if (!follower.isBusy()) {
                     intkM.intake();
                     indexer.IndexBlocker();
-                    follower.followPath(IntkFi1, 0.3, true);
+                    follower.followPath(IntkFi1, 0.8, true);
                     setPathState(7);
                 }
                 break;
@@ -270,9 +269,9 @@ public class Auto_Blue1 extends OpMode {
 
             case 200:
                 if (!follower.isBusy()) {
-                    follower.followPath(Shoot2, 1, true);
+                    //follower.followPath(Shoot2, 1, true);
                     AutoShoot = true;
-                    intkM.slowIntake();
+                    //intkM.slowIntake();
                     setPathState(9);
                 }
                 break;
@@ -293,12 +292,20 @@ public class Auto_Blue1 extends OpMode {
                 break;
 
             case 10:
-                if (actionTimer.getElapsedTimeSeconds() > 3.0) {
+                if (!useNoSortMode && usePGPMode && indexer_pgp != null) {
+                    if (!indexer_pgp.isBusy()) {
+                        AutoShoot = false;
+                        intkM.stop();
+                        setPathState(11);
+                    }
+                } else {
+                    // not PGP: don't wait on PGP indexer
                     AutoShoot = false;
                     intkM.stop();
                     setPathState(11);
                 }
                 break;
+
 
             case 11:
                 if (!follower.isBusy()) {
@@ -310,7 +317,7 @@ public class Auto_Blue1 extends OpMode {
             case 12:
                 if (!follower.isBusy()) {
                     indexer.IndexBlocker();
-                    follower.followPath(IntkFi2, 0.7, true);
+                    follower.followPath(IntkFi2, 0.6, true);
                     setPathState(13);
                 }
                 break;
@@ -468,14 +475,21 @@ public class Auto_Blue1 extends OpMode {
 
     @Override
     public void stop() {
-        if (aprilTag != null) {
-            aprilTag.stopCamera();
-        }
-        if (intkM != null) {
-            intkM.stop();
-        }
         shooterEnabled = false;
         AutoShoot = false;
+
+        if (intkM != null) intkM.stop();
+
+        final AprilTagPipeline at = aprilTag;
+        aprilTag = null;
+
+        if (at != null) {
+            new Thread(() -> {
+                try {
+                    at.stopCamera();   // if this blocks, it won't freeze the OpMode stop()
+                } catch (Exception ignored) {}
+            }).start();
+        }
     }
 
     public void setPathState(int pState) {

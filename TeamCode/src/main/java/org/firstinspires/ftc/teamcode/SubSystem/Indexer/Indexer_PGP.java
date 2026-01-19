@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class Indexer_PGP {
     private Indexer_Base indexerBase;
-    private enum ActionState {IDLE, START, SWAP_TO_LEFT, FINISH}
+    private enum ActionState {IDLE, START, SWAP_TO_LEFT, FINISH , RESET}
     public ActionState pgpState1 = ActionState.IDLE;
     public ActionState pgpState3 = ActionState.IDLE;
     public ActionState pgpState1_OT = ActionState.IDLE;
@@ -57,7 +57,7 @@ public class Indexer_PGP {
     public void startLine1Outtake() {
         if (pgpState1_OT != ActionState.IDLE) return;
         line1OuttakeTimer.reset();
-        pgpState1_OT = ActionState.START;
+        pgpState1_OT = ActionState.RESET;
     }
 
     public void Line1Intake() {
@@ -102,12 +102,22 @@ public class Indexer_PGP {
             case IDLE:
                 break;
 
+
+            case RESET:
+                intkM.slowIntake();
+                line1IntakeTimer.reset();
+                pgpState1_OT = ActionState.START;
+
+                break;
+
             case START:
-                indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
-                indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                line1OuttakeTimer.reset();
-                pgpState1_OT = ActionState.SWAP_TO_LEFT;
+                if (line1IntakeTimer.seconds()>2) {
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
+                    line1OuttakeTimer.reset();
+                    pgpState1_OT = ActionState.SWAP_TO_LEFT;
+                }
                 break;
 
             case SWAP_TO_LEFT:

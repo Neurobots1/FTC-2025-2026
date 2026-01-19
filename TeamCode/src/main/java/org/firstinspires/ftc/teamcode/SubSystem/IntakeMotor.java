@@ -2,9 +2,7 @@ package org.firstinspires.ftc.teamcode.SubSystem;
 
 
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class IntakeMotor {
@@ -20,13 +18,8 @@ public class IntakeMotor {
     }
 
     public void slowIntake() {
-        intakeMotor.setPower(0.7);
+        intakeMotor.setPower(0.8);
     }
-
-    public void SlowIntk(){
-        intakeMotor.setPower(-0.7);
-    }
-
 
     public void outtake() {
         intakeMotor.setPower(-0.7);  // Run motor at 3/4 speed in reverse for outtake
