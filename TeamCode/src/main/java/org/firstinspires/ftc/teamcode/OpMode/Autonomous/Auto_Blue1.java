@@ -66,10 +66,13 @@ public class Auto_Blue1 extends OpMode {
     private boolean useGPPMode = false;
     private boolean usePGPMode = false;
     private boolean usePPGMode = false;
-    private boolean colorSensorActivate = false;
+    private boolean useNoSortMode = false;
 
+    private boolean colorSensorActivate = false;
     private boolean modeLocked = false;
     boolean AutoShoot = false;
+
+    private int detectedAprilTagId = -1;
 
     public final Pose startPose = new Pose(33, 136, Math.toRadians(88));
     private final Pose SeePatern = new Pose(52, 95, Math.toRadians(70));
@@ -163,258 +166,265 @@ public class Auto_Blue1 extends OpMode {
                 if (!modeLocked && pathTimer.getElapsedTimeSeconds() >= 3.0) {
                     int id = getAprilTagID();
 
-                    if (id == 21) {
-                        useGPPMode = true;
-                        telemetry.addData("Mode", "GPP Mode Activé - ID 21 détecté");
-                    } else if (id == 22) {
-                        usePGPMode = true;
-                        telemetry.addData("Mode", "PGP Mode Activé - ID 22 détecté");
-                    } else if (id == 23) {
-                        usePPGMode = true;
-                        telemetry.addData("Mode", "PPG Mode Activé - ID 23 détecté");
-                    } else {
-                        telemetry.addData("Mode", "Normal (aucun tag détecté)");
+                    if (id == 21) useGPPMode = true;
+                    else if (id == 22) usePGPMode = true;
+                    else if (id == 23) usePPGMode = true;
+
+                    if (id != -1) {
+                        detectedAprilTagId = id;
+                        modeLocked = true;
+                        setPathState(2);
+                    } else if (pathTimer.getElapsedTimeSeconds() >= 4.0) {
+                        useNoSortMode = true;
+                        detectedAprilTagId = -1;
+                        modeLocked = true;
+                        if (aprilTag != null) {
+                            aprilTag.stopCamera();
+                            aprilTag = null;
+                        }
+                        setPathState(2);
                     }
-
-                    modeLocked = true;
-                    setPathState(40);
-                }
-                break;
-
-            case 40:
-                if (!follower.isBusy()) {
-                    follower.followPath(Shoot1, 1, true);
-                    shooterEnabled = true;
-                    setPathState(3000);
-                }
-                break;
-
-            // PREMIER TIR - Specimen preload
-            case 3000:
-                if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
-                    intkM.intake();
-                    setPathState(2);
                 }
                 break;
 
             case 2:
-                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    AutoShoot = false;
-                    intkM.stop();
+                if (!follower.isBusy()) {
+                    follower.followPath(Shoot1, 1, true);
+                    shooterEnabled = true;
                     setPathState(3);
                 }
                 break;
 
-            // ALLER CHERCHER SAMPLE 1
             case 3:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt1, 1, true);
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
+                    AutoShoot = true;
+                    intkM.intake();
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                if (!follower.isBusy()) {
-                    indexer.IndexBlocker();
-                    follower.followPath(IntkFi1, 0.3, true);
-                    setPathState(401);
-                }
-                break;
-
-            // DÉTECTION SAMPLE 1 avec TIMEOUT
-            case 401:
-                if (colorSensor.getDistance(DistanceUnit.MM) <= 80) {
-                    // Sample détecté
-                    if (useGPPMode && indexer_gpp != null) {
-                        indexer_gpp.startLine1();
-                    } else if (usePGPMode && indexer_pgp != null) {
-                        indexer.indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                        indexer_pgp.startLine1Intake();
-                    } else if (usePPGMode && indexer_ppg != null) {
-                        indexer_ppg.startLine2(); // PPG utilise Line2 pour le premier sample
-                    }
-                    setPathState(5);
-                } else if (actionTimer.getElapsedTimeSeconds() > 4.0) {
-                    // TIMEOUT - continuer sans sample
-                    telemetry.addData("Warning", "Sample 1 non détecté - timeout");
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
                     setPathState(5);
                 }
                 break;
 
             case 5:
-                boolean sample1Ready = true;
-                if (useGPPMode && indexer_gpp != null) {
-                    sample1Ready = !indexer_gpp.isBusy();
-                } else if (usePGPMode && indexer_pgp != null) {
-                    sample1Ready = !indexer_pgp.isBusy();
-                } else if (usePPGMode && indexer_ppg != null) {
-                    sample1Ready = !indexer_ppg.isBusy();
-                }
-
-                if (!follower.isBusy() && sample1Ready && actionTimer.getElapsedTimeSeconds() > 1.0) {
-                    follower.followPath(Shoot2, 1, true);
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkSt1, 1, true);
                     setPathState(6);
                 }
                 break;
 
-            // TIR SAMPLE 1
             case 6:
+                if (!follower.isBusy()) {
+                    indexer.IndexBlocker();
+                    follower.followPath(IntkFi1, 0.3, true);
+                    setPathState(7);
+                }
+                break;
+
+            case 7:
+                if (colorSensor.getDistance(DistanceUnit.MM) <= 80) {
+                    if (!useNoSortMode) {
+                        if (useGPPMode && indexer_gpp != null) {
+                            indexer_gpp.startLine1();
+                        } else if (usePGPMode && indexer_pgp != null) {
+                            indexer.indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
+                            indexer_pgp.startLine1Intake();
+                        } else if (usePPGMode && indexer_ppg != null) {
+                            indexer_ppg.startLine2();
+                        }
+                    }
+                    setPathState(8);
+                } else if (actionTimer.getElapsedTimeSeconds() > 4.0) {
+                    telemetry.addData("Warning", "Sample 1 non détecté - timeout");
+                    setPathState(8);
+                }
+                break;
+
+            case 8: {
+                boolean sample1Ready = true;
+
+                if (!useNoSortMode) {
+                    if (useGPPMode && indexer_gpp != null) {
+                        sample1Ready = !indexer_gpp.isBusy();
+                    } else if (usePGPMode && indexer_pgp != null) {
+                        sample1Ready = !indexer_pgp.isBusy();
+                    } else if (usePPGMode && indexer_ppg != null) {
+                        sample1Ready = !indexer_ppg.isBusy();
+                    }
+                }
+
+                if (!follower.isBusy() && sample1Ready && actionTimer.getElapsedTimeSeconds() > 1.0) {
+                    follower.followPath(Shoot2, 1, true);
+                    setPathState(9);
+                }
+                break;
+            }
+
+            case 9:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
                     AutoShoot = true;
 
-                    if (usePGPMode && indexer_pgp != null) {
+                    if (!useNoSortMode && usePGPMode && indexer_pgp != null) {
                         indexer_pgp.startLine1Outtake();
                     } else {
                         intkM.intake();
                     }
 
-                    setPathState(68);
-                }
-                break;
-
-            case 68:
-                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    AutoShoot = false;
-                    intkM.stop();
-                    setPathState(7);
-                }
-                break;
-
-            // ALLER CHERCHER SAMPLE 2
-            case 7:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt2, 1, true);
-                    setPathState(9);
-                }
-                break;
-
-            case 9:
-                if (!follower.isBusy()) {
-                    indexer.IndexBlocker();
-                    follower.followPath(IntkFi2, 0.7, true);
                     setPathState(10);
                 }
                 break;
 
             case 10:
-                // Attendre d'être proche du sample avant de démarrer l'indexer
-                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
-                    if (useGPPMode && indexer_gpp != null) {
-                        indexer_gpp.startLine2();
-                    } else if (usePGPMode && indexer_pgp != null) {
-                        indexer_pgp.startLine3Intake();
-                    } else if (usePPGMode && indexer_ppg != null) {
-                        indexer_ppg.startLine2();
-                    }
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
                     setPathState(11);
                 }
                 break;
 
             case 11:
-                boolean sample2Ready = true;
-                if (useGPPMode && indexer_gpp != null) {
-                    sample2Ready = !indexer_gpp.isBusy();
-                } else if (usePGPMode && indexer_pgp != null) {
-                    sample2Ready = !indexer_pgp.isBusy();
-                } else if (usePPGMode && indexer_ppg != null) {
-                    sample2Ready = !indexer_ppg.isBusy();
-                }
-
-                if (!follower.isBusy() && sample2Ready) {
-                    follower.followPath(Shoot3, 1, true);
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkSt2, 1, true);
                     setPathState(12);
                 }
                 break;
 
-            // TIR SAMPLE 2
             case 12:
-                if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
-                    intkM.intake();
-                    setPathState(69);
-                }
-                break;
-
-            case 69:
-                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    AutoShoot = false;
-                    intkM.stop();
+                if (!follower.isBusy()) {
+                    indexer.IndexBlocker();
+                    follower.followPath(IntkFi2, 0.7, true);
                     setPathState(13);
                 }
                 break;
 
-            // ALLER CHERCHER SAMPLE 3
             case 13:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt3, 1, true);
+                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
+                    if (!useNoSortMode) {
+                        if (useGPPMode && indexer_gpp != null) {
+                            indexer_gpp.startLine2();
+                        } else if (usePGPMode && indexer_pgp != null) {
+                            indexer_pgp.startLine3Intake();
+                        } else if (usePPGMode && indexer_ppg != null) {
+                            indexer_ppg.startLine2();
+                        }
+                    }
                     setPathState(14);
                 }
                 break;
 
-            case 14:
-                if (!follower.isBusy()) {
-                    indexer.IndexBlocker();
-                    follower.followPath(IntkFi3, 0.7, true);
+            case 14: {
+                boolean sample2Ready = true;
+
+                if (!useNoSortMode) {
+                    if (useGPPMode && indexer_gpp != null) {
+                        sample2Ready = !indexer_gpp.isBusy();
+                    } else if (usePGPMode && indexer_pgp != null) {
+                        sample2Ready = !indexer_pgp.isBusy();
+                    } else if (usePPGMode && indexer_ppg != null) {
+                        sample2Ready = !indexer_ppg.isBusy();
+                    }
+                }
+
+                if (!follower.isBusy() && sample2Ready) {
+                    follower.followPath(Shoot3, 1, true);
                     setPathState(15);
                 }
                 break;
+            }
 
             case 15:
-                // Attendre d'être proche du sample
-                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
-                    if (useGPPMode && indexer_gpp != null) {
-                        indexer_gpp.startLine2(); // GPP n'a que 2 lignes
-                    } else if (usePGPMode && indexer_pgp != null) {
-                        indexer_pgp.startLine3Intake();
-                    } else if (usePPGMode && indexer_ppg != null) {
-                        indexer_ppg.startLine3();
-                    }
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
+                    AutoShoot = true;
+                    intkM.intake();
                     setPathState(16);
                 }
                 break;
 
             case 16:
-                boolean sample3Ready = true;
-                if (useGPPMode && indexer_gpp != null) {
-                    sample3Ready = !indexer_gpp.isBusy();
-                } else if (usePGPMode && indexer_pgp != null) {
-                    sample3Ready = !indexer_pgp.isBusy();
-                } else if (usePPGMode && indexer_ppg != null) {
-                    sample3Ready = !indexer_ppg.isBusy();
-                }
-
-                if (!follower.isBusy() && sample3Ready) {
-                    follower.followPath(Shoot4, 1, true);
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
                     setPathState(17);
                 }
                 break;
 
-            // TIR SAMPLE 3 (FINAL)
             case 17:
-                if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    AutoShoot = true;
-                    intkM.intake();
-                    setPathState(70);
-                }
-                break;
-
-            case 70:
-                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
-                    AutoShoot = false;
-                    intkM.stop();
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkSt3, 1, true);
                     setPathState(18);
                 }
                 break;
 
             case 18:
-                // Autonomous terminé
+                if (!follower.isBusy()) {
+                    indexer.IndexBlocker();
+                    follower.followPath(IntkFi3, 0.7, true);
+                    setPathState(19);
+                }
+                break;
+
+            case 19:
+                if (pathTimer.getElapsedTimeSeconds() > 1.0) {
+                    if (!useNoSortMode) {
+                        if (useGPPMode && indexer_gpp != null) {
+                            indexer_gpp.startLine2();
+                        } else if (usePGPMode && indexer_pgp != null) {
+                            indexer_pgp.startLine3Intake();
+                        } else if (usePPGMode && indexer_ppg != null) {
+                            indexer_ppg.startLine3();
+                        }
+                    }
+                    setPathState(20);
+                }
+                break;
+
+            case 20: {
+                boolean sample3Ready = true;
+
+                if (!useNoSortMode) {
+                    if (useGPPMode && indexer_gpp != null) {
+                        sample3Ready = !indexer_gpp.isBusy();
+                    } else if (usePGPMode && indexer_pgp != null) {
+                        sample3Ready = !indexer_pgp.isBusy();
+                    } else if (usePPGMode && indexer_ppg != null) {
+                        sample3Ready = !indexer_ppg.isBusy();
+                    }
+                }
+
+                if (!follower.isBusy() && sample3Ready) {
+                    follower.followPath(Shoot4, 1, true);
+                    setPathState(21);
+                }
+                break;
+            }
+
+            case 21:
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
+                    AutoShoot = true;
+                    intkM.intake();
+                    setPathState(22);
+                }
+                break;
+
+            case 22:
+                if (actionTimer.getElapsedTimeSeconds() > 2.0) {
+                    AutoShoot = false;
+                    intkM.stop();
+                    setPathState(23);
+                }
+                break;
+
+            case 23:
                 shooterEnabled = false;
                 setPathState(-1);
                 break;
 
             case -1:
-                // Idle - Autonomous terminé
                 break;
         }
     }
@@ -429,9 +439,17 @@ public class Auto_Blue1 extends OpMode {
             return -1;
         }
 
-        if (detections != null && !detections.isEmpty()) {
-            return detections.get(0).id;
+        if (detections == null || detections.isEmpty()) return -1;
+
+        for (AprilTagDetection det : detections) {
+            int id = det.id;
+            if (id == 21 || id == 22 || id == 23) {
+                aprilTag.stopCamera();
+                aprilTag = null;
+                return id;
+            }
         }
+
         return -1;
     }
 
@@ -466,29 +484,29 @@ public class Auto_Blue1 extends OpMode {
         Shooter.updateShooting(AutoShoot, pose.getX(), pose.getY(), distance);
         follower.update();
 
-        // Mise à jour des indexers selon le mode
-        if (useGPPMode && indexer_gpp != null) {
-            indexer_gpp.Line1();
-            indexer_gpp.Line2();
-        }
+        if (!useNoSortMode) {
+            if (useGPPMode && indexer_gpp != null) {
+                indexer_gpp.Line1();
+                indexer_gpp.Line2();
+            }
 
-        if (usePGPMode && indexer_pgp != null) {
-            indexer_pgp.Line1Intake();
-            indexer_pgp.Line3Intake();
-            indexer_pgp.Line1Outtake();
-        }
+            if (usePGPMode && indexer_pgp != null) {
+                indexer_pgp.Line1Intake();
+                indexer_pgp.Line3Intake();
+                indexer_pgp.Line1Outtake();
+            }
 
-        if (usePPGMode && indexer_ppg != null) {
-            indexer_ppg.Line2();
-            indexer_ppg.Line3();
+            if (usePPGMode && indexer_ppg != null) {
+                indexer_ppg.Line2();
+                indexer_ppg.Line3();
+            }
         }
 
         autonomousPathUpdate();
 
-        // Telemetry
-        telemetry.addData("Mode", useGPPMode ? "GPP" : (usePGPMode ? "PGP" : (usePPGMode ? "PPG" : "Normal")));
+        telemetry.addData("Mode", useGPPMode ? "GPP" : (usePGPMode ? "PGP" : (usePPGMode ? "PPG" : (useNoSortMode ? "NoSort" : "Normal"))));
         telemetry.addData("ModeLocked", modeLocked);
-        telemetry.addData("AprilTag ID", getAprilTagID());
+        telemetry.addData("AprilTag ID", detectedAprilTagId);
         telemetry.addData("path state", pathState);
         telemetry.addData("followerBusy", follower.isBusy());
         telemetry.addData("pathTimer", pathTimer.getElapsedTimeSeconds());
