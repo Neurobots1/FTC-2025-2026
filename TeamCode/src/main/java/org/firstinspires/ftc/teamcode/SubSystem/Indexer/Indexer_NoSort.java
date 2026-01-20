@@ -33,6 +33,16 @@ public class Indexer_NoSort {
         return intakeState != IntakeState.IDLE || outtakeState != OuttakeState.IDLE;
     }
 
+    public void startNoSortIntake() {
+        if (isBusy()) return;
+        intakeState = IntakeState.START;
+    }
+
+    public void startNoSortOuttake() {
+        if (isBusy()) return;
+        outtakeState = OuttakeState.START;
+    }
+
     public void NoSortIntake() {
         switch (intakeState) {
 
