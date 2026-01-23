@@ -14,11 +14,11 @@ import com.seattlesolvers.solverslib.util.InterpLUT;
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
-@TeleOp(name = "teleopblue1214_N_debug", group = "Tuning")
+//@TeleOp(name = "teleopblue1214_N_debug", group = "Tuning")
 public class Teleopblue1214_N_debug extends OpMode {
 
     public static boolean usePIDF = true;
@@ -37,7 +37,7 @@ public class Teleopblue1214_N_debug extends OpMode {
 
     private final InterpLUT lut = new InterpLUT();
 
-    private Launcher23511 launcher;
+    private LauncherSubsystem launcher;
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
     private VoltageSensor voltageSensor;
@@ -58,7 +58,7 @@ public class Teleopblue1214_N_debug extends OpMode {
         robot = new Robot();
         robot.init(hardwareMap);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
+        launcher = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
     }
@@ -110,11 +110,11 @@ public class Teleopblue1214_N_debug extends OpMode {
         telemetryManager.debug("targetTicksPerSecond", targetTicksPerSecond);
         telemetryManager.debug("testPower", testPower);
         telemetryManager.debug("currentVelocity", currentVelocity);
-        telemetryManager.debug("P", Launcher23511.P);
-        telemetryManager.debug("I", Launcher23511.I);
-        telemetryManager.debug("D", Launcher23511.D);
-        telemetryManager.debug("F", Launcher23511.F);
-        telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
+        telemetryManager.debug("P", LauncherSubsystem.P);
+        telemetryManager.debug("I", LauncherSubsystem.I);
+        telemetryManager.debug("D", LauncherSubsystem.D);
+        telemetryManager.debug("F", LauncherSubsystem.F);
+        telemetryManager.debug("NOMINAL_VOLTAGE", LauncherSubsystem.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
         telemetryManager.debug("distance goal", distanceToGoal());
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);

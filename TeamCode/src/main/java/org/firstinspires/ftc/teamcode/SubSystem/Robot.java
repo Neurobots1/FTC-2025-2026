@@ -11,10 +11,9 @@ import com.pedropathing.control.PIDFController;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 
-import org.firstinspires.ftc.teamcode.OpMode.TeleOp.ConvertToPedroPose;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -29,7 +28,7 @@ public class Robot {
     private Alliance alliance = Alliance.BLUE;
 
     private Follower follower;
-    private Launcher23511 launcher;
+    private LauncherSubsystem launcher;
     private HeadingLockController headingLockController;
     private IntakeMotor intake;
     private AprilTagPipeline aprilTag;
@@ -47,14 +46,13 @@ public class Robot {
 
         aprilTag = new AprilTagPipeline(hw);
         aprilTag.startCamera();
-        relocalisation = new Relocalisation(hw, aprilTag);
 
         follower = Constants.createFollower(hw);
         follower.update();
 
         intake = new IntakeMotor(hw);
 
-        launcher = Launcher23511.create(hw);
+        launcher = LauncherSubsystem.create(hw);
 
         Servo blocker = hw.get(Servo.class, "Blocker");
         launcher.setBlocker(blocker);
@@ -84,23 +82,6 @@ public class Robot {
 
         follower.update();
         launcher.update();
-
-        if (gamepad.options
-                && follower.getVelocity().getMagnitude() < 0.3
-                && tagResetTimer.seconds() > tagCooldown) {
-
-            Pose tagPose = relocalisation.relocalisation();
-
-            if (tagPose != null) {
-                Pose pedroPose = tagPose;
-                if (pedroPose != null) {
-                    follower.setPose(pedroPose);
-                    tagResetTimer.reset();
-                }
-            }
-        } else {
-            telemetryManager.addData("NePeuxReset", true);
-        }
 
         Pose pose = follower.getPose();
         boolean shootButton = gamepad.y;
@@ -161,7 +142,7 @@ public class Robot {
 
         indexerBase.OutTake();
 
-        double targetTPS = Launcher23511.targetTPS;
+        double targetTPS = LauncherSubsystem.targetTPS;
         double currentVel = launcher.getCurentRPM();
 
         jt.addData("Alliance", alliance);
@@ -193,7 +174,7 @@ public class Robot {
         return follower;
     }
 
-    public Launcher23511 launcher() {
+    public LauncherSubsystem launcher() {
         return launcher;
     }
 

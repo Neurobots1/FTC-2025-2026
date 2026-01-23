@@ -4,13 +4,14 @@ import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 @Configurable
-@TeleOp(name = "ShooterTune23511_NoLUT", group = "Tuning")
+@Disabled
 public class ShooterTune23511 extends OpMode {
 
     public static boolean usePIDF = true;
@@ -25,7 +26,7 @@ public class ShooterTune23511 extends OpMode {
 
 
 
-    private Launcher23511 launcher;
+    private LauncherSubsystem launcher;
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
     private VoltageSensor voltageSensor;
@@ -37,7 +38,7 @@ public class ShooterTune23511 extends OpMode {
         flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
         flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
+        launcher = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
     }
@@ -72,11 +73,11 @@ public class ShooterTune23511 extends OpMode {
         telemetryManager.debug("targetTicksPerSecond", targetTicksPerSecond);
         telemetryManager.debug("testPower", testPower);
         telemetryManager.debug("currentVelocity", currentVelocity);
-        telemetryManager.debug("P", Launcher23511.P);
-        telemetryManager.debug("I", Launcher23511.I);
-        telemetryManager.debug("D", Launcher23511.D);
-        telemetryManager.debug("F", Launcher23511.F);
-        telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
+        telemetryManager.debug("P", LauncherSubsystem.P);
+        telemetryManager.debug("I", LauncherSubsystem.I);
+        telemetryManager.debug("D", LauncherSubsystem.D);
+        telemetryManager.debug("F", LauncherSubsystem.F);
+        telemetryManager.debug("NOMINAL_VOLTAGE", LauncherSubsystem.NOMINAL_VOLTAGE);
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
         jt.addData("currentVelocity", "%.0f", currentVelocity);
         telemetryManager.update();

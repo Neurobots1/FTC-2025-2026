@@ -5,6 +5,7 @@ import com.bylazar.telemetry.JoinedTelemetry;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PIDFController;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,9 +13,8 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.FilteredPIDFController;
-
+@Disabled
 @Configurable
-@TeleOp(name = "ShooterPIDF", group = "Tuning")
 public class ShooterPIDF extends OpMode {
 
     private DcMotorEx mA, mB;

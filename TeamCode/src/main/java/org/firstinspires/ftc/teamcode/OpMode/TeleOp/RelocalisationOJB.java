@@ -19,7 +19,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
-@TeleOp
+//@TeleOp
 public class RelocalisationOJB extends OpMode {
     private VisionPortal visionPortal;
     private AprilTagProcessor aprilTag;

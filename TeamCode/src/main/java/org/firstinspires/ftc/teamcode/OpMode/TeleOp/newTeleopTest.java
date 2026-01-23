@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.SubSystem.Shoot;
 
 @Configurable
-@TeleOp
+//@TeleOp
 public class newTeleopTest extends OpMode {
 
 

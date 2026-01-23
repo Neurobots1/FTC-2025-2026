@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@TeleOp
+//@TeleOp
 public class TeleopHeadingLock extends OpMode {
 
     public static Pose startingPose;

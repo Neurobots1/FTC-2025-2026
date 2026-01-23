@@ -6,10 +6,11 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.controller.PIDFController;
 
 @Configurable
-public class Launcher23511 {
+public class LauncherSubsystem {
 
     public static double P = 0.03;
     public static double I = 0.003;
@@ -19,13 +20,16 @@ public class Launcher23511 {
     public static double VELOCITY_TOLERANCE = 60;
 
     public static double BlockerOpenPosition = 0.55;
-    public static double BlockerClosedPosition = 0.2;
+    public static double BlockerClosedPosition = 0.25;
 
     public static double MAX_FLYWHEEL_VELOCITY = 1860;
     public static double NOMINAL_VOLTAGE = 12.82;
 
     public static boolean MOTOR_ONE_REVERSED = false;
     public static boolean MOTOR_TWO_REVERSED = true;
+
+
+    public static double BLOCKER_OPEN_DELAY_S = 0.3;
 
     private final DcMotorEx flywheelMotorOne;
     private final DcMotorEx flywheelMotorTwo;
@@ -38,8 +42,10 @@ public class Launcher23511 {
     private boolean headingLock = false;
 
     public static double targetTPS = 0;
-
     public static double LutTPS = 800;
+
+    private final ElapsedTime blockerTimer = new ElapsedTime();
+    private boolean blockerOpenCommanded = false;
 
     // y = 399.5011 + 4.804155*x - 0.00739844*x^2
     // y is RPM/TPS, x is distance
@@ -59,12 +65,13 @@ public class Launcher23511 {
     private enum ShootState {
         IDLE,
         ARMING,
+        OPENING_BLOCKER,
         FIRING
     }
 
     private ShootState shootState = ShootState.IDLE;
 
-    public Launcher23511(DcMotorEx m1, DcMotorEx m2, VoltageSensor vs) {
+    public LauncherSubsystem(DcMotorEx m1, DcMotorEx m2, VoltageSensor vs) {
         this.flywheelMotorOne = m1;
         this.flywheelMotorTwo = m2;
         this.voltageSensor = vs;
@@ -76,11 +83,11 @@ public class Launcher23511 {
         flywheelController.setTolerance(VELOCITY_TOLERANCE);
     }
 
-    public static Launcher23511 create(HardwareMap hw) {
+    public static LauncherSubsystem create(HardwareMap hw) {
         DcMotorEx m1 = hw.get(DcMotorEx.class, "ShooterA");
         DcMotorEx m2 = hw.get(DcMotorEx.class, "ShooterB");
         VoltageSensor vs = hw.voltageSensor.iterator().next();
-        Launcher23511 launcher = new Launcher23511(m1, m2, vs);
+        LauncherSubsystem launcher = new LauncherSubsystem(m1, m2, vs);
         launcher.init();
         return launcher;
     }
@@ -89,7 +96,7 @@ public class Launcher23511 {
         setFlywheelTicks(0);
         shootState = ShootState.IDLE;
         headingLock = false;
-        if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+        commandBlockerClosed();
     }
 
     public double getCurrentRPM() {
@@ -98,13 +105,26 @@ public class Launcher23511 {
 
     public void setBlocker(Servo blocker) {
         this.blocker = blocker;
-        if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+        commandBlockerClosed();
     }
 
     public void setFlywheelTicks(double tps) {
         if (tps < 0) tps = 0;
         if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
         targetTPS = tps;
+    }
+
+    private void commandBlockerOpen() {
+        if (blocker != null) blocker.setPosition(BlockerOpenPosition);
+        if (!blockerOpenCommanded) {
+            blockerOpenCommanded = true;
+            blockerTimer.reset();
+        }
+    }
+
+    private void commandBlockerClosed() {
+        if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+        blockerOpenCommanded = false;
     }
 
     public void update() {
@@ -137,63 +157,93 @@ public class Launcher23511 {
         flywheelMotorTwo.setPower(power);
     }
 
+    // "ready" now means: at speed AND blocker has been open long enough
     public boolean flywheelReady() {
         if (targetTPS <= 0) return false;
+
         double currentTPS = flywheelMotorOne.getVelocity();
-        return Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
+        boolean atSpeed = Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE;
+        if (!atSpeed) return false;
+
+        if (!blockerOpenCommanded) return false;
+        return blockerTimer.seconds() >= BLOCKER_OPEN_DELAY_S;
     }
 
-    public void updateShootingAuto(boolean AutoShoot, double x, double y, double distance) {
+    public void updateShootingAuto(boolean autoShoot, double x, double y, double distance) {
         boolean inZone = isInShootingZone(x, y);
 
-        if (!inZone && shootState != ShootState.IDLE) {
-            cancelShooting();
+        if (!autoShoot) {
+            shootState = ShootState.IDLE;
         }
 
-        if (AutoShoot && !shootButtonLast) {
-            if (shootState == ShootState.IDLE && inZone) {
-                shootState = ShootState.ARMING;
-
-                LutTPS = computeLutTPS(distance);
-                setFlywheelTicks(LutTPS);
-
-
-            } else {
-                cancelShooting();
-            }
+        if (autoShoot && !inZone) {
+            shootState = ShootState.IDLE;
         }
-
 
         switch (shootState) {
             case IDLE:
                 headingLock = false;
-                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+                commandBlockerClosed();
+
+                if (autoShoot && inZone) {
+                    shootState = ShootState.ARMING;
+                    break;
+                }
+
                 setFlywheelTicks(0);
                 break;
 
             case ARMING:
                 headingLock = false;
-                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+                commandBlockerClosed();
 
-                // continuously update target based on current distance
                 LutTPS = computeLutTPS(distance);
                 setFlywheelTicks(LutTPS);
 
                 update();
+
+                // once we're up to speed, start opening blocker and go to next state
+                double currentTPS = flywheelMotorOne.getVelocity();
+                if (Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE) {
+                    commandBlockerOpen();
+                    shootState = ShootState.OPENING_BLOCKER;
+                }
+
+                if (!autoShoot || !inZone) {
+                    shootState = ShootState.IDLE;
+                }
+                break;
+
+            case OPENING_BLOCKER:
+                headingLock = false;
+
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
+                update();
+                commandBlockerOpen();
+
                 if (flywheelReady()) {
                     shootState = ShootState.FIRING;
+                }
+
+                if (!autoShoot || !inZone) {
+                    shootState = ShootState.IDLE;
                 }
                 break;
 
             case FIRING:
                 headingLock = false;
 
-                // still update target while firing (in case robot moves)
                 LutTPS = computeLutTPS(distance);
                 setFlywheelTicks(LutTPS);
 
                 update();
-                if (blocker != null) blocker.setPosition(BlockerOpenPosition);
+                commandBlockerOpen();
+
+                if (!autoShoot || !inZone) {
+                    shootState = ShootState.IDLE;
+                }
                 break;
         }
     }
@@ -223,19 +273,35 @@ public class Launcher23511 {
         switch (shootState) {
             case IDLE:
                 headingLock = false;
-                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+                commandBlockerClosed();
                 setFlywheelTicks(0);
                 break;
 
             case ARMING:
                 headingLock = true;
-                if (blocker != null) blocker.setPosition(BlockerClosedPosition);
+                commandBlockerClosed();
 
-                // continuously update target based on current distance
                 LutTPS = computeLutTPS(distance);
                 setFlywheelTicks(LutTPS);
 
                 update();
+
+                double currentTPS = flywheelMotorOne.getVelocity();
+                if (Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE) {
+                    commandBlockerOpen();
+                    shootState = ShootState.OPENING_BLOCKER;
+                }
+                break;
+
+            case OPENING_BLOCKER:
+                headingLock = true;
+
+                LutTPS = computeLutTPS(distance);
+                setFlywheelTicks(LutTPS);
+
+                update();
+                commandBlockerOpen();
+
                 if (flywheelReady()) {
                     shootState = ShootState.FIRING;
                 }
@@ -244,12 +310,11 @@ public class Launcher23511 {
             case FIRING:
                 headingLock = true;
 
-                // still update target while firing (in case robot moves)
                 LutTPS = computeLutTPS(distance);
                 setFlywheelTicks(LutTPS);
 
                 update();
-                if (blocker != null) blocker.setPosition(BlockerOpenPosition);
+                commandBlockerOpen();
                 break;
         }
     }
@@ -258,7 +323,7 @@ public class Launcher23511 {
         shootState = ShootState.IDLE;
         headingLock = false;
         setFlywheelTicks(0);
-        if (blocker != null) blocker.setPosition(0);
+        commandBlockerClosed();
     }
 
     public boolean isHeadingLockEnabled() {

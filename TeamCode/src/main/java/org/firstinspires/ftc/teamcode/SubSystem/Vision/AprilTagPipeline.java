@@ -1,26 +1,17 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Vision;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import android.icu.text.Transliterator;
 import android.util.Size;
+
+import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessorImpl;
-import org.firstinspires.ftc.vision.VisionPortal;
-
-import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
-import org.opencv.core.Point;
-import org.opencv.imgproc.Imgproc;
-
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.Collections;
@@ -31,24 +22,29 @@ public class AprilTagPipeline extends OpenCvPipeline {
     public AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
     private volatile AprilTagDetection latestDetection = null;
-    private HardwareMap hardwareMap;
+    private final HardwareMap hardwareMap;
 
-    private Position cameraPosition = new Position(DistanceUnit.INCH,
-            4.875, 8.4375, 10, 0);
-    private YawPitchRollAngles cameraorientation =
-            new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 180, 0);
+    private final Position cameraPosition = new Position(DistanceUnit.INCH, 4.875, 8.4375, 10, 0);
+    private final YawPitchRollAngles cameraorientation =
+            new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 0, 0);
+
+    private volatile boolean closing = false;
 
     public AprilTagPipeline(HardwareMap hardwareMap) {
         this.hardwareMap = hardwareMap;
-
-       /* aprilTag = new AprilTagProcessorImpl.Builder()
-                .setDrawAxes(true)
-                .setDrawCubeProjection(true)
-                .setDrawTagOutline(true)
-                .build(); */
     }
 
-    public void startCamera() {
+    public synchronized void startCamera() {
+        closing = false;
+
+        if (visionPortal != null) {
+            VisionPortal.CameraState st = visionPortal.getCameraState();
+            if (st == VisionPortal.CameraState.STREAMING || st == VisionPortal.CameraState.STARTING_STREAM) {
+                return;
+            }
+            safeClosePortal();
+        }
+
         aprilTag = new AprilTagProcessor.Builder()
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
@@ -62,69 +58,57 @@ public class AprilTagPipeline extends OpenCvPipeline {
                 .setCameraResolution(new Size(640, 480))
                 .setStreamFormat(VisionPortal.StreamFormat.MJPEG)
                 .addProcessors(aprilTag)
-                .enableLiveView(true)
+                .enableLiveView(false)
                 .build();
 
         visionPortal.setProcessorEnabled(aprilTag, true);
     }
 
-    /**
-     * Arrête la caméra et libère les ressources
-     * Cette méthode doit être appelée dans stop() de l'OpMode
-     */
-    public void stopCamera() {
-        if (visionPortal != null) {
-            // Désactive le processeur AprilTag
-            if (aprilTag != null) {
-                visionPortal.setProcessorEnabled(aprilTag, false);
-            }
+    public synchronized void stopCamera() {
+        if (closing) return;
+        closing = true;
 
-            // Arrête le streaming
-            visionPortal.stopStreaming();
+        latestDetection = null;
 
-            // Ferme complètement le VisionPortal
-            visionPortal.close();
-
-            // Libère les références
-            visionPortal = null;
+        if (visionPortal == null) {
+            aprilTag = null;
+            return;
         }
 
-        // Réinitialise la dernière détection
-        latestDetection = null;
+        try {
+            if (aprilTag != null) {
+                try {
+                    visionPortal.setProcessorEnabled(aprilTag, false);
+                } catch (RuntimeException ignored) { }
+            }
+
+            safeClosePortal();
+
+        } finally {
+            visionPortal = null;
+            aprilTag = null;
+        }
     }
 
-    /**
-     * Vérifie si la caméra est active
-     * @return true si la caméra est en cours d'exécution
-     */
+    private void safeClosePortal() {
+        try {
+            if (visionPortal != null) {
+                visionPortal.close();
+            }
+        } catch (RuntimeException ignored) {
+        }
+    }
+
     public boolean isCameraActive() {
         return visionPortal != null && visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING;
     }
 
+
     @Override
-    public Mat processFrame(Mat input) {
+    public org.opencv.core.Mat processFrame(org.opencv.core.Mat input) {
         if (aprilTag == null) return input;
         List<AprilTagDetection> detections = aprilTag.getDetections();
-
-        for (AprilTagDetection tag : detections) {
-            latestDetection = tag;
-
-            // Draw a simple box around the tag (optional)
-            Imgproc.rectangle(input,
-                    new Point(tag.corners[0].x, tag.corners[0].y),
-                    new Point(tag.corners[2].x, tag.corners[2].y),
-                    new Scalar(255), 2);
-
-            // Put tag ID on the image
-            Imgproc.putText(input,
-                    "ID: " + tag.id,
-                    new Point(tag.center.x - 20, tag.center.y - 10),
-                    Imgproc.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    new Scalar(255),
-                    2);
-        }
-
+        if (!detections.isEmpty()) latestDetection = detections.get(0);
         return input;
     }
 

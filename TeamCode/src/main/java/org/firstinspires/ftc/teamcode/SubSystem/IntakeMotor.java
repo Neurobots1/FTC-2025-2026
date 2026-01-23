@@ -18,7 +18,7 @@ public class IntakeMotor {
     }
 
     public void slowIntake() {
-        intakeMotor.setPower(0.8);
+        intakeMotor.setPower(0.9);
     }
 
     public void outtake() {

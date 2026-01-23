@@ -4,22 +4,24 @@ import com.pedropathing.geometry.Pose;
 
 public class ConvertToPedroPose {
 
-    // Static utility method – no need to store fields
-    public static Pose convertToPedroPose(Pose filterPose) {
-        if (filterPose == null) return null;  // safety
+    public static Pose convertToPedroPose(Pose centerPoseDeg) {
+        if (centerPoseDeg == null) return null;
 
-        double x = filterPose.getX();
-        double y = filterPose.getY();
-        double headingDeg = filterPose.getHeading();  // Pedro Pose usually uses radians
+        double x = centerPoseDeg.getX();          // center-origin inches
+        double y = centerPoseDeg.getY();          // center-origin inches
+        double headingDeg = centerPoseDeg.getHeading(); // DEGREES in your FTC frame
 
-        // --- Your axis swap / translation (assuming FTC -> Pedro conversion) ---
-        double xPedro = y + 72;
-        double yPedro = 72 - x;
+        // Rotate position 90° left (CCW): (x, y) -> (-y, x)
+        double xRot = -y;
+        double yRot =  x;
 
-        // If heading is in radians, apply rotation in radians too.
-        // If your filterPose heading is actually in DEGREES, convert first.
-        double headingPedro = headingDeg;  // adjust here if you rotate frame
+        // Shift to Pedro field (72,72 is center)
+        double xPedro = xRot + 72.0;
+        double yPedro = yRot + 72.0;
 
-        return new Pose(xPedro, yPedro, headingPedro);
+        // Rotate heading with the same frame rotation, then convert to radians for Pedro
+        double headingPedroRad = Math.toRadians(headingDeg + 90.0);
+
+        return new Pose(xPedro, yPedro, headingPedroRad);
     }
 }

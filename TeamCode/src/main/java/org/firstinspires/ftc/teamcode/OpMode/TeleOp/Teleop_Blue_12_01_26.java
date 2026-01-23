@@ -6,7 +6,6 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.math.Vector;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -16,13 +15,13 @@ import com.seattlesolvers.solverslib.util.InterpLUT;
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Launcher23511;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.Relocalisation;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 
 @Configurable
-@TeleOp
+//@TeleOp
 public class Teleop_Blue_12_01_26 extends OpMode {
 
 
@@ -47,7 +46,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
 
     private final InterpLUT lut = new InterpLUT();
 
-    private Launcher23511 launcher;
+    private LauncherSubsystem launcher;
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
     private Servo Blocker;
@@ -76,12 +75,11 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         //init = new Robot(hardwareMap);
         convertToPedroPose = new ConvertToPedroPose();
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        launcher = new Launcher23511(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
+        launcher = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
         launcher.init();
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
         aprilTagPipeline = new AprilTagPipeline(hardwareMap);
         aprilTagPipeline.startCamera();
-        relocalisation = new Relocalisation(hardwareMap, aprilTagPipeline);
         currentPosition = new Teleopblue1214_N_debug();
         Blocker = hardwareMap.get(Servo.class, "Blocker");
         Blocker.setPosition(1);
@@ -99,20 +97,6 @@ public class Teleop_Blue_12_01_26 extends OpMode {
     public void loop(){
         follower.update();
 
-
-
-        if (gamepad1.options && follower.getVelocity().getMagnitude()<0.3) {
-            Pose tagPose = relocalisation.relocalisation();
-
-            if (tagPose != null) {
-                Pose pedroPose = ConvertToPedroPose.convertToPedroPose(tagPose);
-                if (pedroPose != null) {
-                    follower.setPose(pedroPose);
-                }
-            }
-        } else {
-            telemetryManager.addData("NePeuxReset",true);
-        }
 
 
 
@@ -172,11 +156,11 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         telemetryManager.debug("usePIDF", usePIDF);
         telemetryManager.debug("targetTicksPerSecond", targetTicksPerSecond);
         telemetryManager.debug("testPower", testPower);
-        telemetryManager.debug("P", Launcher23511.P);
-        telemetryManager.debug("I", Launcher23511.I);
-        telemetryManager.debug("D", Launcher23511.D);
-        telemetryManager.debug("F", Launcher23511.F);
-        telemetryManager.debug("NOMINAL_VOLTAGE", Launcher23511.NOMINAL_VOLTAGE);
+        telemetryManager.debug("P", LauncherSubsystem.P);
+        telemetryManager.debug("I", LauncherSubsystem.I);
+        telemetryManager.debug("D", LauncherSubsystem.D);
+        telemetryManager.debug("F", LauncherSubsystem.F);
+        telemetryManager.debug("NOMINAL_VOLTAGE", LauncherSubsystem.NOMINAL_VOLTAGE);
         telemetryManager.debug("pose2D", follower.getPose());
         jt.addData("targetTicksPerSecond", "%.0f", targetTicksPerSecond);
         jt.addData("currentVelocity", "%.0f", currentVelocity);

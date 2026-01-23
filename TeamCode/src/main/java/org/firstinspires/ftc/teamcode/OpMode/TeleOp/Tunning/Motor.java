@@ -1,11 +1,12 @@
 package org.firstinspires.ftc.teamcode.OpMode.TeleOp.Tunning;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@TeleOp(name="MotorFullPower_OpMode")
+@Disabled
 public class Motor extends OpMode {
 
     DcMotor motor;

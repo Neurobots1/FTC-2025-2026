@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@TeleOp(name = "Shooter Spin Test", group = "Test")
+//@TeleOp(name = "Shooter Spin Test", group = "Test")
 public class ShooterSpinTest extends OpMode {
 
     private DcMotorEx shootMotor1;

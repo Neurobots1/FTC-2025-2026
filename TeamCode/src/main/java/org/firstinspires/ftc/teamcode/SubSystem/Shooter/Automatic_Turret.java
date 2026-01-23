@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -10,7 +11,7 @@ import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 
-@TeleOp(name="Tourelle Auto")
+@Disabled
 public class Automatic_Turret extends OpMode {
 
     private DcMotor moteurRotation;

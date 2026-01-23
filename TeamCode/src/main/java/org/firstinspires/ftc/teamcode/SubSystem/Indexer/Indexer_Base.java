@@ -42,18 +42,9 @@ public class Indexer_Base {
     public static double servointkF_Closed = 1;//Servo Intk ferme(les balles ne peuvent pas passer)
     public static double servointkF_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
 
-    public static double servointkB_Closed = 0;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointkB_Open = 1;//Servo Intk ouver(les balles peuvent passer)
+    public static double servointkB_Closed = 0.4;//Servo Intk ferme(les balles ne peuvent pas passer)
+    public static double servointkB_Open = 1;//Servo Intk ouvert(les balles peuvent passer)
 
-
-    public boolean isIndexer_1_AtCenter() {
-        return indexLeftServo.getPosition() >= indexer_L_Engage - 0.05
-                && indexLeftServo.getPosition() <= indexer_L_Engage + 0.05; // Tolerance de 0.05
-    }
-    public boolean isIndexer_2_AtCenter() {
-        return indexRightServo.getPosition() >= indexer_R_Engage - 0.05
-                && indexRightServo.getPosition() <= indexer_R_Engage + 0.05; // Tolerance de 0.05
-    }
 
     public static double INDEXER_MOVE_TIME = 0.5;      // Temps pour deplacer le rail (secondes)
     public static double INDEXER_COLLECT_TIME = 0.5; // Temps de collecte (secondes)
@@ -210,7 +201,7 @@ public class Indexer_Base {
 
     public void StartIndexPose(){
         indexLeftServo.setPosition(indexer_L_Retracted);
-        indexRightServo.setPosition(indexer_R_Engage);
+        indexRightServo.setPosition(indexer_R_Retracted);
         indexGateBack.setPosition(servointkB_Open);
         indexGateFront.setPosition(servointkF_Open);
 

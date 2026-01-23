@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Configurable
-@TeleOp
+//@TeleOp
 public class HeadingLockOJB extends OpMode {
     private Follower follower;
     public final Pose startingPose = new Pose(63, 136, Math.toRadians(90)); // Start Pose of our robot.

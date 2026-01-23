@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 
-@TeleOp(name = "Index_Test")
+//@TeleOp(name = "Index_Test")
 public class Index_Test extends OpMode {
 
     private Indexer_Base indexerBase;
