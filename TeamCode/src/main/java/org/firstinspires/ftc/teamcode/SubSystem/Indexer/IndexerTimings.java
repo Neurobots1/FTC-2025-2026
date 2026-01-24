@@ -5,7 +5,7 @@ import com.bylazar.configurables.annotations.Configurable;
 @Configurable
 public class IndexerTimings {
 
-    // ===== Tuned timings (seconds) based on PGP mapping =====
+
     public static double L1_IN_SWAP_TO_MIDDLE_DELAY_S = 0.5;
     public static double L1_IN_FINISH_STOP_S = 2.0;
 
@@ -23,7 +23,7 @@ public class IndexerTimings {
     public static double L3_OUT_SWAP_TO_LEFT_DELAY_S = 0.7;
     public static double L3_OUT_FINISH_DONE_S = 1.0;
 
-    // Sensors
+
     public static double COLOR_DETECT_MM = 50.0;
 
     private IndexerTimings() {}

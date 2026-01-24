@@ -10,7 +10,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @SuppressWarnings("all")
-public class Indexer_PGP {
+public class Indexer_PGP implements IndexerMode {
+
     private Indexer_Base indexerBase;
 
     private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET}
@@ -37,15 +38,16 @@ public class Indexer_PGP {
     private double shootY = 0;
     private double shootDistance = 0;
 
-    private ElapsedTime line1IntakeTimer;
-    private ElapsedTime line2IntakeTimer;
-    private ElapsedTime line3IntakeTimer;
-    private ElapsedTime line1OuttakeTimer;
-    private ElapsedTime line2OuttakeTimer;
-    private ElapsedTime line3OuttakeTimer;
+    private final ElapsedTime line1IntakeTimer;
+    private final ElapsedTime line2IntakeTimer;
+    private final ElapsedTime line3IntakeTimer;
+    private final ElapsedTime line1OuttakeTimer;
+    private final ElapsedTime line2OuttakeTimer;
+    private final ElapsedTime line3OuttakeTimer;
 
     public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, LauncherSubsystem shooter) {
         this.indexerBase = base;
+
         this.intkM = base.intkM;
         this.indexLeftServo = base.indexLeftServo;
         this.indexRightServo = base.indexRightServo;
@@ -63,6 +65,7 @@ public class Indexer_PGP {
         this.Shooter = shooter;
     }
 
+    @Override
     public boolean isBusy() {
         return (pgpState1 != ActionState.IDLE
                 || pgpState2 != ActionState.IDLE
@@ -72,10 +75,25 @@ public class Indexer_PGP {
                 || pgpState3_OT != ActionState.IDLE);
     }
 
+    @Override
     public void setShootContext(double x, double y, double distance) {
         this.shootX = x;
         this.shootY = y;
         this.shootDistance = distance;
+    }
+
+    @Override
+    public void startIntake(int line) {
+        if (line == 1) startLine1Intake();
+        else if (line == 2) startLine2Intake();
+        else if (line == 3) startLine3Intake();
+    }
+
+    @Override
+    public void startOuttake(int line) {
+        if (line == 1) startLine1Outtake();
+        else if (line == 2) startLine2Outtake();
+        else if (line == 3) startLine3Outtake();
     }
 
     public void startLine1Intake() {
@@ -339,6 +357,7 @@ public class Indexer_PGP {
         }
     }
 
+    @Override
     public void stopAll() {
         pgpState1 = ActionState.IDLE;
         pgpState2 = ActionState.IDLE;
@@ -354,6 +373,7 @@ public class Indexer_PGP {
         if (indexGateBack != null) indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
     }
 
+    @Override
     public void update() {
         Shooter.updateShootingAuto(wantShoot, shootX, shootY, shootDistance);
         Shooter.update();
