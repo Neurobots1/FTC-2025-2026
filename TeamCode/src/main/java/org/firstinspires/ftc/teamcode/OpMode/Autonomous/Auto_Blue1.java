@@ -333,15 +333,13 @@ public class Auto_Blue1 extends OpMode {
 
         if (activeIndexer != null) activeIndexer.stopAll();
 
-        final AprilTagPipeline at = aprilTag;
-        aprilTag = null;
-
-        if (at != null) {
-            new Thread(() -> {
-                try { at.stopCamera(); } catch (Exception ignored) {}
-            }).start();
+        if (aprilTag != null) {
+            try { aprilTag.stopCamera(); } catch (Exception ignoredv) {}
         }
     }
+
+
+
 
     public void setPathState(int pState) {
         pathState = pState;
