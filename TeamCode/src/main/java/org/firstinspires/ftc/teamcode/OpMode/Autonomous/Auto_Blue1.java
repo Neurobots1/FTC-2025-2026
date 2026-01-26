@@ -80,6 +80,59 @@ public class Auto_Blue1 extends OpMode {
     private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
     private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(140));
 
+
+// Default fallback
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.40;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.40;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
+
+    // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.5;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.7; // faster
+    public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
+
+    // PPG: you said you want line 1 faster
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 1; // faster
+    public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
+    public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
+
+    // GPP / NoSort (set whatever you want; leaving sane defaults)
+    public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.40;
+    public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.40;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.7;
+
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.7;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.7;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.7;
+
+    private double intakeFinalSpeedForLine(int line) {
+        // choose table based on which mode got locked
+        if (usePGPMode) {
+            if (line == 1) return PGP_INTAKE_FINAL_SPEED_L1;
+            if (line == 2) return PGP_INTAKE_FINAL_SPEED_L2;
+            if (line == 3) return PGP_INTAKE_FINAL_SPEED_L3;
+        } else if (usePPGMode) {
+            if (line == 1) return PPG_INTAKE_FINAL_SPEED_L1;
+            if (line == 2) return PPG_INTAKE_FINAL_SPEED_L2;
+            if (line == 3) return PPG_INTAKE_FINAL_SPEED_L3;
+        } else if (useGPPMode) {
+            if (line == 1) return GPP_INTAKE_FINAL_SPEED_L1;
+            if (line == 2) return GPP_INTAKE_FINAL_SPEED_L2;
+            if (line == 3) return GPP_INTAKE_FINAL_SPEED_L3;
+        } else if (useNoSortMode) {
+            if (line == 1) return NOSORT_INTAKE_FINAL_SPEED_L1;
+            if (line == 2) return NOSORT_INTAKE_FINAL_SPEED_L2;
+            if (line == 3) return NOSORT_INTAKE_FINAL_SPEED_L3;
+        }
+
+        // fallback
+        if (line == 1) return DEFAULT_INTAKE_FINAL_SPEED_L1;
+        if (line == 2) return DEFAULT_INTAKE_FINAL_SPEED_L2;
+        return DEFAULT_INTAKE_FINAL_SPEED_L3;
+    }
+
+
+
     public PathChain TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
             IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3;
 
@@ -215,7 +268,7 @@ public class Auto_Blue1 extends OpMode {
 
             case 4:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi1, 0.4, true);
+                    follower.followPath(IntkFi1, intakeFinalSpeedForLine(1), true);
                     setPathState(5);
                 }
                 break;
@@ -244,7 +297,7 @@ public class Auto_Blue1 extends OpMode {
             case 8:
                 if (!follower.isBusy()) {
                     startIntakeLine(2);
-                    follower.followPath(IntkFi2, 0.4, true);
+                    follower.followPath(IntkFi2, intakeFinalSpeedForLine(2), true);
                     setPathState(9);
                 }
                 break;
@@ -273,7 +326,7 @@ public class Auto_Blue1 extends OpMode {
             case 12:
                 if (!follower.isBusy()) {
                     startIntakeLine(3);
-                    follower.followPath(IntkFi3, 0.4, true);
+                    follower.followPath(IntkFi3, intakeFinalSpeedForLine(3), true);
                     setPathState(13);
                 }
                 break;
