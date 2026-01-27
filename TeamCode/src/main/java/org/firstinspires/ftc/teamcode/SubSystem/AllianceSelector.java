@@ -26,10 +26,10 @@ public final class AllianceSelector {
 
     public static final class Field {
 
-        public static final double RED_GOAL_X_IN  = 132;
-        public static final double RED_GOAL_Y_IN  = 132;
-        public static final double BLUE_GOAL_X_IN = 12;
-        public static final double BLUE_GOAL_Y_IN = 132;
+        public static final double RED_GOAL_X_IN  = 144;
+        public static final double RED_GOAL_Y_IN  = 144;
+        public static final double BLUE_GOAL_X_IN = 0;
+        public static final double BLUE_GOAL_Y_IN = 144;
 
         public static double goalX(Alliance a) {
             return a == Alliance.BLUE ? BLUE_GOAL_X_IN : RED_GOAL_X_IN;
@@ -38,6 +38,13 @@ public final class AllianceSelector {
         public static double goalY(Alliance a) {
             return a == Alliance.BLUE ? BLUE_GOAL_Y_IN : RED_GOAL_Y_IN;
         }
+
+        public static double fieldCentricOffset(Alliance a) {
+            return (a == Alliance.BLUE)
+                    ? Math.toRadians(180)
+                    : Math.toRadians(0);
+        }
+
 
         public static double headingToGoal(Pose pose, Alliance alliance) {
             double gx = goalX(alliance);

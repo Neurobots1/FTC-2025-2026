@@ -56,6 +56,7 @@ public class Robot {
 
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
+
     public void init(HardwareMap hw) {
 
         follower = Constants.createFollower(hw);
@@ -194,12 +195,19 @@ public class Robot {
         double manualTurn = -gamepad.right_stick_x;
         double turn = headingLockController.update(currentPose, headingLock, manualTurn);
 
+        double fieldCentricOffset =
+                AllianceSelector.Field.fieldCentricOffset(
+                        alliance == Alliance.BLUE
+                                ? AllianceSelector.Alliance.BLUE
+                                : AllianceSelector.Alliance.RED
+                );
+
         follower.setTeleOpDrive(
                 -gamepad.left_stick_y,
                 -gamepad.left_stick_x,
                 turn,
                 false,
-                Math.toRadians(180)
+                fieldCentricOffset
         );
 
         if (!indexerBase.isBusy()) {

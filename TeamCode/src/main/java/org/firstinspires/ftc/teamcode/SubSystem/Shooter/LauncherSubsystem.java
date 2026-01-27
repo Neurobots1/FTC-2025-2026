@@ -28,7 +28,6 @@ public class LauncherSubsystem {
     public static boolean MOTOR_ONE_REVERSED = false;
     public static boolean MOTOR_TWO_REVERSED = true;
 
-
     public static double BLOCKER_OPEN_DELAY_S = 0.3;
 
     private final DcMotorEx flywheelMotorOne;
@@ -47,16 +46,33 @@ public class LauncherSubsystem {
     private final ElapsedTime blockerTimer = new ElapsedTime();
     private boolean blockerOpenCommanded = false;
 
-    // y = 399.5011 + 4.804155*x - 0.00739844*x^2
+    // Far zone TPS is a constant (tune this)
+    public static double FAR_ZONE_TPS = 850;
+
+    // Close zone: y = 399.5011 + 4.804155*x - 0.00739844*x^2
     // y is RPM/TPS, x is distance
-    private static double computeLutTPS(double distance) {
-        double tps = 399.5011
-                + 4.804155 * distance
-                - 0.00739844 * distance * distance;
+    private static double computeLutTPSClose(double distance) {
+        double tps = 329.9568
+                + 7.182261 * distance
+                - 0.02564303 * distance * distance;
 
         if (tps < 0) tps = 0;
         if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
         return tps;
+    }
+
+    // Far zone: constant TPS
+    private static double computeLutTPSFar() {
+        double tps = FAR_ZONE_TPS;
+
+        if (tps < 0) tps = 0;
+        if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
+        return tps;
+    }
+
+    private static double computeLutTPS(double distance, double x, double y) {
+        if (isInBackZone(x, y)) return computeLutTPSFar();       // far zone
+        return computeLutTPSClose(distance);                      // close zone (front/default)
     }
 
     public double getTargetTPS() { return targetTPS; }
@@ -157,7 +173,6 @@ public class LauncherSubsystem {
         flywheelMotorTwo.setPower(power);
     }
 
-    // "ready" now means: at speed AND blocker has been open long enough
     public boolean flywheelReady() {
         if (targetTPS <= 0) return false;
 
@@ -197,12 +212,11 @@ public class LauncherSubsystem {
                 headingLock = false;
                 commandBlockerClosed();
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
 
-                // once we're up to speed, start opening blocker and go to next state
                 double currentTPS = flywheelMotorOne.getVelocity();
                 if (Math.abs(targetTPS - currentTPS) <= VELOCITY_TOLERANCE) {
                     commandBlockerOpen();
@@ -217,7 +231,7 @@ public class LauncherSubsystem {
             case OPENING_BLOCKER:
                 headingLock = false;
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
@@ -235,7 +249,7 @@ public class LauncherSubsystem {
             case FIRING:
                 headingLock = false;
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
@@ -248,7 +262,6 @@ public class LauncherSubsystem {
         }
     }
 
-    /************************* SHOOTING STATE MACHINE *************************/
     public void updateShooting(boolean shootButton, double x, double y, double distance) {
         boolean inZone = isInShootingZone(x, y);
 
@@ -260,7 +273,7 @@ public class LauncherSubsystem {
             if (shootState == ShootState.IDLE && inZone) {
                 shootState = ShootState.ARMING;
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 headingLock = true;
@@ -281,7 +294,7 @@ public class LauncherSubsystem {
                 headingLock = true;
                 commandBlockerClosed();
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
@@ -296,7 +309,7 @@ public class LauncherSubsystem {
             case OPENING_BLOCKER:
                 headingLock = true;
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
@@ -310,7 +323,7 @@ public class LauncherSubsystem {
             case FIRING:
                 headingLock = true;
 
-                LutTPS = computeLutTPS(distance);
+                LutTPS = computeLutTPS(distance, x, y);
                 setFlywheelTicks(LutTPS);
 
                 update();
@@ -329,8 +342,6 @@ public class LauncherSubsystem {
     public boolean isHeadingLockEnabled() {
         return headingLock;
     }
-
-    /************************* SHOOTING ZONE GEOMETRY *************************/
 
     public static double radius = 10.0;
 

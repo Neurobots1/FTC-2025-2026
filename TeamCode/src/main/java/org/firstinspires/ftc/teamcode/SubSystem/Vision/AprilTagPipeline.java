@@ -14,10 +14,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import org.openftc.easyopencv.OpenCvPipeline;
-import com.pedropathing.ftc.FTCCoordinates;
-import com.pedropathing.geometry.PedroCoordinates;
-import com.pedropathing.geometry.Pose;
 
+import com.pedropathing.geometry.Pose;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +29,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
 
     private final Position cameraPosition = new Position(DistanceUnit.INCH, -4.875, 8.4375, 10, 0);
     private final YawPitchRollAngles cameraorientation =
-            new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, 0, 0);
+            new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 0, 0);
 
     private volatile boolean closing = false;
 
@@ -98,12 +96,33 @@ public class AprilTagPipeline extends OpenCvPipeline {
 
     private void safeClosePortal() {
         try {
-            if (visionPortal != null) {
-                visionPortal.close();
+            if (visionPortal == null) return;
+
+            try {
+                visionPortal.stopStreaming();
+            } catch (Throwable ignored) { }
+
+            long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() - start < 600) {
+                VisionPortal.CameraState st;
+                try {
+                    st = visionPortal.getCameraState();
+                } catch (Throwable t) {
+                    break;
+                }
+                if (st != VisionPortal.CameraState.STREAMING &&
+                        st != VisionPortal.CameraState.STOPPING_STREAM &&
+                        st != VisionPortal.CameraState.STARTING_STREAM) {
+                    break;
+                }
+                try { Thread.sleep(20); } catch (InterruptedException ignored) { }
             }
+
+            visionPortal.close();
         } catch (RuntimeException ignored) {
         }
     }
+
 
     public boolean isCameraActive() {
         return visionPortal != null && visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING;
@@ -140,7 +159,27 @@ public class AprilTagPipeline extends OpenCvPipeline {
         }
     }
 
+    public static class RobotPoseDeg {
+        public final double x;
+        public final double y;
+        public final double headingDeg;
+        public final int tagIdUsed;
+
+        public RobotPoseDeg(double x, double y, double headingDeg, int tagIdUsed) {
+            this.x = x;
+            this.y = y;
+            this.headingDeg = headingDeg;
+            this.tagIdUsed = tagIdUsed;
+        }
+    }
+
     public RobotPose getRobotFieldPose() {
+        RobotPoseDeg p = getRobotFieldPoseDeg();
+        if (p == null) return null;
+        return new RobotPose(p.x, p.y, Math.toRadians(p.headingDeg), p.tagIdUsed);
+    }
+
+    public RobotPoseDeg getRobotFieldPoseDeg() {
         if (aprilTag == null) return null;
 
         List<AprilTagDetection> dets;
@@ -155,8 +194,8 @@ public class AprilTagPipeline extends OpenCvPipeline {
             if (d != null && d.robotPose != null) {
                 double x = d.robotPose.getPosition().x;
                 double y = d.robotPose.getPosition().y;
-                double headingRad = Math.toRadians(d.robotPose.getOrientation().getYaw(AngleUnit.DEGREES));
-                return new RobotPose(x, y, headingRad, d.id);
+                double headingDeg = d.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+                return new RobotPoseDeg(x, y, headingDeg, d.id);
             }
         }
 
@@ -164,15 +203,14 @@ public class AprilTagPipeline extends OpenCvPipeline {
     }
 
     public Pose getRobotFieldPosePedro() {
-        RobotPose p = getRobotFieldPose();
+        RobotPoseDeg p = getRobotFieldPoseDeg();
         if (p == null) return null;
-        return new Pose(p.x, p.y, p.headingRad, FTCCoordinates.INSTANCE).getAsCoordinateSystem(PedroCoordinates.INSTANCE);
+        return ConvertToPedroPose.convertToPedroPose(p.x, p.y, p.headingDeg);
     }
 
+
     private Pose getRobotPoseFromCamera() {
-        Pose p = getRobotFieldPosePedro();
-        if (p == null) return null;
-        return p;
+        return getRobotFieldPosePedro();
     }
 
     public Pose getRobotFieldPosePedroFiltered(Pose currentPedroPose,
@@ -194,12 +232,16 @@ public class AprilTagPipeline extends OpenCvPipeline {
         double bestScore = -1;
 
         for (AprilTagDetection d : dets) {
-            if (d == null || d.robotPose == null || d.ftcPose == null) continue;
+            if (d == null || d.robotPose == null) continue;
 
-            double range = d.ftcPose.range;
-            if (range <= 0 || range > maxRangeIn) continue;
+            double score = 1.0;
 
-            double score = 1.0 / Math.max(1e-6, range);
+            if (d.ftcPose != null) {
+                double range = d.ftcPose.range;
+                if (range <= 0 || range > maxRangeIn) continue;
+                score = 1.0 / Math.max(1e-6, range);
+            }
+
             if (score > bestScore) {
                 bestScore = score;
                 best = d;
@@ -210,9 +252,12 @@ public class AprilTagPipeline extends OpenCvPipeline {
 
         double x = best.robotPose.getPosition().x;
         double y = best.robotPose.getPosition().y;
-        double h = Math.toRadians(best.robotPose.getOrientation().getYaw(AngleUnit.DEGREES));
 
-        Pose visionPedro = new Pose(x, y, h, FTCCoordinates.INSTANCE).getAsCoordinateSystem(PedroCoordinates.INSTANCE);
+        double hDegRaw = best.robotPose.getOrientation().getYaw(AngleUnit.DEGREES);
+        double hDeg = normalizeDeg360(hDegRaw);
+
+        Pose visionPedro = ConvertToPedroPose.convertToPedroPose(x, y, hDeg);
+        if (visionPedro == null) return null;
 
         if (currentPedroPose == null) return visionPedro;
 
@@ -223,14 +268,25 @@ public class AprilTagPipeline extends OpenCvPipeline {
         double dh = wrapRad(visionPedro.getHeading() - currentPedroPose.getHeading());
         double dhDeg = Math.abs(Math.toDegrees(dh));
 
-        if (jump > maxJumpIn || dhDeg > maxHeadingJumpDeg) return null;
+        // IMPORTANT: don't return null forever — snap to vision when it's "too different"
+        if (jump > maxJumpIn || dhDeg > maxHeadingJumpDeg) {
+            return visionPedro;
+        }
 
         double fx = lerp(currentPedroPose.getX(), visionPedro.getX(), alpha);
         double fy = lerp(currentPedroPose.getY(), visionPedro.getY(), alpha);
         double fh = angleLerp(currentPedroPose.getHeading(), visionPedro.getHeading(), alpha);
 
-        return new Pose(fx, fy, fh, PedroCoordinates.INSTANCE);
+        return new Pose(fx, fy, fh);
     }
+
+    private static double normalizeDeg360(double deg) {
+        deg %= 360.0;
+        if (deg < 0) deg += 360.0;
+        return deg;
+    }
+
+
 
     private static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
@@ -245,5 +301,4 @@ public class AprilTagPipeline extends OpenCvPipeline {
     private static double angleLerp(double a, double b, double t) {
         return a + wrapRad(b - a) * t;
     }
-
 }

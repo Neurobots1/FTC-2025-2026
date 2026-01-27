@@ -66,20 +66,20 @@ public class Teleop_0601_camera extends OpMode {
             AprilTagPoseFtc ftcPose = relocalisation.relocalisationFtcPose();
             if (ftcPose != null) {
 
-                // --- FTC pose (corner-origin) -> center-origin ---
+
                 double xCenter = ftcPose.x - 72.0;
                 double yCenter = ftcPose.y - 72.0;
                 double headingDeg = ftcPose.yaw;
 
-                // --- 90° left rotation (CCW): (x, y) -> (-y, x) ---
+
                 double xRot = -yCenter;
                 double yRot =  xCenter;
 
-                // --- center-origin -> Pedro field (72,72 is center) ---
+
                 double xPedro = xRot + 72.0;
                 double yPedro = yRot + 72.0;
 
-                // --- heading: degrees -> apply frame rotation -> radians ---
+
                 double headingPedroRad = Math.toRadians(headingDeg + 90.0);
 
                 Pose newPose = new Pose(xPedro, yPedro, headingPedroRad);
