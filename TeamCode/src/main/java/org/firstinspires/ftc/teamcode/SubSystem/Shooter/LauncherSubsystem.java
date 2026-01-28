@@ -52,14 +52,15 @@ public class LauncherSubsystem {
     // Close zone: y = 399.5011 + 4.804155*x - 0.00739844*x^2
     // y is RPM/TPS, x is distance
     private static double computeLutTPSClose(double distance) {
-        double tps = 329.9568
-                + 7.182261 * distance
-                - 0.02564303 * distance * distance;
+        double tps = 446.5017
+                + 1.199221 * distance
+                + 0.007467123 * distance * distance;
 
         if (tps < 0) tps = 0;
         if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
         return tps;
     }
+
 
     // Far zone: constant TPS
     private static double computeLutTPSFar() {

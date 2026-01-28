@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter;
 
+import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PIDFController;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -7,11 +8,11 @@ import com.pedropathing.math.MathFunctions;
 
 public class HeadingLockController {
 
-    public static final double BLUE_GOAL_X = 12;
-    public static final double BLUE_GOAL_Y = 132;
+    public double BLUE_GOAL_X = 0;
+    public double BLUE_GOAL_Y = 140;
 
-    public static final double RED_GOAL_X = 132;
-    public static final double RED_GOAL_Y = 132;
+    public double RED_GOAL_X = 140;
+    public double RED_GOAL_Y = 140;
 
     private double goalX = BLUE_GOAL_X;
     private double goalY = BLUE_GOAL_Y;
@@ -19,6 +20,16 @@ public class HeadingLockController {
     private final PIDFController headingController;
     private final Follower follower;
     private double headingGoal = 0.0;
+
+
+    private static final PIDFCoefficients HEADING_PIDF =
+            new PIDFCoefficients(0.6 ,0,0.02,0.02);
+
+    public void setGoalY(double y) {
+        this.goalY = y;
+    }
+
+
 
     public HeadingLockController(PIDFController headingController, Follower follower) {
         this.headingController = headingController;
@@ -41,7 +52,7 @@ public class HeadingLockController {
     public double update(Pose pose, boolean lockEnabled, double manualTurn) {
         if (!lockEnabled) return manualTurn;
 
-        headingController.setCoefficients(follower.constants.coefficientsHeadingPIDF);
+        headingController.setCoefficients(HEADING_PIDF);
 
         headingGoal = calculateTargetHeadingToGoal(pose);
         double error = getHeadingError(pose);
@@ -57,6 +68,7 @@ public class HeadingLockController {
         goalX = BLUE_GOAL_X;
         goalY = BLUE_GOAL_Y;
     }
+
 
     public void setGoalRed() {
         goalX = RED_GOAL_X;

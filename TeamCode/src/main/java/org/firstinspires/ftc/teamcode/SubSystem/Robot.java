@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
+
 import com.pedropathing.ftc.InvertedFTCCoordinates;
 import com.pedropathing.ftc.PoseConverter;
 import com.pedropathing.geometry.PedroCoordinates;
@@ -27,6 +28,8 @@ import org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
+import java.util.Timer;
+
 public class Robot {
 
     public static boolean USE_LIMELIGHT = false;
@@ -46,6 +49,9 @@ public class Robot {
 
     private Limelight3A limelight;
     private LLResult llResult;
+    private final ElapsedTime DpadUpTimer = new ElapsedTime();
+    private final ElapsedTime DpadDownTimer = new ElapsedTime();
+
 
     private boolean visionInitialized = false;
     private double yawBiasRad = 0.0;
@@ -55,6 +61,9 @@ public class Robot {
     private boolean shooterReadyRumbleSent = false;
 
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
+
+
+
 
 
     public void init(HardwareMap hw) {
@@ -216,16 +225,49 @@ public class Robot {
             else intake.stop();
         }
 
-        if (gamepad.dpad_down) {
+        if (gamepad.dpad_left
+
+
+
+        ) {
             indexerBase.startOutTake();
         }
 
+        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.3) {
+            double newY = headingLockController.getGoalY() + 1.0;
+            headingLockController.setGoalY(newY);
+            DpadUpTimer.reset();
+        }
+
+
+        if (gamepad.dpad_down &&DpadDownTimer.seconds() >= 0.3 ) {
+            double newY = headingLockController.getGoalY() - 1.0;
+            headingLockController.setGoalY(newY);
+            DpadDownTimer.reset();
+        }
+
+        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.3) {
+            double newY = headingLockController.getGoalY() + 1.0;
+            headingLockController.setGoalY(newY);
+            DpadUpTimer.reset();
+        }
+
+
         indexerBase.OutTake();
+
+
 
         jt.addData("Alliance", alliance);
         jt.addData("position", follower.getPose());
         jt.addData("Velocity", follower.getVelocity().getMagnitude());
         jt.addData("distance to goal", getDistanceToGoal());
+        jt.addData("Shooter Target TPS", launcher.getTargetTPS());
+        jt.addData("Shooter Current TPS", launcher.getCurrentRPM());
+        jt.addData("GoalPoseY", headingLockController.getGoalY());
+        jt.update();
+        telemetryManager.update();
+
+
         jt.update();
         telemetryManager.update();
     }

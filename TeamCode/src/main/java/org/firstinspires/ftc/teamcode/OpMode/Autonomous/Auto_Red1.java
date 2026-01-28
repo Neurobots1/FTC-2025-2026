@@ -34,7 +34,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import java.util.List;
 
 @Autonomous(name = "Auto_blue1", group = "Examples")
-public class Auto_Blue1 extends OpMode {
+public class Auto_Red1 extends OpMode {
 
     private Follower follower;
     private Auto_pathBuild_Blue autoPathBuild;
@@ -69,19 +69,20 @@ public class Auto_Blue1 extends OpMode {
     private boolean modeLocked = false;
     private int detectedAprilTagId = -1;
 
-    public final Pose startPose = new Pose(33, 136, Math.toRadians(88));
-    private final Pose SeePatern = new Pose(47.1, 92, Math.toRadians(70));
-    private final Pose Shoot = new Pose(47, 92, Math.toRadians(130));
-    private final Pose IntkStart1 = new Pose(42, 83, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(14.5, 83, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(42, 61, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(10, 61, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(42, 40, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(140));
+    private final Pose startPose = new Pose(110, 136, Math.toRadians(90));
+    private final Pose SeePatern = new Pose(92, 92,Math.toRadians(90) );
+    private final Pose Shoot = new Pose(92, 92, Math.toRadians(50));
+    private final Pose IntkStart1 = new Pose(100, 85, Math.toRadians(0));
+    private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
+    private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
+    private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
+    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
+    private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
+    public static Pose finalPose = new Pose();
 
 
-// Default fallback
+    // Default fallback
     public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.40;
     public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.40;
     public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
@@ -479,10 +480,11 @@ public class Auto_Blue1 extends OpMode {
     }
 
     public double getDistanceToGoal() {
-        double gx = 0;
+        double gx = 140;
         double gy = 140;
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();
         return Math.hypot(dx, dy);
     }
 }
+
