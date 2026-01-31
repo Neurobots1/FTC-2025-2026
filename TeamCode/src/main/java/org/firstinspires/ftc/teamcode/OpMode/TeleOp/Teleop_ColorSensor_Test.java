@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-//@TeleOp(name="Teleop_ColorSensor_Test", group="TeleOp")
+@TeleOp(name="Teleop_ColorSensor_Test", group="TeleOp")
 public class Teleop_ColorSensor_Test extends OpMode {
     private RevColorSensorV3 colorSensor;
     private IntakeMotor intkM;

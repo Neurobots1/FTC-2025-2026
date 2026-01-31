@@ -5,6 +5,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -33,8 +34,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import java.util.List;
 
-@Autonomous(name = "Auto_Red1", group = "Examples")
-public class Auto_Red1 extends OpMode {
+@Autonomous(name = "Auto_Meet_Red", group = "Examples")
+public class Auto_Meet_Red extends OpMode {
 
     private Follower follower;
     private Auto_pathBuild_Blue autoPathBuild;
@@ -76,6 +77,7 @@ public class Auto_Red1 extends OpMode {
     private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
     private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
     private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
+    private final Pose ControlIntk2 = new Pose(100,65);
     private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
     private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
     private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
@@ -93,7 +95,7 @@ public class Auto_Red1 extends OpMode {
     public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.7;
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.7; // faster
     public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
 
@@ -134,19 +136,16 @@ public class Auto_Red1 extends OpMode {
 
 
 
-    public PathChain TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
+    public PathChain OpenGate, TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
             IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3;
 
     public void buildPaths() {
+
         TakePatern = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, SeePatern))
                 .setLinearHeadingInterpolation(startPose.getHeading(), SeePatern.getHeading())
                 .build();
 
-        Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(SeePatern, Shoot))
-                .setLinearHeadingInterpolation(SeePatern.getHeading(), Shoot.getHeading())
-                .build();
 
         Shoot2 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkFinal1, Shoot))
@@ -154,7 +153,7 @@ public class Auto_Red1 extends OpMode {
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal2, Shoot))
+                .addPath(new BezierCurve(IntkFinal2, ControlIntk2, Shoot))
                 .setLinearHeadingInterpolation(IntkFinal2.getHeading(), Shoot.getHeading())
                 .build();
 
@@ -233,29 +232,17 @@ public class Auto_Red1 extends OpMode {
 
                     if (id == 21) {
                         lockModeTo(indexer_gpp, "GPP", id);
-                        setPathState(2);
+                        setPathState(4000);
                     } else if (id == 22) {
                         lockModeTo(indexer_pgp, "PGP", id);
-                        setPathState(2);
+                        setPathState(4000);
                     } else if (id == 23) {
                         lockModeTo(indexer_ppg, "PPG", id);
-                        setPathState(2);
-                    } else if (pathTimer.getElapsedTimeSeconds() >= 3) {
+                        setPathState(4000);
+                    } else if (pathTimer.getElapsedTimeSeconds() >= 2) {
                         lockModeTo(indexer_noSort, "NoSort", -1);
-                        setPathState(2);
+                        setPathState(4000);
                     }
-                }
-                break;
-
-            case 2:
-                follower.followPath(Shoot1, 1, true);
-                setPathState(3);
-                break;
-
-            case 3:
-                if (!follower.isBusy()) {
-                    startOuttakeLine(1);
-                    setPathState(4000);
                 }
                 break;
 
@@ -386,10 +373,6 @@ public class Auto_Red1 extends OpMode {
         if (intkM != null) intkM.stop();
 
         if (activeIndexer != null) activeIndexer.stopAll();
-
-        if (aprilTag != null) {
-            try { aprilTag.stopCamera(); } catch (Exception ignoredv) {}
-        }
     }
 
 
@@ -480,7 +463,7 @@ public class Auto_Red1 extends OpMode {
     }
 
     public double getDistanceToGoal() {
-        double gx = 140;
+        double gx = 0;
         double gy = 140;
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();

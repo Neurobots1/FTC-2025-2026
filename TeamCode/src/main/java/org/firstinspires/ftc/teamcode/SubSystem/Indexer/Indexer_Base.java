@@ -42,8 +42,8 @@ public class Indexer_Base {
     public static double servointkF_Closed = 1;//Servo Intk ferme(les balles ne peuvent pas passer)
     public static double servointkF_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
 
-    public static double servointkB_Closed = 0.4;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointkB_Open = 1;//Servo Intk ouvert(les balles peuvent passer)
+    public static double servointkB_Closed = 0.6;//Servo Intk ferme(les balles ne peuvent pas passer)
+    public static double servointkB_Open = 0.3;//Servo Intk ouvert(les balles peuvent passer)
 
 
     public static double INDEXER_MOVE_TIME = 0.5;      // Temps pour deplacer le rail (secondes)

@@ -6,7 +6,7 @@ import com.bylazar.configurables.annotations.Configurable;
 public class IndexerTimings {
 
 
-    public static double L1_IN_SWAP_TO_MIDDLE_DELAY_S = 0.5;
+    public static double L1_IN_SWAP_TO_MIDDLE_DELAY_S = 0.1;
     public static double L1_IN_FINISH_STOP_S = 2.0;
 
     public static double L1_OUT_START_TO_SWAP_DELAY_S = 1;

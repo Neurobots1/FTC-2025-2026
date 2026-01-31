@@ -14,7 +14,7 @@ public class Indexer_PGP implements IndexerMode {
 
     private Indexer_Base indexerBase;
 
-    private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET}
+    private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET , WAIT}
 
     public ActionState pgpState1 = ActionState.IDLE;
     public ActionState pgpState2 = ActionState.IDLE;
@@ -142,8 +142,8 @@ public class Indexer_PGP implements IndexerMode {
 
             case START:
                 intkM.intake();
-                indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
+                indexLeftServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                indexRightServo.setPosition(Indexer_Base.indexer_L_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
                 line1IntakeTimer.reset();
                 pgpState1 = ActionState.Color_Detection;
@@ -158,15 +158,25 @@ public class Indexer_PGP implements IndexerMode {
 
             case SWAP_TO_MIDDLE:
                 if (line1IntakeTimer.seconds() > IndexerTimings.L1_IN_SWAP_TO_MIDDLE_DELAY_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
+                    line1IntakeTimer.reset();
+                    pgpState1 = ActionState.WAIT;
+                }
+                break;
+
+            case WAIT:
+                if (line1IntakeTimer.seconds()>0.5){
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                     pgpState1 = ActionState.FINISH;
                 }
+
+
                 break;
 
             case FINISH:
                 if (line1IntakeTimer.seconds() >= IndexerTimings.L1_IN_FINISH_STOP_S) {
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Blocker);
                     intkM.stop();
                     pgpState1 = ActionState.IDLE;
                 }
@@ -189,16 +199,24 @@ public class Indexer_PGP implements IndexerMode {
 
             case START:
                 if (line1OuttakeTimer.seconds() > IndexerTimings.L1_OUT_START_TO_SWAP_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
+                    indexLeftServo.setPosition(Indexer_Base.indexer_R_Engage);
+                    indexRightServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
+                    line1OuttakeTimer.reset();
+                    pgpState1_OT = ActionState.WAIT;
+                }
+                break;
+
+            case WAIT:
+                if (line1OuttakeTimer.seconds()>1){
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
                     line1OuttakeTimer.reset();
                     pgpState1_OT = ActionState.SWAP_TO_LEFT;
                 }
                 break;
-
             case SWAP_TO_LEFT:
-                if (line1OuttakeTimer.seconds() >= IndexerTimings.L1_OUT_SWAP_TO_LEFT_DONE_S) {
+                if (line1OuttakeTimer.seconds() >= 1) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
@@ -217,6 +235,7 @@ public class Indexer_PGP implements IndexerMode {
 
             case START:
                 intkM.intake();
+                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
                 indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                 line2IntakeTimer.reset();
                 pgpState2 = ActionState.Color_Detection;
@@ -225,12 +244,22 @@ public class Indexer_PGP implements IndexerMode {
             case Color_Detection:
                 if (colorSensor.getDistance(DistanceUnit.MM) <= IndexerTimings.COLOR_DETECT_MM) {
                     line2IntakeTimer.reset();
+                    pgpState2 = ActionState.WAIT;
+                }
+                break;
+
+            case WAIT:
+                if (line2IntakeTimer.seconds()>0.75) {
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
+                    line2IntakeTimer.reset();
                     pgpState2 = ActionState.FINISH;
                 }
                 break;
 
             case FINISH:
-                if (line2IntakeTimer.seconds() >= IndexerTimings.L2_IN_FINISH_STOP_S) {
+                if (line2IntakeTimer.seconds() >= 1) {
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     intkM.stop();
                     pgpState2 = ActionState.IDLE;
                 }
@@ -244,7 +273,6 @@ public class Indexer_PGP implements IndexerMode {
                 break;
 
             case RESET:
-                indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                 if (Shooter.flywheelReady()) {
                     intkM.slowIntake();
                     line2OuttakeTimer.reset();
@@ -253,10 +281,32 @@ public class Indexer_PGP implements IndexerMode {
                 break;
 
             case START:
-                if (line2OuttakeTimer.seconds() > IndexerTimings.L2_OUT_START_DONE_S) {
+                if (line2OuttakeTimer.seconds() > IndexerTimings.L3_OUT_START_TO_SWAP_DELAY_S) {
+                    indexLeftServo.setPosition(Indexer_Base.indexer_R_Engage);
+                    indexRightServo.setPosition(Indexer_Base.indexer_L_Retracted);
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    wantShoot = false;
+                    line2OuttakeTimer.reset();
+                    pgpState2_OT = ActionState.SWAP_TO_LEFT;
+                }
+                break;
+
+            case SWAP_TO_LEFT:
+                if (line2OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_SWAP_TO_LEFT_DELAY_S) {
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
+                    line2OuttakeTimer.reset();
+                    pgpState2_OT = ActionState.FINISH;
+                }
+                break;
+
+            case FINISH:
+                if (line2OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_FINISH_DONE_S) {
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                     intkM.stop();
+                    wantShoot = false;
                     pgpState2_OT = ActionState.IDLE;
                 }
                 break;

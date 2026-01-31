@@ -5,6 +5,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -33,8 +34,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 import java.util.List;
 
-@Autonomous(name = "Auto_Red1", group = "Examples")
-public class Auto_Red1 extends OpMode {
+@Autonomous(name = "Auto_Meet_Blue", group = "Examples")
+public class Auto_Meet_Blue extends OpMode {
 
     private Follower follower;
     private Auto_pathBuild_Blue autoPathBuild;
@@ -69,17 +70,17 @@ public class Auto_Red1 extends OpMode {
     private boolean modeLocked = false;
     private int detectedAprilTagId = -1;
 
-    private final Pose startPose = new Pose(110, 136, Math.toRadians(90));
-    private final Pose SeePatern = new Pose(92, 92,Math.toRadians(90) );
-    private final Pose Shoot = new Pose(92, 92, Math.toRadians(50));
-    private final Pose IntkStart1 = new Pose(100, 85, Math.toRadians(0));
-    private final Pose IntkFinal1 = new Pose(127, 85, Math.toRadians(0));
-    private final Pose IntkStart2 = new Pose(100, 63, Math.toRadians(0));
-    private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
-    private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
-    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
-    private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
-    public static Pose finalPose = new Pose();
+    public final Pose startPose = new Pose(34, 134, Math.toRadians(91));
+    private final Pose SeePatern = new Pose(47.1, 92, Math.toRadians(70));
+    private final Pose Shoot = new Pose(47, 92, Math.toRadians(130));
+    private final Pose IntkStart1 = new Pose(50, 82, Math.toRadians(180));
+    private final Pose IntkFinal1 = new Pose(20, 82, Math.toRadians(180));
+    private final Pose IntkStart2 = new Pose(42, 62, Math.toRadians(180));
+    private final Pose IntkFinal2 = new Pose(10, 58, Math.toRadians(180));
+    private final Pose ControlIntk2 = new Pose(30,65);
+    private final Pose IntkStart3 = new Pose(42, 38, Math.toRadians(180));
+    private final Pose IntkFinal3 = new Pose(8, 38, Math.toRadians(180));
+    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(140));
 
 
     // Default fallback
@@ -88,23 +89,23 @@ public class Auto_Red1 extends OpMode {
     public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
 
     // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
-    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.5;
-    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.7; // faster
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.4;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.7;
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.4; // faster
     public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // GPP / NoSort (set whatever you want; leaving sane defaults)
     public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.40;
     public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.7;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
-    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.7;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.7;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.7;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     private double intakeFinalSpeedForLine(int line) {
         // choose table based on which mode got locked
@@ -134,19 +135,16 @@ public class Auto_Red1 extends OpMode {
 
 
 
-    public PathChain TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
+    public PathChain OpenGate, TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
             IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3;
 
     public void buildPaths() {
+
         TakePatern = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, SeePatern))
                 .setLinearHeadingInterpolation(startPose.getHeading(), SeePatern.getHeading())
                 .build();
 
-        Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(SeePatern, Shoot))
-                .setLinearHeadingInterpolation(SeePatern.getHeading(), Shoot.getHeading())
-                .build();
 
         Shoot2 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkFinal1, Shoot))
@@ -154,7 +152,7 @@ public class Auto_Red1 extends OpMode {
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal2, Shoot))
+                .addPath(new BezierCurve(IntkFinal2, ControlIntk2, Shoot))
                 .setLinearHeadingInterpolation(IntkFinal2.getHeading(), Shoot.getHeading())
                 .build();
 
@@ -233,29 +231,17 @@ public class Auto_Red1 extends OpMode {
 
                     if (id == 21) {
                         lockModeTo(indexer_gpp, "GPP", id);
-                        setPathState(2);
+                        setPathState(4000);
                     } else if (id == 22) {
                         lockModeTo(indexer_pgp, "PGP", id);
-                        setPathState(2);
+                        setPathState(4000);
                     } else if (id == 23) {
                         lockModeTo(indexer_ppg, "PPG", id);
-                        setPathState(2);
-                    } else if (pathTimer.getElapsedTimeSeconds() >= 3) {
+                        setPathState(4000);
+                    } else if (pathTimer.getElapsedTimeSeconds() >= 2) {
                         lockModeTo(indexer_noSort, "NoSort", -1);
-                        setPathState(2);
+                        setPathState(4000);
                     }
-                }
-                break;
-
-            case 2:
-                follower.followPath(Shoot1, 1, true);
-                setPathState(3);
-                break;
-
-            case 3:
-                if (!follower.isBusy()) {
-                    startOuttakeLine(1);
-                    setPathState(4000);
                 }
                 break;
 
@@ -291,13 +277,13 @@ public class Auto_Red1 extends OpMode {
             case 7:
                 if (!activeIndexerBusy()) {
                     follower.followPath(IntkSt2, 1, true);
+                    startIntakeLine(2);
                     setPathState(8);
                 }
                 break;
 
             case 8:
                 if (!follower.isBusy()) {
-                    startIntakeLine(2);
                     follower.followPath(IntkFi2, intakeFinalSpeedForLine(2), true);
                     setPathState(9);
                 }
@@ -320,13 +306,13 @@ public class Auto_Red1 extends OpMode {
             case 11:
                 if (!activeIndexerBusy()) {
                     follower.followPath(IntkSt3, 1, true);
+                    startIntakeLine(3);
                     setPathState(12);
                 }
                 break;
 
             case 12:
                 if (!follower.isBusy()) {
-                    startIntakeLine(3);
                     follower.followPath(IntkFi3, intakeFinalSpeedForLine(3), true);
                     setPathState(13);
                 }
@@ -386,10 +372,6 @@ public class Auto_Red1 extends OpMode {
         if (intkM != null) intkM.stop();
 
         if (activeIndexer != null) activeIndexer.stopAll();
-
-        if (aprilTag != null) {
-            try { aprilTag.stopCamera(); } catch (Exception ignoredv) {}
-        }
     }
 
 
@@ -480,11 +462,10 @@ public class Auto_Red1 extends OpMode {
     }
 
     public double getDistanceToGoal() {
-        double gx = 140;
+        double gx = 0;
         double gy = 140;
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();
         return Math.hypot(dx, dy);
     }
 }
-

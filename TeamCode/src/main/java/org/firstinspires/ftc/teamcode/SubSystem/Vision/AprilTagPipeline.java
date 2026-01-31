@@ -29,7 +29,7 @@ public class AprilTagPipeline extends OpenCvPipeline {
 
     private final Position cameraPosition = new Position(DistanceUnit.INCH, -4.875, 8.4375, 10, 0);
     private final YawPitchRollAngles cameraorientation =
-            new YawPitchRollAngles(AngleUnit.DEGREES, 0, -90, 0, 0);
+            new YawPitchRollAngles(AngleUnit.DEGREES, 0, 0, -90, 0);
 
     private volatile boolean closing = false;
 

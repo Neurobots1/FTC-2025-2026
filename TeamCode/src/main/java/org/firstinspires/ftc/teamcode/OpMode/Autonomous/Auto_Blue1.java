@@ -69,15 +69,16 @@ public class Auto_Blue1 extends OpMode {
     private boolean modeLocked = false;
     private int detectedAprilTagId = -1;
 
-    public final Pose startPose = new Pose(33, 136, Math.toRadians(88));
+    public final Pose startPose = new Pose(34, 134, Math.toRadians(91));
     private final Pose SeePatern = new Pose(47.1, 92, Math.toRadians(70));
     private final Pose Shoot = new Pose(47, 92, Math.toRadians(130));
-    private final Pose IntkStart1 = new Pose(42, 83, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(14.5, 83, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(42, 61, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(10, 61, Math.toRadians(180));
-    private final Pose IntkStart3 = new Pose(42, 40, Math.toRadians(180));
-    private final Pose IntkFinal3 = new Pose(7, 37.05, Math.toRadians(180));
+    private final Pose IntkStart1 = new Pose(42, 88, Math.toRadians(190));
+    private final Pose IntkFinal1 = new Pose(15, 82, Math.toRadians(190));
+    private final Pose Gate = new Pose(11,71,Math.toRadians(180));
+    private final Pose IntkStart2 = new Pose(42, 62, Math.toRadians(180));
+    private final Pose IntkFinal2 = new Pose(7, 62, Math.toRadians(180));
+    private final Pose IntkStart3 = new Pose(42, 38, Math.toRadians(180));
+    private final Pose IntkFinal3 = new Pose(5, 38, Math.toRadians(180));
     private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(140));
 
 
@@ -92,7 +93,7 @@ public class Auto_Blue1 extends OpMode {
     public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 1; // faster
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.7; // faster
     public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
 
@@ -133,10 +134,16 @@ public class Auto_Blue1 extends OpMode {
 
 
 
-    public PathChain TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
+    public PathChain OpenGate, TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
             IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3;
 
     public void buildPaths() {
+
+        OpenGate = follower.pathBuilder()
+                .addPath(new BezierLine(IntkFinal1, Gate))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Gate.getHeading())
+                .build();
+
         TakePatern = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, SeePatern))
                 .setLinearHeadingInterpolation(startPose.getHeading(), SeePatern.getHeading())
@@ -239,7 +246,7 @@ public class Auto_Blue1 extends OpMode {
                     } else if (id == 23) {
                         lockModeTo(indexer_ppg, "PPG", id);
                         setPathState(2);
-                    } else if (pathTimer.getElapsedTimeSeconds() >= 4.0) {
+                    } else if (pathTimer.getElapsedTimeSeconds() >= 3) {
                         lockModeTo(indexer_noSort, "NoSort", -1);
                         setPathState(2);
                     }
@@ -272,6 +279,11 @@ public class Auto_Blue1 extends OpMode {
                     setPathState(5);
                 }
                 break;
+
+            case 1000:
+                if (!follower.isBusy()) {
+                    follower.followPath(OpenGate, 1, true);
+                }
 
             case 5:
                 if (!follower.isBusy() && !activeIndexerBusy()) {
@@ -385,10 +397,6 @@ public class Auto_Blue1 extends OpMode {
         if (intkM != null) intkM.stop();
 
         if (activeIndexer != null) activeIndexer.stopAll();
-
-        if (aprilTag != null) {
-            try { aprilTag.stopCamera(); } catch (Exception ignoredv) {}
-        }
     }
 
 
