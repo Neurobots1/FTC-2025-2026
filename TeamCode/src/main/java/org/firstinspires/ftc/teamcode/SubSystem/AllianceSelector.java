@@ -31,6 +31,40 @@ public final class AllianceSelector {
         public static final double BLUE_GOAL_X_IN = 0;
         public static final double BLUE_GOAL_Y_IN = 144;
 
+        public static final double BLUE_CORNER_Y_IN = 9;
+        public static final double BLUE_CORNER_X_IN = 135;
+        public static final double RED_CORNER_Y_IN = 9;
+        public static final double RED_CORNER_X_IN = 9;
+
+        public static final double RED_FINAL_X = 93;
+        public static final double RED_FINAL_Y = 108;
+        public static final double BLUE_FINAL_X = 55;
+        public static final double BLUE_FINAL_Y = 105;
+
+        public static final double BLUE_FINAL_H = 140;
+        public static final double RED_FINAL_H = 37;
+
+
+
+        public static double EndAutoX (Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_X : RED_FINAL_X;
+        }
+
+        public static double EndAutoY (Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_Y : RED_FINAL_Y;
+        }
+
+        public static double EndAutoH (Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_H : RED_FINAL_H;
+        }
+        public static double resetX(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_CORNER_X_IN : RED_CORNER_X_IN;
+        }
+
+        public static double resetY(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_CORNER_Y_IN : RED_CORNER_Y_IN;
+        }
+
         public static double goalX(Alliance a) {
             return a == Alliance.BLUE ? BLUE_GOAL_X_IN : RED_GOAL_X_IN;
         }
