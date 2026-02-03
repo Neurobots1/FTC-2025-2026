@@ -79,7 +79,7 @@ public class Auto_Meet_Red extends OpMode {
     private final Pose IntkFinal2 = new Pose(127, 63, Math.toRadians(0));
     private final Pose ControlIntk2 = new Pose(100,65);
     private final Pose IntkStart3 = new Pose(100, 40, Math.toRadians(0));
-    private final Pose IntkFinal3 = new Pose(127, 40, Math.toRadians(0));
+    private final Pose IntkFinal3 = new Pose(130, 40, Math.toRadians(0));
     private final Pose FinalShootPose = new Pose(93, 108, Math.toRadians(37));
     public static Pose finalPose = new Pose();
 
@@ -90,23 +90,23 @@ public class Auto_Meet_Red extends OpMode {
     public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
 
     // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
-    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.5;
-    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.7; // faster
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.4;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.7; // faster
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.4; // faster
     public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
     public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     // GPP / NoSort (set whatever you want; leaving sane defaults)
     public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.40;
     public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.7;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.4;
 
-    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.7;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.7;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.7;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.4;
 
     private double intakeFinalSpeedForLine(int line) {
         // choose table based on which mode got locked
@@ -463,11 +463,10 @@ public class Auto_Meet_Red extends OpMode {
     }
 
     public double getDistanceToGoal() {
-        double gx = 0;
+        double gx = 148;
         double gy = 140;
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();
         return Math.hypot(dx, dy);
     }
 }
-

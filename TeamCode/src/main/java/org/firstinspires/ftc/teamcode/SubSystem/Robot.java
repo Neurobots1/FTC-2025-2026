@@ -1,6 +1,8 @@
 package org.firstinspires.ftc.teamcode.SubSystem;
 
-
+import com.pedropathing.control.KalmanFilter;
+import com.pedropathing.control.KalmanFilterParameters;
+import com.pedropathing.control.LowPassFilter;
 import com.pedropathing.ftc.InvertedFTCCoordinates;
 import com.pedropathing.ftc.PoseConverter;
 import com.pedropathing.geometry.PedroCoordinates;
@@ -52,19 +54,19 @@ public class Robot {
     private final ElapsedTime DpadUpTimer = new ElapsedTime();
     private final ElapsedTime DpadDownTimer = new ElapsedTime();
 
-
     private boolean visionInitialized = false;
     private double yawBiasRad = 0.0;
+
+    private LowPassFilter headingErrLP;
+    private KalmanFilter kalX;
+    private KalmanFilter kalY;
+    private boolean filtersInitialized = false;
 
     private final ElapsedTime shooterReadyTimer = new ElapsedTime();
     private boolean headingLockWasEnabled = false;
     private boolean shooterReadyRumbleSent = false;
 
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
-
-
-
-
 
     public void init(HardwareMap hw) {
 
@@ -87,14 +89,22 @@ public class Robot {
         if (USE_LIMELIGHT) {
             limelight = hw.get(Limelight3A.class, "limelight");
             limelight.pipelineSwitch(1);
+
             visionInitialized = false;
             yawBiasRad = 0.0;
+
+            headingErrLP = new LowPassFilter(0.15);
+
+            KalmanFilterParameters p = new KalmanFilterParameters(0.05, 2.0);
+            kalX = new KalmanFilter(p);
+            kalY = new KalmanFilter(p);
+            filtersInitialized = false;
         }
     }
 
     public void startTeleop() {
         follower.startTeleopDrive();
-        follower.setStartingPose(startingPose);
+        follower.setStartingPose(getAutoEndPose());
 
         if (USE_LIMELIGHT && limelight != null) {
             limelight.start();
@@ -112,7 +122,7 @@ public class Robot {
 
         Pose currentPose = follower.getPose();
 
-        if (USE_LIMELIGHT && limelight != null && !visionInitialized) {
+        if (USE_LIMELIGHT && limelight != null) {
 
             double yawForLLDeg = Math.toDegrees(wrapRad(currentPose.getHeading() + yawBiasRad));
             limelight.updateRobotOrientation(yawForLLDeg);
@@ -120,11 +130,11 @@ public class Robot {
             llResult = limelight.getLatestResult();
 
             boolean llValid = false;
-            Pose3D llPose3d = null;
+            Pose3D mt2Pose3d = null;
 
             if (llResult != null && llResult.isValid()) {
-                llPose3d = llResult.getBotpose_MT2();
-                llValid = (llPose3d != null);
+                mt2Pose3d = llResult.getBotpose_MT2();
+                llValid = (mt2Pose3d != null);
             }
 
             int tagCount = 0;
@@ -135,42 +145,88 @@ public class Robot {
             jt.addData("LL enabled", true);
             jt.addData("LL valid", llValid);
             jt.addData("LL tagCount", tagCount);
+            jt.addData("LL filtersInit", filtersInitialized);
 
             boolean stillEnough =
                     follower.getVelocity().getMagnitude() < 0.2
                             && Math.abs(follower.getAngularVelocity()) < 0.1;
 
-            if (llValid
-                    && tagCount > 0
-                    && tagResetTimer.seconds() > tagCooldown
-                    && stillEnough) {
+            if (llValid && tagCount > 0) {
 
-                Pose visionPose = getRobotPoseFromCamera();
-                if (visionPose != null) {
+                Pose mt2Pedro = getPedroPoseFromMT2(); // XY source
+                Pose mt1Pedro = getPedroPoseFromMT1(); // heading source
 
-                    double imuHeadingRad = currentPose.getHeading();
+                boolean haveXY = (mt2Pedro != null);
+                boolean haveH  = (mt1Pedro != null);
 
-                    double h0 = wrapRad(visionPose.getHeading());
-                    double h1 = wrapRad(visionPose.getHeading() + Math.PI);
+                if (haveXY || haveH) {
 
-                    double chosen =
-                            angleDiffRad(h0, imuHeadingRad) <= angleDiffRad(h1, imuHeadingRad)
-                                    ? h0
-                                    : h1;
+                    if (!filtersInitialized) {
+                        double startX = currentPose.getX();
+                        double startY = currentPose.getY();
 
-                    yawBiasRad = wrapRad(chosen - imuHeadingRad);
+                        if (haveXY) {
+                            startX = mt2Pedro.getX();
+                            startY = mt2Pedro.getY();
+                        }
 
-                    double correctedHeading = wrapRad(imuHeadingRad + yawBiasRad);
+                        kalX.reset(startX, 1.0, 0.0);
+                        kalY.reset(startY, 1.0, 0.0);
 
-                    follower.setPose(new Pose(
-                            visionPose.getX(),
-                            visionPose.getY(),
-                            correctedHeading
-                    ));
+                        headingErrLP.reset(0.0, 1.0, 0.0);
 
-                    visionInitialized = true;
-                    tagResetTimer.reset();
+                        filtersInitialized = true;
+                    }
+
+                    if (haveXY) {
+                        kalX.update(mt2Pedro.getX(), currentPose.getX());
+                        kalY.update(mt2Pedro.getY(), currentPose.getY());
+                    }
+
+                    if (haveH) {
+                        double predictedH = currentPose.getHeading();
+                        double measuredH  = mt1Pedro.getHeading();
+
+                        double err = wrapRad(measuredH - predictedH);
+                        headingErrLP.update(err, headingErrLP.getState());
+                    }
+
+                    double filteredX = haveXY ? kalX.getState() : currentPose.getX();
+                    double filteredY = haveXY ? kalY.getState() : currentPose.getY();
+
+                    double filteredHeading = wrapRad(currentPose.getHeading() + headingErrLP.getState());
+
+                    jt.addData("LL filt X,Y,Hdeg", "%.1f, %.1f, %.1f",
+                            filteredX, filteredY, Math.toDegrees(filteredHeading));
+
+                    if (tagResetTimer.seconds() > tagCooldown && stillEnough) {
+
+                        double imuHeadingRad = currentPose.getHeading();
+
+                        double h0 = wrapRad(filteredHeading);
+                        double h1 = wrapRad(filteredHeading + Math.PI);
+
+                        double chosen =
+                                angleDiffRad(h0, imuHeadingRad) <= angleDiffRad(h1, imuHeadingRad)
+                                        ? h0
+                                        : h1;
+
+                        yawBiasRad = wrapRad(chosen - imuHeadingRad);
+
+                        double correctedHeading = wrapRad(imuHeadingRad + yawBiasRad);
+
+                        follower.setPose(new Pose(
+                                filteredX,
+                                filteredY,
+                                correctedHeading
+                        ));
+
+                        visionInitialized = true;
+                        tagResetTimer.reset();
+                    }
                 }
+            } else {
+                jt.addData("LL initDone", visionInitialized);
             }
         } else {
             jt.addData("LL enabled", USE_LIMELIGHT);
@@ -225,11 +281,7 @@ public class Robot {
             else intake.stop();
         }
 
-        if (gamepad.dpad_left
-
-
-
-        ) {
+        if (gamepad.dpad_left) {
             indexerBase.startOutTake();
         }
 
@@ -239,23 +291,21 @@ public class Robot {
             DpadUpTimer.reset();
         }
 
-
-        if (gamepad.dpad_down &&DpadDownTimer.seconds() >= 0.3 ) {
+        if (gamepad.dpad_down && DpadDownTimer.seconds() >= 0.3) {
             double newY = headingLockController.getGoalY() - 1.0;
             headingLockController.setGoalY(newY);
             DpadDownTimer.reset();
         }
 
-        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.3) {
-            double newY = headingLockController.getGoalY() + 1.0;
-            headingLockController.setGoalY(newY);
-            DpadUpTimer.reset();
+        if (gamepad.options) {
+            follower.setPose(getOptionsResetPose());
         }
 
+        if (gamepad.share) {
+            follower.setPose(startingPose);
+        }
 
         indexerBase.OutTake();
-
-
 
         jt.addData("Alliance", alliance);
         jt.addData("position", follower.getPose());
@@ -264,10 +314,6 @@ public class Robot {
         jt.addData("Shooter Target TPS", launcher.getTargetTPS());
         jt.addData("Shooter Current TPS", launcher.getCurrentRPM());
         jt.addData("GoalPoseY", headingLockController.getGoalY());
-        jt.update();
-        telemetryManager.update();
-
-
         jt.update();
         telemetryManager.update();
     }
@@ -282,18 +328,31 @@ public class Robot {
         return Math.abs(wrapRad(a - b));
     }
 
-    private Pose getRobotPoseFromCamera() {
+    private Pose getPedroPoseFromMT2() {
         if (!USE_LIMELIGHT) return null;
         if (llResult == null || !llResult.isValid()) return null;
 
         Pose3D llPose = llResult.getBotpose_MT2();
         if (llPose == null) return null;
 
+        return pose3DToPedro(llPose);
+    }
+
+    private Pose getPedroPoseFromMT1() {
+        if (!USE_LIMELIGHT) return null;
+        if (llResult == null || !llResult.isValid()) return null;
+
+        Pose3D llPose = llResult.getBotpose();
+        if (llPose == null) return null;
+
+        return pose3DToPedro(llPose);
+    }
+
+    private Pose pose3DToPedro(Pose3D llPose) {
         double xIn = llPose.getPosition().toUnit(DistanceUnit.INCH).x;
         double yIn = llPose.getPosition().toUnit(DistanceUnit.INCH).y;
 
-        double camHeadingRad =
-                Math.toRadians(llPose.getOrientation().getYaw(AngleUnit.DEGREES));
+        double camHeadingRad = Math.toRadians(llPose.getOrientation().getYaw(AngleUnit.DEGREES));
 
         Pose2D apriltagPose = new Pose2D(
                 DistanceUnit.INCH,
@@ -325,5 +384,33 @@ public class Robot {
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();
         return Math.hypot(dx, dy);
+    }
+
+    private AllianceSelector.Alliance toSelectorAlliance() {
+        return (alliance == Alliance.BLUE)
+                ? AllianceSelector.Alliance.BLUE
+                : AllianceSelector.Alliance.RED;
+    }
+
+    private Pose getOptionsResetPose() {
+        AllianceSelector.Alliance a = toSelectorAlliance();
+
+        double x = AllianceSelector.Field.resetX(a);
+        double y = AllianceSelector.Field.resetY(a);
+
+        double headingRad = Math.toRadians(270);
+
+        return new Pose(x, y, headingRad);
+    }
+
+    private Pose getAutoEndPose() {
+        AllianceSelector.Alliance a = toSelectorAlliance();
+
+        double x = AllianceSelector.Field.EndAutoX(a);
+        double y = AllianceSelector.Field.EndAutoY(a);
+
+        double headingRad = Math.toRadians((AllianceSelector.Field.EndAutoH(a)));
+
+        return new Pose(x, y, headingRad);
     }
 }

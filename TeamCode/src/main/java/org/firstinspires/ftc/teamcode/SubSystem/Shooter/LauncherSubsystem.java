@@ -47,7 +47,7 @@ public class LauncherSubsystem {
     private boolean blockerOpenCommanded = false;
 
     // Far zone TPS is a constant (tune this)
-    public static double FAR_ZONE_TPS = 850;
+    public static double FAR_ZONE_TPS = 820;
 
     // Close zone: y = 399.5011 + 4.804155*x - 0.00739844*x^2
     // y is RPM/TPS, x is distance
