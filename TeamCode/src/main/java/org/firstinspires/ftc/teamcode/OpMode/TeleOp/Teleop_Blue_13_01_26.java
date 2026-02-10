@@ -9,12 +9,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
+import org.firstinspires.ftc.teamcode.OpMode.Autonomous.Auto_Meet_Blue;
 
 @Configurable
 @TeleOp
 public class Teleop_Blue_13_01_26 extends OpMode {
 
     private Robot robot;
+    private Auto_Meet_Blue autonomeB;
     private JoinedTelemetry jt;
     private TelemetryManager telemetryManager;
     private final ElapsedTime tagResetTimer = new ElapsedTime();
@@ -24,9 +26,9 @@ public class Teleop_Blue_13_01_26 extends OpMode {
     public void init() {
         robot = new Robot();
         robot.init(hardwareMap);
-
+        autonomeB = new Auto_Meet_Blue();
+        autonomeB.GetPose();
         robot.setAlliance(Robot.Alliance.BLUE);
-
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
 
