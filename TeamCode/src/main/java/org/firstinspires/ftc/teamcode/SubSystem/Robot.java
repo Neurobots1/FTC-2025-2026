@@ -285,14 +285,14 @@ public class Robot {
             indexerBase.startOutTake();
         }
 
-        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.3) {
-            double newY = headingLockController.getGoalY() + 1.0;
+        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.2) {
+            double newY = headingLockController.getGoalY() + 3.0;
             headingLockController.setGoalY(newY);
             DpadUpTimer.reset();
         }
 
-        if (gamepad.dpad_down && DpadDownTimer.seconds() >= 0.3) {
-            double newY = headingLockController.getGoalY() - 1.0;
+        if (gamepad.dpad_down && DpadDownTimer.seconds() >= 0.2) {
+            double newY = headingLockController.getGoalY() - 3.0;
             headingLockController.setGoalY(newY);
             DpadDownTimer.reset();
         }
