@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 @Autonomous
 public class Auto_TEST extends OpMode {
 
+
     public static class Paths {
         public PathChain Path1;
         public PathChain Path2;
@@ -22,6 +23,9 @@ public class Auto_TEST extends OpMode {
         public PathChain Path6;
         public PathChain Path7;
         public PathChain Path8;
+        public PathChain Path9;
+        public PathChain Path10;
+        public PathChain Path11;
 
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder().addPath(
@@ -50,7 +54,7 @@ public class Auto_TEST extends OpMode {
 
                                     new Pose(10.000, 58.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                    ).setTangentHeadingInterpolation()
 
                     .build();
 
@@ -101,6 +105,36 @@ public class Auto_TEST extends OpMode {
                                     new Pose(49.000, 92.000)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(139), Math.toRadians(139))
+
+                    .build();
+
+            Path9 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(49.000, 92.000),
+
+                                    new Pose(39.000, 84.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(139), Math.toRadians(180))
+
+                    .build();
+
+            Path10 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(39.000, 84.000),
+
+                                    new Pose(17.000, 84.000)
+                            )
+                    ).setTangentHeadingInterpolation()
+
+                    .build();
+
+            Path11 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(17.000, 84.000),
+
+                                    new Pose(64.000, 103.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(139))
 
                     .build();
         }
