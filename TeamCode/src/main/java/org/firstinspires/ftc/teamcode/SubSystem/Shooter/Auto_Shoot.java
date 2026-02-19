@@ -51,8 +51,6 @@ public class Auto_Shoot {
     public static double MIN_DISTANCE = 10.0;
     public static double MAX_DISTANCE = 150.0;
 
-    // si millimètres, utiliser 0.0393701
-    // si pouces, utiliser 1.0
     public static double PEDRO_TO_INCHES = 0.0393701;
 
     private boolean autoAdjustEnabled = true;
@@ -74,16 +72,12 @@ public class Auto_Shoot {
     }
 
     public void update() {
-        follower.update();
-
         if (autoAdjustEnabled) {
             calculateDistanceToGoal();
-
             if (targetInRange) {
                 targetRPM = calculateRPMFromDistance(distanceToGoal);
             }
         }
-
         updateLauncher();
     }
 
@@ -98,11 +92,8 @@ public class Auto_Shoot {
 
         double distancePedroUnits = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-
         distanceToGoal = distancePedroUnits * PEDRO_TO_INCHES;
-
         angleToGoal = Math.toDegrees(Math.atan2(deltaY, deltaX));
-
         targetInRange = (distanceToGoal >= MIN_DISTANCE && distanceToGoal <= MAX_DISTANCE);
     }
 
@@ -162,7 +153,6 @@ public class Auto_Shoot {
 
     public void shootAuto() {
         if (targetInRange && isAtTargetRPM()) {
-            // Prêt à tirer
         }
     }
 
@@ -204,7 +194,6 @@ public class Auto_Shoot {
         return new Pose(currentPose.getX(), currentPose.getY(), headingToGoal);
     }
 
-    // Getters
     public boolean isAtTargetRPM() {
         return Math.abs(currentRPM - targetRPM) < RPM_TOLERANCE;
     }
@@ -259,9 +248,3 @@ public class Auto_Shoot {
                 pose.getX(), pose.getY(), GOAL_X, GOAL_Y, distanceToGoal);
     }
 }
-
-
-
-
-
-//.

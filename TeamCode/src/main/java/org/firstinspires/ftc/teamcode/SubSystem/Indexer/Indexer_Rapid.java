@@ -31,6 +31,7 @@ public class Indexer_Rapid implements IndexerMode {
 
     private final ElapsedTime rapidIntakeTimer;
     private final ElapsedTime rapidOuttakeTimer;
+    private final ElapsedTime setupOuttakeTimer;
 
     private enum RapidIntakeState {IDLE, START, COLOR_DETECTION, FINISH}
     private enum RapidOuttakeState {IDLE, START, FINISH}
@@ -56,11 +57,16 @@ public class Indexer_Rapid implements IndexerMode {
 
         this.rapidIntakeTimer = new ElapsedTime();
         this.rapidOuttakeTimer = new ElapsedTime();
+        this.setupOuttakeTimer = new ElapsedTime();
     }
 
     @Override
     public boolean isBusy() {
-        return intakeState != RapidIntakeState.IDLE || outtakeState != RapidOuttakeState.IDLE;
+        return intakeState != RapidIntakeState.IDLE
+                || outtakeState != RapidOuttakeState.IDLE
+                || setupOuttakeState != SetupOuttakeState.IDLE
+                || finishOuttakeState != FinishOuttakeState.IDLE;
+
     }
 
     @Override
@@ -141,11 +147,16 @@ public class Indexer_Rapid implements IndexerMode {
                 break;
 
             case START:
-                wantShoot = false;
-                finishOuttakeState = FinishOuttakeState.FINISH;
+               if (Shooter.flywheelReady()) {
+                   intkM.intake();
+                   if (setupOuttakeTimer.seconds()>1.7) {
+                       finishOuttakeState = FinishOuttakeState.FINISH;
+                   }
+               }
                 break;
 
             case FINISH:
+                wantShoot = false;
                 finishOuttakeState = FinishOuttakeState.IDLE;
                 break;
         }

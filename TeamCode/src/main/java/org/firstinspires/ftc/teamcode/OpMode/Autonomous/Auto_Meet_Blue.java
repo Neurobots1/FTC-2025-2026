@@ -16,6 +16,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import org.firstinspires.ftc.teamcode.SubSystem.Auto_Pose;
+
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
@@ -51,6 +53,7 @@ public class Auto_Meet_Blue extends OpMode {
     private IndexerMode activeIndexer;
 
     private IntakeMotor intkM;
+    public Auto_Pose autoPose;
 
     private DcMotorEx flywheelMotorOne;
     private DcMotorEx flywheelMotorTwo;
@@ -372,7 +375,21 @@ public class Auto_Meet_Blue extends OpMode {
         if (intkM != null) intkM.stop();
 
         if (activeIndexer != null) activeIndexer.stopAll();
+        Get_Pose();
     }
+
+    public void Get_Pose() {
+        if (follower == null) return;
+
+        Pose pose = follower.getPose();
+        Auto_Pose.save(pose);
+
+        telemetry.addData("POSE SAVED X", pose.getX());
+        telemetry.addData("POSE SAVED Y", pose.getY());
+        telemetry.addData("POSE SAVED H (deg)", Math.toDegrees(pose.getHeading()));
+        telemetry.update();
+    }
+
 
 
 
