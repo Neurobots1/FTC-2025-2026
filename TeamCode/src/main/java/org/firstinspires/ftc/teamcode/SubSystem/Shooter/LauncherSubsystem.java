@@ -63,8 +63,8 @@ public class LauncherSubsystem {
 
 
     // Far zone: constant TPS
-    private static double computeLutTPSFar() {
-        double tps = FAR_ZONE_TPS;
+    private static double computeLutTPSFar(double distance) {
+        double tps = 1277.489 - 10.31641 * distance + 0.04716799 * distance * distance;
 
         if (tps < 0) tps = 0;
         if (tps > MAX_FLYWHEEL_VELOCITY) tps = MAX_FLYWHEEL_VELOCITY;
@@ -72,7 +72,7 @@ public class LauncherSubsystem {
     }
 
     private static double computeLutTPS(double distance, double x, double y) {
-        if (isInBackZone(x, y)) return computeLutTPSFar();       // far zone
+        if (isInBackZone(x, y)) return computeLutTPSFar(distance);       // far zone
         return computeLutTPSClose(distance);                      // close zone (front/default)
     }
 
