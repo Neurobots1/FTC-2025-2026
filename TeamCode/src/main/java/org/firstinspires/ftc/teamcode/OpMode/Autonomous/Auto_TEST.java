@@ -10,6 +10,8 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
 @Autonomous
 public class Auto_TEST extends OpMode {
 
@@ -150,5 +152,6 @@ public class Auto_TEST extends OpMode {
 
     @Override
     public void init() {
+        follower = Constants.createFollower(hardwareMap);
     }
 }

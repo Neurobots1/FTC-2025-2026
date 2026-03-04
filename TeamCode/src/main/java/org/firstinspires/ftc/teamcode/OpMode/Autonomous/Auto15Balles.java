@@ -37,17 +37,20 @@ public class Auto15Balles extends OpMode {
 
     private LauncherSubsystem Shooter;
 
-    public final Pose startPose = new Pose(21, 120, Math.toRadians(139));
+    public final Pose startPose = new Pose(20, 119, Math.toRadians(139));
     private final Pose shoot = new Pose(47, 92, Math.toRadians(139));
-    private final Pose intkStart1 = new Pose(42, 88, Math.toRadians(190));
-    private final Pose intkFinal1 = new Pose(20, 82, Math.toRadians(190));
-    private final Pose intkStart2 = new Pose(42, 62, Math.toRadians(180));
-    private final Pose intkFinal2 = new Pose(7, 62, Math.toRadians(180));
-    private final Pose intk2Control = new Pose(30, 65);
-    private final Pose gateIntk = new Pose(13, 63, Math.toRadians(155));
+    private final Pose intkStart1 = new Pose(50, 88, Math.toRadians(190));
+    private final Pose intkFinal1 = new Pose(23, 82, Math.toRadians(190));
+    private final Pose intkStart2 = new Pose(50, 55, Math.toRadians(180));
+    private final Pose intkFinal2 = new Pose(15, 55, Math.toRadians(180));
+    private final Pose intk2Control = new Pose(45, 55);
+    private final Pose gateIntk = new Pose(11, 55, Math.toRadians(152));
     private final Pose gateIntkControl = new Pose(27, 50);
 
     public PathChain Shoot1, IntkSt1, IntkFi1, Shoot2, IntkSt2, IntkFi2, Shoot3, GateIntk1, Shoot4, GateIntk2, FiShoot;
+
+    private boolean gateWaitStarted1 = false;
+    private boolean gateWaitStarted2 = false;
 
     public void buildPaths() {
         Shoot1 = follower.pathBuilder()
@@ -91,7 +94,7 @@ public class Auto15Balles extends OpMode {
                 .build();
 
         Shoot4 = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk, gateIntkControl, shoot))
+                .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
                 .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
                 .build();
 
@@ -101,7 +104,7 @@ public class Auto15Balles extends OpMode {
                 .build();
 
         FiShoot = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk, gateIntkControl, shoot))
+                .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
                 .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
                 .build();
     }
@@ -116,149 +119,159 @@ public class Auto15Balles extends OpMode {
 
             case 1:
                 if (!follower.isBusy()) {
-                    follower.followPath(Shoot1, 0.7, true);
-                    setPathState(99);
-                }
-                break;
-
-            case 99:
-                if (!follower.isBusy()&&Shooter.flywheelReady()){
-                    intkM.slowIntake();
-                    setPathState(100);
-                }
-                break;
-
-            case 100:
-                if (!follower.isBusy()&&actionTimer.getElapsedTimeSeconds()>2){
-                    fuckingNoSort.startFinishOuttake();
+                    follower.followPath(Shoot1, 0.8, true);
                     setPathState(2);
-
                 }
                 break;
-
-
 
             case 2:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkSt1);
+                if (!follower.isBusy() && Shooter.flywheelReady()) {
+                    fuckingNoSort.startRapidOuttake();
                     setPathState(3);
                 }
                 break;
 
             case 3:
-                if (!follower.isBusy()) {
-                    follower.followPath(IntkFi1,0.7, true);
-                    fuckingNoSort.startRapidIntakeNoSort();
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
                     setPathState(4);
                 }
                 break;
 
             case 4:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds() > 1) {
-                    follower.followPath(Shoot2,0.7, true);
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkSt2, 0.8, true);
                     setPathState(5);
                 }
                 break;
 
             case 5:
                 if (!follower.isBusy()) {
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 80);
-                    fuckingNoSort.startRapidOuttake();
+                    follower.followPath(IntkFi2, 0.6, true);
+                    fuckingNoSort.startRapidIntakeNoSort();
                     setPathState(6);
                 }
                 break;
 
             case 6:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds()>2.5) {
-                    follower.followPath(IntkSt2,0.7, true);
-                    actionTimer.resetTimer();
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 1.0) {
+                    follower.followPath(Shoot3, 0.8, true);
+                    intkM.stop();
                     setPathState(7);
                 }
                 break;
 
             case 7:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi2,0.7, true);
-                    fuckingNoSort.startRapidIntakeNoSort();
+                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
+                    fuckingNoSort.startRapidOuttake();
                     setPathState(8);
                 }
                 break;
 
             case 8:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds()>1) {
-                    follower.followPath(Shoot3,0.7, true);
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                    follower.followPath(GateIntk1, 0.8, true);
+                    gateWaitStarted1 = false;
                     setPathState(9);
                 }
                 break;
 
             case 9:
                 if (!follower.isBusy()) {
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 80);
-                    fuckingNoSort.startRapidOuttake();
-                    setPathState(10);
-                }
-                break;
-
-            case 10:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds()>2) {
-                    follower.followPath(GateIntk1,0.7, true);
-                    actionTimer.resetTimer();
-                    setPathState(101);
-                }
-                break;
-
-            case 101:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds()>1.5) {
-                    fuckingNoSort.startRapidIntakeNoSort();
-                    setPathState(11);
+                    if (!gateWaitStarted1) {
+                        intkM.intake();
+                        actionTimer.resetTimer();
+                        gateWaitStarted1 = true;
+                    }
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
+                        intkM.stop();
+                        follower.followPath(Shoot4, 0.8, true);
+                        gateWaitStarted1 = false;
+                        setPathState(11);
+                    }
                 }
                 break;
 
             case 11:
                 if (!follower.isBusy()) {
-                    follower.followPath(Shoot4,0.7, true);
+                    intkM.stop();
+                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
+                    fuckingNoSort.startRapidOuttake();
                     setPathState(12);
                 }
                 break;
 
             case 12:
-                if (!follower.isBusy()) {
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 80);
-                    fuckingNoSort.startRapidOuttake();
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                    follower.followPath(GateIntk2, 0.8, true);
+                    gateWaitStarted2 = false;
                     setPathState(13);
                 }
                 break;
 
             case 13:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds()>2.5) {
-                    follower.followPath(GateIntk2,0.7, true);
-                    actionTimer.resetTimer();
-                    setPathState(131);
-                }
-                break;
-
-            case 131:
-                if (!follower.isBusy()&& actionTimer.getElapsedTimeSeconds() > 1.5) {
-                    fuckingNoSort.startRapidIntakeNoSort();
-                    setPathState(14);
-                }
-                break;
-
-            case 14:
                 if (!follower.isBusy()) {
-                    follower.followPath(FiShoot,0.7, true);
-                    setPathState(15);
+                    if (!gateWaitStarted2) {
+                        intkM.intake();
+                        actionTimer.resetTimer();
+                        gateWaitStarted2 = true;
+                    }
+                    if (actionTimer.getElapsedTimeSeconds() > 2) {
+                        intkM.stop();
+                        follower.followPath(FiShoot, 0.8, true);
+                        gateWaitStarted2 = false;
+                        setPathState(15);
+                    }
                 }
                 break;
 
             case 15:
                 if (!follower.isBusy()) {
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 80);
+                    intkM.stop();
+                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
                     fuckingNoSort.startRapidOuttake();
-                    if (actionTimer.getElapsedTimeSeconds()>2) {
-                        setPathState(-1);
-                    }
+                    setPathState(16);
                 }
+                break;
+
+            case 16:
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                    follower.followPath(IntkSt1, 0.8, true);
+                    setPathState(17);
+                }
+                break;
+
+            case 17:
+                if (!follower.isBusy()) {
+                    follower.followPath(IntkFi1, 0.8, true);
+                    fuckingNoSort.startRapidIntakeNoSort();
+                    setPathState(18);
+                }
+                break;
+
+            case 18:
+                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 1.0) {
+                    follower.followPath(Shoot2, 0.8, true);
+                    setPathState(19);
+                }
+                break;
+
+            case 19:
+                if (!follower.isBusy()) {
+                    intkM.stop();
+                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
+                    fuckingNoSort.startRapidOuttake();
+                    setPathState(20);
+                }
+                break;
+
+            case 20:
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                    setPathState(-1);
+                }
+                break;
+
+            default:
                 break;
         }
     }
@@ -304,10 +317,8 @@ public class Auto15Balles extends OpMode {
 
         double distance = getDistanceToGoal();
 
-
-        // CRITICAL: without this, Rapid won't run its state machines
         fuckingNoSort.update();
-        fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(),distance);
+        fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), distance);
 
         telemetry.addData("Follower busy", follower.isBusy());
         telemetry.addData("PathState", pathState);
@@ -326,6 +337,7 @@ public class Auto15Balles extends OpMode {
     @Override
     public void stop() {
         if (fuckingNoSort != null) fuckingNoSort.stopAll();
+        if (intkM != null) intkM.stop();
         if (indexerBase != null && indexerBase.intkM != null) indexerBase.intkM.stop();
     }
 }
