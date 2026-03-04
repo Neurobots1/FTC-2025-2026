@@ -4,15 +4,14 @@ import com.pedropathing.geometry.Pose;
 
 public class ConvertToPedroPose {
 
-    public static Pose convertToPedroPose(double xCenterIn, double yCenterIn, double headingDeg) {
-        double xRot = -yCenterIn;
-        double yRot =  xCenterIn;
+    // Adjust ONLY if needed (start at 0)
+    private static final double HEADING_OFFSET_DEG = 0.0;
 
-        double xPedro = xRot + 72.0;
-        double yPedro = yRot + 72.0;
-
-        double headingPedroRad = Math.toRadians(headingDeg + 90.0);
-
-        return new Pose(xPedro, yPedro, headingPedroRad);
+    public static Pose convertToPedroPose(double xIn, double yIn, double headingDeg) {
+        return new Pose(
+                xIn,
+                yIn,
+                Math.toRadians(headingDeg + HEADING_OFFSET_DEG)
+        );
     }
 }
