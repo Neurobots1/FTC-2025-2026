@@ -56,56 +56,78 @@ public class Auto15Balles extends OpMode {
         Shoot1 = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, shoot))
                 .setLinearHeadingInterpolation(startPose.getHeading(), shoot.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt1 = follower.pathBuilder()
                 .addPath(new BezierLine(shoot, intkStart1))
                 .setLinearHeadingInterpolation(shoot.getHeading(), intkStart1.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi1 = follower.pathBuilder()
                 .addPath(new BezierLine(intkStart1, intkFinal1))
                 .setLinearHeadingInterpolation(intkStart1.getHeading(), intkFinal1.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot2 = follower.pathBuilder()
                 .addPath(new BezierLine(intkFinal1, shoot))
                 .setLinearHeadingInterpolation(intkFinal1.getHeading(), shoot.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt2 = follower.pathBuilder()
                 .addPath(new BezierLine(shoot, intkStart2))
                 .setLinearHeadingInterpolation(shoot.getHeading(), intkStart2.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi2 = follower.pathBuilder()
                 .addPath(new BezierLine(intkStart2, intkFinal2))
                 .setLinearHeadingInterpolation(intkStart2.getHeading(), intkFinal2.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot3 = follower.pathBuilder()
                 .addPath(new BezierCurve(intkFinal2, intk2Control, shoot))
                 .setLinearHeadingInterpolation(intkFinal2.getHeading(), shoot.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk1 = follower.pathBuilder()
                 .addPath(new BezierCurve(shoot, gateIntkControl, gateIntk))
                 .setLinearHeadingInterpolation(shoot.getHeading(), gateIntk.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot4 = follower.pathBuilder()
                 .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
                 .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk2 = follower.pathBuilder()
                 .addPath(new BezierCurve(shoot, gateIntkControl, gateIntk))
                 .setLinearHeadingInterpolation(shoot.getHeading(), gateIntk.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
 
         FiShoot = follower.pathBuilder()
                 .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
                 .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
+                .setBrakingStart(0.2)
+                .setGlobalDeceleration(0.50)
                 .build();
     }
 
@@ -127,18 +149,13 @@ public class Auto15Balles extends OpMode {
             case 2:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
                     fuckingNoSort.startRapidOuttake();
-                    setPathState(3);
-                }
-                break;
-
-            case 3:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
                     setPathState(4);
                 }
                 break;
 
+
             case 4:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
                     follower.followPath(IntkSt2, 0.8, true);
                     setPathState(5);
                 }

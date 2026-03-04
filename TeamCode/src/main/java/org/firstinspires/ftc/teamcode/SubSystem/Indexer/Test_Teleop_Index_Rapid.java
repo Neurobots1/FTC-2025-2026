@@ -79,6 +79,7 @@ public class Test_Teleop_Index_Rapid extends OpMode {
         boolean x    = pressed(gamepad1.x, last.x);
         boolean y    = pressed(gamepad1.y, last.y);
         boolean back = pressed(gamepad1.back, last.back);
+        boolean start = pressed(gamepad1.start, last.start);
 
         if (a) rapid.startRapidIntakeNoSort();
         if (b) rapid.startRapidOuttake();
@@ -123,4 +124,6 @@ public class Test_Teleop_Index_Rapid extends OpMode {
         if (rapid != null) rapid.stopAll();
     }
 }
+
+
 

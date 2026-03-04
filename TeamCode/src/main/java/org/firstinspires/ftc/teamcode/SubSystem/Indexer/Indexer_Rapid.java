@@ -3,11 +3,11 @@ package org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
-
-import com.qualcomm.hardware.rev.RevColorSensorV3;
+import org.firstinspires.ftc.teamcode.SubSystem.Indexer.IndexerTimings;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.ColorRangeSensor;
 
 @SuppressWarnings("all")
 public class Indexer_Rapid implements IndexerMode {
@@ -15,11 +15,13 @@ public class Indexer_Rapid implements IndexerMode {
     private final Indexer_Base base;
 
     public IntakeMotor intkM;
-    public RevColorSensorV3 colorSensor;
+    public ColorRangeSensor colorSensor;
+
     public Servo indexLeftServo;
     public Servo indexRightServo;
     public Servo indexGateFront;
     public Servo indexGateBack;
+
 
     private final LauncherSubsystem Shooter;
 
@@ -52,7 +54,7 @@ public class Indexer_Rapid implements IndexerMode {
         this.indexGateFront = base.indexGateFront;
         this.indexGateBack = base.indexGateBack;
 
-        this.colorSensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+        this.colorSensor = hardwareMap.get(ColorRangeSensor.class, "colorSensor");
         this.Shooter = shooter;
 
         this.rapidIntakeTimer = new ElapsedTime();
@@ -120,7 +122,7 @@ public class Indexer_Rapid implements IndexerMode {
                 break;
 
             case FINISH:
-                if (rapidIntakeTimer.seconds() >= IndexerTimings.L1_IN_FINISH_STOP_S) {
+                if (rapidIntakeTimer.seconds() >= IndexerTimings.RAPID_INTAKE) {
                     intkM.stop();
                     intakeState = RapidIntakeState.IDLE;
                 }
@@ -149,7 +151,7 @@ public class Indexer_Rapid implements IndexerMode {
             case START:
                if (Shooter.flywheelReady()) {
                    intkM.intake();
-                   if (setupOuttakeTimer.seconds()>1.7) {
+                   if (setupOuttakeTimer.seconds()> IndexerTimings.RAPID_INTAKE_SHOOTER) {
                        finishOuttakeState = FinishOuttakeState.FINISH;
                    }
                }
@@ -169,7 +171,7 @@ public class Indexer_Rapid implements IndexerMode {
                 break;
 
             case START:
-                if (Shooter.flywheelReady()&&rapidOuttakeTimer.seconds()>1) {
+                if (Shooter.flywheelReady()&&rapidOuttakeTimer.seconds()> IndexerTimings.RAPID_SHOOTER) {
                     intkM.slowIntake();
                     rapidOuttakeTimer.reset();
                     outtakeState = RapidOuttakeState.FINISH;
@@ -177,13 +179,12 @@ public class Indexer_Rapid implements IndexerMode {
                 break;
 
             case FINISH:
-                if (rapidOuttakeTimer.seconds() >= 2.0) {
+                if (rapidOuttakeTimer.seconds() >= IndexerTimings.RAPID_OUTTAKE_SHOOTER) {
                     wantShoot = false;
                     intkM.stop();
                     outtakeState = RapidOuttakeState.IDLE;
                 }
                 break;
-
         }
 
     }

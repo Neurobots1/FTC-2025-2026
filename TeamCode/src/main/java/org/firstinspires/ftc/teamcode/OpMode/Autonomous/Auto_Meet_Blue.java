@@ -75,40 +75,40 @@ public class Auto_Meet_Blue extends OpMode {
 
     public final Pose startPose = new Pose(34, 134, Math.toRadians(91));
     private final Pose SeePatern = new Pose(47.1, 92, Math.toRadians(70));
-    private final Pose Shoot = new Pose(47, 92, Math.toRadians(130));
-    private final Pose IntkStart1 = new Pose(50, 82, Math.toRadians(180));
-    private final Pose IntkFinal1 = new Pose(20, 82, Math.toRadians(180));
-    private final Pose IntkStart2 = new Pose(42, 62, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(10, 58, Math.toRadians(180));
-    private final Pose ControlIntk2 = new Pose(30,65);
-    private final Pose IntkStart3 = new Pose(42, 38, Math.toRadians(180));
+    private final Pose Shoot = new Pose(47, 92, Math.toRadians(139));
+    private final Pose IntkStart1 = new Pose(55, 84, Math.toRadians(180));
+    private final Pose IntkFinal1 = new Pose(20, 84, Math.toRadians(180));
+    private final Pose IntkStart2 = new Pose(50, 62, Math.toRadians(180));
+    private final Pose IntkFinal2 = new Pose(10, 62, Math.toRadians(180));
+    private final Pose ControlIntk2 = new Pose(55,65);
+    private final Pose IntkStart3 = new Pose(50, 38, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(8, 38, Math.toRadians(180));
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(140));
+    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(149));
 
 
     // Default fallback
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.40;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.8;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.8;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.8;
 
     // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
-    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.4;
-    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.8;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.8;
+    public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.8;
 
     // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.4; // faster
-    public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.8; // faster
+    public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.8;
+    public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.8;
 
     // GPP / NoSort (set whatever you want; leaving sane defaults)
-    public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.8;
+    public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.8;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.8;
 
-    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.4;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.8;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.8;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.8;
 
     private double intakeFinalSpeedForLine(int line) {
         // choose table based on which mode got locked
@@ -146,52 +146,72 @@ public class Auto_Meet_Blue extends OpMode {
         TakePatern = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, SeePatern))
                 .setLinearHeadingInterpolation(startPose.getHeading(), SeePatern.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
 
         Shoot2 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkFinal1, Shoot))
                 .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         Shoot3 = follower.pathBuilder()
                 .addPath(new BezierCurve(IntkFinal2, ControlIntk2, Shoot))
                 .setLinearHeadingInterpolation(IntkFinal2.getHeading(), Shoot.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         Shoot4 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkFinal3, FinalShootPose))
                 .setLinearHeadingInterpolation(IntkFinal3.getHeading(), FinalShootPose.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkSt1 = follower.pathBuilder()
                 .addPath(new BezierLine(Shoot, IntkStart1))
                 .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart1.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkFi1 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkStart1, IntkFinal1))
                 .setLinearHeadingInterpolation(IntkStart1.getHeading(), IntkFinal1.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkSt2 = follower.pathBuilder()
                 .addPath(new BezierLine(Shoot, IntkStart2))
                 .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart2.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkFi2 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkStart2, IntkFinal2))
                 .setLinearHeadingInterpolation(IntkStart2.getHeading(), IntkFinal2.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkSt3 = follower.pathBuilder()
                 .addPath(new BezierLine(Shoot, IntkStart3))
                 .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart3.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         IntkFi3 = follower.pathBuilder()
                 .addPath(new BezierLine(IntkStart3, IntkFinal3))
                 .setLinearHeadingInterpolation(IntkStart3.getHeading(), IntkFinal3.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
                 .build();
     }
 
