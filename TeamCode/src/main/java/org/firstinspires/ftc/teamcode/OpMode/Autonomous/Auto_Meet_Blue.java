@@ -16,9 +16,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+
 import org.firstinspires.ftc.teamcode.SubSystem.Auto_Pose;
-
-
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 import org.firstinspires.ftc.teamcode.SubSystem.Auto_pathBuild_Blue;
@@ -71,74 +70,67 @@ public class Auto_Meet_Blue extends OpMode {
     private boolean useNoSortMode = false;
 
     private boolean modeLocked = false;
+    private boolean wantShoot = false;
     private int detectedAprilTagId = -1;
 
     public final Pose startPose = new Pose(34, 134, Math.toRadians(91));
     private final Pose SeePatern = new Pose(47.1, 92, Math.toRadians(70));
-    private final Pose Shoot = new Pose(47, 92, Math.toRadians(139));
+    private final Pose Shoot = new Pose(47, 92, Math.toRadians(135));
     private final Pose IntkStart1 = new Pose(55, 84, Math.toRadians(180));
     private final Pose IntkFinal1 = new Pose(20, 84, Math.toRadians(180));
+    private final Pose GateOpen = new Pose(16,78,Math.toRadians(90));
     private final Pose IntkStart2 = new Pose(50, 62, Math.toRadians(180));
     private final Pose IntkFinal2 = new Pose(10, 62, Math.toRadians(180));
-    private final Pose ControlIntk2 = new Pose(55,65);
+    private final Pose ControlIntk2 = new Pose(55, 65);
     private final Pose IntkStart3 = new Pose(50, 38, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(8, 38, Math.toRadians(180));
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(149));
+    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
 
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // Default fallback
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.8;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.8;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.8;
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double PGP_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
-    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.8;
-    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.8;
-    public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.8;
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double PPG_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double PPG_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.8; // faster
-    public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.8;
-    public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.8;
+    public static double GPP_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double GPP_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // GPP / NoSort (set whatever you want; leaving sane defaults)
-    public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.8;
-    public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.8;
-    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.8;
-
-    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.8;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.8;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.8;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 1;
 
     private double intakeFinalSpeedForLine(int line) {
-        // choose table based on which mode got locked
         if (usePGPMode) {
             if (line == 1) return PGP_INTAKE_FINAL_SPEED_L1;
             if (line == 2) return PGP_INTAKE_FINAL_SPEED_L2;
-            if (line == 3) return PGP_INTAKE_FINAL_SPEED_L3;
+            return PGP_INTAKE_FINAL_SPEED_L3;
         } else if (usePPGMode) {
             if (line == 1) return PPG_INTAKE_FINAL_SPEED_L1;
             if (line == 2) return PPG_INTAKE_FINAL_SPEED_L2;
-            if (line == 3) return PPG_INTAKE_FINAL_SPEED_L3;
+            return PPG_INTAKE_FINAL_SPEED_L3;
         } else if (useGPPMode) {
             if (line == 1) return GPP_INTAKE_FINAL_SPEED_L1;
             if (line == 2) return GPP_INTAKE_FINAL_SPEED_L2;
-            if (line == 3) return GPP_INTAKE_FINAL_SPEED_L3;
+            return GPP_INTAKE_FINAL_SPEED_L3;
         } else if (useNoSortMode) {
             if (line == 1) return NOSORT_INTAKE_FINAL_SPEED_L1;
             if (line == 2) return NOSORT_INTAKE_FINAL_SPEED_L2;
-            if (line == 3) return NOSORT_INTAKE_FINAL_SPEED_L3;
+            return NOSORT_INTAKE_FINAL_SPEED_L3;
         }
 
-        // fallback
         if (line == 1) return DEFAULT_INTAKE_FINAL_SPEED_L1;
         if (line == 2) return DEFAULT_INTAKE_FINAL_SPEED_L2;
         return DEFAULT_INTAKE_FINAL_SPEED_L3;
     }
 
-
-
-    public PathChain OpenGate, TakePatern, Shoot1, Shoot2, Shoot3, Shoot4,
+    public PathChain TakePatern,OpenLaGateTaGrandMere ,Shoot2, Shoot3, Shoot4,
             IntkSt1, IntkSt2, IntkSt3, IntkFi1, IntkFi2, IntkFi3;
 
     public void buildPaths() {
@@ -150,10 +142,16 @@ public class Auto_Meet_Blue extends OpMode {
                 .setGlobalDeceleration(0.5)
                 .build();
 
+        OpenLaGateTaGrandMere = follower.pathBuilder()
+                .addPath(new BezierLine(IntkFinal1,Shoot))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
+                .setBrakingStart(0.4)
+                .setGlobalDeceleration(0.5)
+                .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal1, Shoot))
-                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
+                .addPath(new BezierLine(GateOpen,Shoot))
+                .setLinearHeadingInterpolation(GateOpen.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.4)
                 .setGlobalDeceleration(0.5)
                 .build();
@@ -254,22 +252,22 @@ public class Auto_Meet_Blue extends OpMode {
 
                     if (id == 21) {
                         lockModeTo(indexer_gpp, "GPP", id);
-                        setPathState(4000);
+                        setPathState(3);
                     } else if (id == 22) {
                         lockModeTo(indexer_pgp, "PGP", id);
-                        setPathState(4000);
+                        setPathState(3);
                     } else if (id == 23) {
                         lockModeTo(indexer_ppg, "PPG", id);
-                        setPathState(4000);
+                        setPathState(3);
                     } else if (pathTimer.getElapsedTimeSeconds() >= 2) {
                         lockModeTo(indexer_noSort, "NoSort", -1);
-                        setPathState(4000);
+                        setPathState(3);
                     }
                 }
                 break;
 
-            case 4000:
-                if (!activeIndexerBusy()) {
+            case 3:
+                if (!activeIndexerBusy() && !follower.isBusy()) {
                     startIntakeLine(1);
                     follower.followPath(IntkSt1, 1, true);
                     setPathState(4);
@@ -279,26 +277,34 @@ public class Auto_Meet_Blue extends OpMode {
             case 4:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi1, intakeFinalSpeedForLine(1), true);
+                    indexer_pgp.startPreSpin();
+                    setPathState(10000000);
+                }
+                break;
+
+            case 10000000:
+                if (!follower.isBusy()) {
+                    follower.followPath(OpenLaGateTaGrandMere, 1, true);
                     setPathState(5);
                 }
                 break;
 
             case 5:
-                if (!follower.isBusy() && !activeIndexerBusy()) {
+                if (!follower.isBusy() /*&& !activeIndexerBusy()*/) {
                     follower.followPath(Shoot2, 1, true);
                     setPathState(6);
                 }
                 break;
 
             case 6:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && !activeIndexerBusy()) {
                     startOuttakeLine(1);
                     setPathState(7);
                 }
                 break;
 
             case 7:
-                if (!activeIndexerBusy()) {
+                if (!activeIndexerBusy() && !follower.isBusy()) {
                     follower.followPath(IntkSt2, 1, true);
                     startIntakeLine(2);
                     setPathState(8);
@@ -308,26 +314,27 @@ public class Auto_Meet_Blue extends OpMode {
             case 8:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi2, intakeFinalSpeedForLine(2), true);
+                    indexer_pgp.startPreSpin();
                     setPathState(9);
                 }
                 break;
 
             case 9:
-                if (!follower.isBusy() && !activeIndexerBusy()) {
+                if (!follower.isBusy() /*&& !activeIndexerBusy()*/) {
                     follower.followPath(Shoot3, 1, true);
                     setPathState(10);
                 }
                 break;
 
             case 10:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && !activeIndexerBusy()) {
                     startOuttakeLine(2);
                     setPathState(11);
                 }
                 break;
 
             case 11:
-                if (!activeIndexerBusy()) {
+                if (!activeIndexerBusy() && !follower.isBusy()) {
                     follower.followPath(IntkSt3, 1, true);
                     startIntakeLine(3);
                     setPathState(12);
@@ -337,19 +344,20 @@ public class Auto_Meet_Blue extends OpMode {
             case 12:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi3, intakeFinalSpeedForLine(3), true);
+                    indexer_pgp.startPreSpin();
                     setPathState(13);
                 }
                 break;
 
             case 13:
-                if (!follower.isBusy() && !activeIndexerBusy()) {
+                if (!follower.isBusy() /* && !activeIndexerBusy()*/) {
                     follower.followPath(Shoot4, 1, true);
                     setPathState(14);
                 }
                 break;
 
             case 14:
-                if (!follower.isBusy()) {
+                if (!follower.isBusy() && !activeIndexerBusy()) {
                     startOuttakeLine(3);
                     setPathState(15);
                 }
@@ -357,6 +365,7 @@ public class Auto_Meet_Blue extends OpMode {
 
             case 15:
                 if (!activeIndexerBusy()) {
+                    indexer_pgp.stopPreSpinIfIdle();
                     setPathState(-1);
                 }
                 break;
@@ -393,7 +402,6 @@ public class Auto_Meet_Blue extends OpMode {
     @Override
     public void stop() {
         if (intkM != null) intkM.stop();
-
         if (activeIndexer != null) activeIndexer.stopAll();
         Get_Pose();
     }
@@ -410,10 +418,6 @@ public class Auto_Meet_Blue extends OpMode {
         telemetry.update();
     }
 
-
-
-
-
     public void setPathState(int pState) {
         pathState = pState;
         if (pathTimer != null) pathTimer.resetTimer();
@@ -427,13 +431,12 @@ public class Auto_Meet_Blue extends OpMode {
         Pose pose = follower.getPose();
         double distance = getDistanceToGoal();
 
-        if (activeIndexer != null) activeIndexer.setShootContext(pose.getX(), pose.getY(), distance);
-
         if (activeIndexer != null) {
+            activeIndexer.setShootContext(pose.getX(), pose.getY(), distance);
             activeIndexer.update();
         } else {
             if (Shooter != null) {
-                Shooter.updateShootingAuto(false, pose.getX(), pose.getY(), distance);
+                Shooter.updateShootingAuto(wantShoot, pose.getX(), pose.getY(), distance);
                 Shooter.update();
             }
         }
@@ -492,7 +495,6 @@ public class Auto_Meet_Blue extends OpMode {
         indexer_gpp = new Indexer_GPP(pgpCore);
         indexer_ppg = new Indexer_PPG(pgpCore);
         indexer_noSort = new Indexer_NoSort(pgpCore);
-
 
         activeIndexer = null;
         setPathState(0);
