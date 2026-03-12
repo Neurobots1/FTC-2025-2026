@@ -36,6 +36,8 @@ public class Teleop_Red_13_01_26 extends OpMode {
 
     @Override
     public void start() {
+        Robot.USE_LIMELIGHT = true;
+        robot.init(hardwareMap);
         robot.startTeleop();
     }
 
