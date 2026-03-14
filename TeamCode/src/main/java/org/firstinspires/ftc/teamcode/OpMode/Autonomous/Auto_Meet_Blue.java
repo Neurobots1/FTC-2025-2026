@@ -77,13 +77,13 @@ public class Auto_Meet_Blue extends OpMode {
     private final Pose Shoot = new Pose(47, 92, Math.toRadians(139));
     private final Pose IntkStart1 = new Pose(50, 88, Math.toRadians(190));
     private final Pose IntkFinal1 = new Pose(23, 82, Math.toRadians(190));
-    private final Pose GateOpen = new Pose(15, 73, Math.toRadians(90));
     private final Pose IntkStart2 = new Pose(50, 55, Math.toRadians(180));
     private final Pose IntkFinal2 = new Pose(15, 55, Math.toRadians(180));
     private final Pose ControlIntk2 = new Pose(45, 55);
     private final Pose IntkStart3 = new Pose(50, 38, Math.toRadians(180));
     private final Pose IntkFinal3 = new Pose(8, 38, Math.toRadians(180));
     private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
+    private final Pose GateOpen = new Pose(15, 73, Math.toRadians(90));
 
     public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 1;
     public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 1;
