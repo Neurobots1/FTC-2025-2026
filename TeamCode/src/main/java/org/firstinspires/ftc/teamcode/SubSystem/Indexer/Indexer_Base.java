@@ -5,10 +5,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 
 public class Indexer_Base {
 
     private enum ActionState { IDLE, START, COLLECTING, DONE }
+
     private enum OutTakeState {IDLE,OUTAKE, START, SWAP_TO_LEFT, FINISH}
     private enum IndexIntakeState {IDLE, START, SWAP_TO_LEFT, FINISH}
 
@@ -20,8 +22,10 @@ public class Indexer_Base {
     private IndexIntakeState indexIntakeState = IndexIntakeState.IDLE;
     public PGPstate pgpState = PGPstate.IDLE;
     public PPGstate ppgState = PPGstate.IDLE;
+    public LauncherSubsystem Shooter;
 
     private OutTakeState outTakeState = OutTakeState.IDLE;
+
 
     private boolean rightAutoIdle = false;
     private boolean leftAutoIdle  = false;

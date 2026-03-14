@@ -23,7 +23,7 @@ public class Constants {
             .mass(13.6078)
             .forwardZeroPowerAcceleration(-29.9662)
             .lateralZeroPowerAcceleration(-67.0801)
-            .centripetalScaling(0.000365)
+            .centripetalScaling(0.000265)
             .automaticHoldEnd(true)
 
 

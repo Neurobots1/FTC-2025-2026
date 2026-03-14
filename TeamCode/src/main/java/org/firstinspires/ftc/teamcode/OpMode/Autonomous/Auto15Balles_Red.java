@@ -6,10 +6,8 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -20,13 +18,13 @@ import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Rapid;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
-@Autonomous(name = "Auto15Balles", group = "Examples")
-public class Auto15Balles extends OpMode {
+@Autonomous(name = "Auto15Balles_Red", group = "Examples")
+ public class Auto15Balles_Red extends OpMode {
 
     private Follower follower;
 
     private Indexer_Base indexerBase;
-    private Indexer_Rapid fuckingNoSort;
+    private Indexer_Rapid rapidIndexer;
     private IntakeMotor intkM;
 
     private DcMotorEx flywheelMotorOne, flywheelMotorTwo;
@@ -37,16 +35,16 @@ public class Auto15Balles extends OpMode {
 
     private LauncherSubsystem Shooter;
 
-    public final Pose startPose = new Pose(20, 119, Math.toRadians(139));
-    private final Pose shoot = new Pose(47, 92, Math.toRadians(139));
-    private final Pose intkStart1 = new Pose(50, 88, Math.toRadians(190));
-    private final Pose intkFinal1 = new Pose(23, 82, Math.toRadians(190));
-    private final Pose intkStart2 = new Pose(50, 55, Math.toRadians(180));
-    private final Pose intkFinal2 = new Pose(15, 55, Math.toRadians(180));
-    private final Pose intk2Control = new Pose(45, 55);
-    private final Pose gateIntk = new Pose(11, 57, Math.toRadians(152));
-    private final Pose gateIntkControl = new Pose(27, 50);
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
+    public final Pose startPose = new Pose(124, 119, Math.toRadians(41));
+    private final Pose Shoot = new Pose(97, 92, Math.toRadians(41));
+    private final Pose IntkStart1 = new Pose(94, 88, Math.toRadians(350));
+    private final Pose IntkFinal1 = new Pose(121, 82, Math.toRadians(350));
+    private final Pose IntkStart2 = new Pose(94, 55, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(129, 55, Math.toRadians(0));
+    private final Pose ControlIntk2 = new Pose(99, 55);
+    private final Pose gateIntk = new Pose(133, 57, Math.toRadians(28));
+    private final Pose gateIntkControl = new Pose(117, 50);
+    private final Pose FinalShootPose = new Pose(89, 105, Math.toRadians(35));
 
     public PathChain Shoot1, IntkSt1, IntkFi1, Shoot2, IntkSt2, IntkFi2, Shoot3, GateIntk1, Shoot4, GateIntk2, FiShoot;
 
@@ -55,78 +53,78 @@ public class Auto15Balles extends OpMode {
 
     public void buildPaths() {
         Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, shoot))
-                .setLinearHeadingInterpolation(startPose.getHeading(), shoot.getHeading())
+                .addPath(new BezierLine(startPose, Shoot))
+                .setLinearHeadingInterpolation(startPose.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt1 = follower.pathBuilder()
-                .addPath(new BezierLine(shoot, intkStart1))
-                .setLinearHeadingInterpolation(shoot.getHeading(), intkStart1.getHeading())
+                .addPath(new BezierLine(Shoot, IntkStart1))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart1.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi1 = follower.pathBuilder()
-                .addPath(new BezierLine(intkStart1, intkFinal1))
-                .setLinearHeadingInterpolation(intkStart1.getHeading(), intkFinal1.getHeading())
+                .addPath(new BezierLine(IntkStart1, IntkFinal1))
+                .setLinearHeadingInterpolation(IntkStart1.getHeading(), IntkFinal1.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(intkFinal1, shoot))
-                .setLinearHeadingInterpolation(intkFinal1.getHeading(), shoot.getHeading())
+                .addPath(new BezierLine(IntkFinal1, Shoot))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt2 = follower.pathBuilder()
-                .addPath(new BezierLine(shoot, intkStart2))
-                .setLinearHeadingInterpolation(shoot.getHeading(), intkStart2.getHeading())
+                .addPath(new BezierLine(Shoot, IntkStart2))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart2.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi2 = follower.pathBuilder()
-                .addPath(new BezierLine(intkStart2, intkFinal2))
-                .setLinearHeadingInterpolation(intkStart2.getHeading(), intkFinal2.getHeading())
+                .addPath(new BezierLine(IntkStart2, IntkFinal2))
+                .setLinearHeadingInterpolation(IntkStart2.getHeading(), IntkFinal2.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierCurve(intkFinal2, intk2Control, shoot))
-                .setLinearHeadingInterpolation(intkFinal2.getHeading(), shoot.getHeading())
+                .addPath(new BezierCurve(IntkFinal2, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(IntkFinal2.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk1 = follower.pathBuilder()
-                .addPath(new BezierCurve(shoot, gateIntkControl, gateIntk))
-                .setLinearHeadingInterpolation(shoot.getHeading(), gateIntk.getHeading())
+                .addPath(new BezierCurve(Shoot, gateIntkControl, gateIntk))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), gateIntk.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot4 = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
-                .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
+                .addPath(new BezierCurve(gateIntk, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(gateIntk.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk2 = follower.pathBuilder()
-                .addPath(new BezierCurve(shoot, gateIntkControl, gateIntk))
-                .setLinearHeadingInterpolation(shoot.getHeading(), gateIntk.getHeading())
+                .addPath(new BezierCurve(Shoot, gateIntkControl, gateIntk))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), gateIntk.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         FiShoot = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk, intk2Control, shoot))
-                .setLinearHeadingInterpolation(gateIntk.getHeading(), shoot.getHeading())
+                .addPath(new BezierCurve(gateIntk, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(gateIntk.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
@@ -136,7 +134,7 @@ public class Auto15Balles extends OpMode {
         switch (pathState) {
 
             case 0:
-                fuckingNoSort.startSetupOuttake();
+                rapidIndexer.startSetupOuttake();
                 setPathState(1);
                 break;
 
@@ -149,14 +147,13 @@ public class Auto15Balles extends OpMode {
 
             case 2:
                 if (!follower.isBusy() && Shooter.flywheelReady()) {
-                    fuckingNoSort.startRapidOuttake();
+                    rapidIndexer.startRapidOuttake();
                     setPathState(4);
                 }
                 break;
 
-
             case 4:
-                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                if (!follower.isBusy() && !rapidIndexer.isBusy()) {
                     follower.followPath(IntkSt2, 1, false);
                     setPathState(5);
                 }
@@ -165,7 +162,7 @@ public class Auto15Balles extends OpMode {
             case 5:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi2, 1, false);
-                    fuckingNoSort.startRapidIntakeNoSort();
+                    rapidIndexer.startRapidIntakeNoSort();
                     setPathState(6);
                 }
                 break;
@@ -180,14 +177,14 @@ public class Auto15Balles extends OpMode {
 
             case 7:
                 if (!follower.isBusy()) {
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
-                    fuckingNoSort.startRapidOuttake();
+                    rapidIndexer.setShootContext(Shoot.getX(), Shoot.getY(), 77);
+                    rapidIndexer.startRapidOuttake();
                     setPathState(8);
                 }
                 break;
 
             case 8:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                if (!follower.isBusy() && !rapidIndexer.isBusy()) {
                     follower.followPath(GateIntk1, 1, true);
                     gateWaitStarted1 = false;
                     setPathState(9);
@@ -213,14 +210,14 @@ public class Auto15Balles extends OpMode {
             case 11:
                 if (!follower.isBusy()) {
                     intkM.stop();
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
-                    fuckingNoSort.startRapidOuttake();
+                    rapidIndexer.setShootContext(Shoot.getX(), Shoot.getY(), 77);
+                    rapidIndexer.startRapidOuttake();
                     setPathState(12);
                 }
                 break;
 
             case 12:
-                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                if (!follower.isBusy() && !rapidIndexer.isBusy()) {
                     follower.followPath(GateIntk2, 1, true);
                     gateWaitStarted2 = false;
                     setPathState(13);
@@ -246,14 +243,14 @@ public class Auto15Balles extends OpMode {
             case 15:
                 if (!follower.isBusy()) {
                     intkM.stop();
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
-                    fuckingNoSort.startRapidOuttake();
+                    rapidIndexer.setShootContext(Shoot.getX(), Shoot.getY(), 77);
+                    rapidIndexer.startRapidOuttake();
                     setPathState(16);
                 }
                 break;
 
             case 16:
-                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                if (!follower.isBusy() && !rapidIndexer.isBusy()) {
                     follower.followPath(IntkSt1, 1, false);
                     setPathState(17);
                 }
@@ -262,7 +259,7 @@ public class Auto15Balles extends OpMode {
             case 17:
                 if (!follower.isBusy()) {
                     follower.followPath(IntkFi1, 1, false);
-                    fuckingNoSort.startRapidIntakeNoSort();
+                    rapidIndexer.startRapidIntakeNoSort();
                     setPathState(18);
                 }
                 break;
@@ -277,14 +274,14 @@ public class Auto15Balles extends OpMode {
             case 19:
                 if (!follower.isBusy()) {
                     intkM.stop();
-                    fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), 77);
-                    fuckingNoSort.startRapidOuttake();
+                    rapidIndexer.setShootContext(Shoot.getX(), Shoot.getY(), 77);
+                    rapidIndexer.startRapidOuttake();
                     setPathState(20);
                 }
                 break;
 
             case 20:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
+                if (!follower.isBusy() && !rapidIndexer.isBusy()) {
                     setPathState(-1);
                 }
                 break;
@@ -322,7 +319,7 @@ public class Auto15Balles extends OpMode {
         Shooter.init();
 
         indexerBase = new Indexer_Base(hardwareMap);
-        fuckingNoSort = new Indexer_Rapid(hardwareMap, indexerBase, Shooter);
+        rapidIndexer = new Indexer_Rapid(hardwareMap, indexerBase, Shooter);
 
         buildPaths();
         setPathState(0);
@@ -335,12 +332,12 @@ public class Auto15Balles extends OpMode {
 
         double distance = getDistanceToGoal();
 
-        fuckingNoSort.update();
-        fuckingNoSort.setShootContext(shoot.getX(), shoot.getY(), distance);
+        rapidIndexer.update();
+        rapidIndexer.setShootContext(Shoot.getX(), Shoot.getY(), distance);
 
         telemetry.addData("Follower busy", follower.isBusy());
         telemetry.addData("PathState", pathState);
-        telemetry.addData("Rapid busy", fuckingNoSort.isBusy());
+        telemetry.addData("Rapid busy", rapidIndexer.isBusy());
         telemetry.update();
     }
 
@@ -354,7 +351,7 @@ public class Auto15Balles extends OpMode {
 
     @Override
     public void stop() {
-        if (fuckingNoSort != null) fuckingNoSort.stopAll();
+        if (rapidIndexer != null) rapidIndexer.stopAll();
         if (intkM != null) intkM.stop();
         if (indexerBase != null && indexerBase.intkM != null) indexerBase.intkM.stop();
     }
