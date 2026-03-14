@@ -35,16 +35,16 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
     private LauncherSubsystem Shooter;
 
-    public final Pose startPose = new Pose(20, 119, Math.toRadians(139));
-    private final Pose Shoot = new Pose(47, 92, Math.toRadians(139));
-    private final Pose IntkStart1 = new Pose(50, 88, Math.toRadians(190));
-    private final Pose IntkFinal1 = new Pose(23, 82, Math.toRadians(190));
-    private final Pose IntkStart2 = new Pose(50, 55, Math.toRadians(180));
-    private final Pose IntkFinal2 = new Pose(15, 55, Math.toRadians(180));
-    private final Pose ControlIntk2 = new Pose(45, 55);
-    private final Pose gateIntk = new Pose(11, 57, Math.toRadians(152));
-    private final Pose gateIntkControl = new Pose(27, 50);
-    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
+    public final Pose startPose = new Pose(124, 119, Math.toRadians(41));
+    private final Pose Shoot = new Pose(97, 92, Math.toRadians(41));
+    private final Pose IntkStart1 = new Pose(94, 88, Math.toRadians(350));
+    private final Pose IntkFinal1 = new Pose(121, 82, Math.toRadians(350));
+    private final Pose IntkStart2 = new Pose(94, 55, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(129, 55, Math.toRadians(0));
+    private final Pose ControlIntk2 = new Pose(99, 55);
+    private final Pose gateIntk = new Pose(133, 57, Math.toRadians(28));
+    private final Pose gateIntkControl = new Pose(117, 50);
+    private final Pose FinalShootPose = new Pose(89, 105, Math.toRadians(35));
 
     public PathChain Shoot1, IntkSt1, IntkFi1, Shoot2, IntkSt2, IntkFi2, Shoot3, GateIntk1, Shoot4, GateIntk2, FiShoot;
 
@@ -53,78 +53,78 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
     public void buildPaths() {
         Shoot1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose.mirror(), Shoot.mirror()))
-                .setLinearHeadingInterpolation(startPose.mirror().getHeading(), Shoot.mirror().getHeading())
+                .addPath(new BezierLine(startPose, Shoot))
+                .setLinearHeadingInterpolation(startPose.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt1 = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot.mirror(), IntkStart1.mirror()))
-                .setLinearHeadingInterpolation(Shoot.mirror().getHeading(), IntkStart1.mirror().getHeading())
+                .addPath(new BezierLine(Shoot, IntkStart1))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart1.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi1 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkStart1.mirror(), IntkFinal1.mirror()))
-                .setLinearHeadingInterpolation(IntkStart1.mirror().getHeading(), IntkFinal1.mirror().getHeading())
+                .addPath(new BezierLine(IntkStart1, IntkFinal1))
+                .setLinearHeadingInterpolation(IntkStart1.getHeading(), IntkFinal1.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal1.mirror(), Shoot.mirror()))
-                .setLinearHeadingInterpolation(IntkFinal1.mirror().getHeading(), Shoot.mirror().getHeading())
+                .addPath(new BezierLine(IntkFinal1, Shoot))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkSt2 = follower.pathBuilder()
-                .addPath(new BezierLine(Shoot.mirror(), IntkStart2.mirror()))
-                .setLinearHeadingInterpolation(Shoot.mirror().getHeading(), IntkStart2.mirror().getHeading())
+                .addPath(new BezierLine(Shoot, IntkStart2))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), IntkStart2.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         IntkFi2 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkStart2.mirror(), IntkFinal2.mirror()))
-                .setLinearHeadingInterpolation(IntkStart2.mirror().getHeading(), IntkFinal2.mirror().getHeading())
+                .addPath(new BezierLine(IntkStart2, IntkFinal2))
+                .setLinearHeadingInterpolation(IntkStart2.getHeading(), IntkFinal2.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot3 = follower.pathBuilder()
-                .addPath(new BezierCurve(IntkFinal2.mirror(), ControlIntk2.mirror(), Shoot.mirror()))
-                .setLinearHeadingInterpolation(IntkFinal2.mirror().getHeading(), Shoot.mirror().getHeading())
+                .addPath(new BezierCurve(IntkFinal2, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(IntkFinal2.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk1 = follower.pathBuilder()
-                .addPath(new BezierCurve(Shoot.mirror(), gateIntkControl.mirror(), gateIntk.mirror()))
-                .setLinearHeadingInterpolation(Shoot.mirror().getHeading(), gateIntk.mirror().getHeading())
+                .addPath(new BezierCurve(Shoot, gateIntkControl, gateIntk))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), gateIntk.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         Shoot4 = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk.mirror(), ControlIntk2.mirror(), Shoot.mirror()))
-                .setLinearHeadingInterpolation(gateIntk.mirror().getHeading(), Shoot.mirror().getHeading())
+                .addPath(new BezierCurve(gateIntk, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(gateIntk.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         GateIntk2 = follower.pathBuilder()
-                .addPath(new BezierCurve(Shoot.mirror(), gateIntkControl.mirror(), gateIntk.mirror()))
-                .setLinearHeadingInterpolation(Shoot.mirror().getHeading(), gateIntk.mirror().getHeading())
+                .addPath(new BezierCurve(Shoot, gateIntkControl, gateIntk))
+                .setLinearHeadingInterpolation(Shoot.getHeading(), gateIntk.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
 
         FiShoot = follower.pathBuilder()
-                .addPath(new BezierCurve(gateIntk.mirror(), ControlIntk2.mirror(), Shoot.mirror()))
-                .setLinearHeadingInterpolation(gateIntk.mirror().getHeading(), Shoot.mirror().getHeading())
+                .addPath(new BezierCurve(gateIntk, ControlIntk2, Shoot))
+                .setLinearHeadingInterpolation(gateIntk.getHeading(), Shoot.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
