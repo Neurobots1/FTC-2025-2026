@@ -85,28 +85,25 @@ public class Auto_Meet_Red extends OpMode {
 
 
     // Default fallback
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 0.40;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 0.40;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double DEFAULT_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // PGP: you said you want line 2 faster, line 1 & 3 slower (and different)
-    public static double PGP_INTAKE_FINAL_SPEED_L1 = 0.4;
-    public static double PGP_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double PGP_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double PGP_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double PGP_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double PGP_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // PPG: you said you want line 1 faster
-    public static double PPG_INTAKE_FINAL_SPEED_L1 = 0.4; // faster
-    public static double PPG_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double PPG_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double PPG_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double PPG_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double PPG_INTAKE_FINAL_SPEED_L3 = 1;
 
-    // GPP / NoSort (set whatever you want; leaving sane defaults)
-    public static double GPP_INTAKE_FINAL_SPEED_L1 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L2 = 0.40;
-    public static double GPP_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double GPP_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double GPP_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double GPP_INTAKE_FINAL_SPEED_L3 = 1;
 
-    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 0.4;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 0.4;
-    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 0.4;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L1 = 1;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L2 = 1;
+    public static double NOSORT_INTAKE_FINAL_SPEED_L3 = 1;
 
     private double intakeFinalSpeedForLine(int line) {
         // choose table based on which mode got locked

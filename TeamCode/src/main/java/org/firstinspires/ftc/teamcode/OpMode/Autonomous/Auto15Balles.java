@@ -44,8 +44,9 @@ public class Auto15Balles extends OpMode {
     private final Pose intkStart2 = new Pose(50, 55, Math.toRadians(180));
     private final Pose intkFinal2 = new Pose(15, 55, Math.toRadians(180));
     private final Pose intk2Control = new Pose(45, 55);
-    private final Pose gateIntk = new Pose(11, 55, Math.toRadians(152));
+    private final Pose gateIntk = new Pose(11, 57, Math.toRadians(152));
     private final Pose gateIntkControl = new Pose(27, 50);
+    private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
 
     public PathChain Shoot1, IntkSt1, IntkFi1, Shoot2, IntkSt2, IntkFi2, Shoot3, GateIntk1, Shoot4, GateIntk2, FiShoot;
 
@@ -141,7 +142,7 @@ public class Auto15Balles extends OpMode {
 
             case 1:
                 if (!follower.isBusy()) {
-                    follower.followPath(Shoot1, 0.8, true);
+                    follower.followPath(Shoot1, 1, true);
                     setPathState(2);
                 }
                 break;
@@ -155,23 +156,23 @@ public class Auto15Balles extends OpMode {
 
 
             case 4:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
-                    follower.followPath(IntkSt2, 0.8, true);
+                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                    follower.followPath(IntkSt2, 1, false);
                     setPathState(5);
                 }
                 break;
 
             case 5:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi2, 0.6, true);
+                    follower.followPath(IntkFi2, 1, false);
                     fuckingNoSort.startRapidIntakeNoSort();
                     setPathState(6);
                 }
                 break;
 
             case 6:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 1.0) {
-                    follower.followPath(Shoot3, 0.8, true);
+                if (!follower.isBusy()) {
+                    follower.followPath(Shoot3, 1, true);
                     intkM.stop();
                     setPathState(7);
                 }
@@ -187,7 +188,7 @@ public class Auto15Balles extends OpMode {
 
             case 8:
                 if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
-                    follower.followPath(GateIntk1, 0.8, true);
+                    follower.followPath(GateIntk1, 1, true);
                     gateWaitStarted1 = false;
                     setPathState(9);
                 }
@@ -200,9 +201,9 @@ public class Auto15Balles extends OpMode {
                         actionTimer.resetTimer();
                         gateWaitStarted1 = true;
                     }
-                    if (actionTimer.getElapsedTimeSeconds() > 2) {
+                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
                         intkM.stop();
-                        follower.followPath(Shoot4, 0.8, true);
+                        follower.followPath(Shoot4, 1, true);
                         gateWaitStarted1 = false;
                         setPathState(11);
                     }
@@ -219,8 +220,8 @@ public class Auto15Balles extends OpMode {
                 break;
 
             case 12:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
-                    follower.followPath(GateIntk2, 0.8, true);
+                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                    follower.followPath(GateIntk2, 1, true);
                     gateWaitStarted2 = false;
                     setPathState(13);
                 }
@@ -233,9 +234,9 @@ public class Auto15Balles extends OpMode {
                         actionTimer.resetTimer();
                         gateWaitStarted2 = true;
                     }
-                    if (actionTimer.getElapsedTimeSeconds() > 2) {
+                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
                         intkM.stop();
-                        follower.followPath(FiShoot, 0.8, true);
+                        follower.followPath(FiShoot, 1, true);
                         gateWaitStarted2 = false;
                         setPathState(15);
                     }
@@ -252,23 +253,23 @@ public class Auto15Balles extends OpMode {
                 break;
 
             case 16:
-                if (!follower.isBusy() && !fuckingNoSort.isBusy()) {
-                    follower.followPath(IntkSt1, 0.8, true);
+                if (!follower.isBusy()&& !fuckingNoSort.isBusy()) {
+                    follower.followPath(IntkSt1, 1, false);
                     setPathState(17);
                 }
                 break;
 
             case 17:
                 if (!follower.isBusy()) {
-                    follower.followPath(IntkFi1, 0.8, true);
+                    follower.followPath(IntkFi1, 1, false);
                     fuckingNoSort.startRapidIntakeNoSort();
                     setPathState(18);
                 }
                 break;
 
             case 18:
-                if (!follower.isBusy() && actionTimer.getElapsedTimeSeconds() > 1.0) {
-                    follower.followPath(Shoot2, 0.8, true);
+                if (!follower.isBusy()) {
+                    follower.followPath(Shoot2, 1, true);
                     setPathState(19);
                 }
                 break;

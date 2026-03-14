@@ -14,8 +14,8 @@ public class Indexer_PGP implements IndexerMode {
 
     private Indexer_Base indexerBase;
 
-    private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET , WAIT}
-    private enum SetupState{IDLE, START}
+    private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET, WAIT}
+    private enum SetupState {IDLE, START}
 
     public ActionState pgpState1 = ActionState.IDLE;
     public ActionState pgpState2 = ActionState.IDLE;
@@ -23,6 +23,7 @@ public class Indexer_PGP implements IndexerMode {
     public ActionState pgpState1_OT = ActionState.IDLE;
     public ActionState pgpState2_OT = ActionState.IDLE;
     public ActionState pgpState3_OT = ActionState.IDLE;
+    public ActionState pgpState4_OT = ActionState.IDLE;
     public SetupState setupState = SetupState.IDLE;
 
     public IntakeMotor intkM;
@@ -35,10 +36,13 @@ public class Indexer_PGP implements IndexerMode {
     private final LauncherSubsystem Shooter;
 
     private boolean wantShoot = false;
+    private boolean wantPreSpin = false;
 
     private double shootX = 0;
     private double shootY = 0;
     private double shootDistance = 0;
+
+    public static double PRESPIN_TPS = 820;
 
     private final ElapsedTime line1IntakeTimer;
     private final ElapsedTime line2IntakeTimer;
@@ -46,6 +50,7 @@ public class Indexer_PGP implements IndexerMode {
     private final ElapsedTime line1OuttakeTimer;
     private final ElapsedTime line2OuttakeTimer;
     private final ElapsedTime line3OuttakeTimer;
+    private final ElapsedTime line4OuttakeTimer;
 
     public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, LauncherSubsystem shooter) {
         this.indexerBase = base;
@@ -62,17 +67,19 @@ public class Indexer_PGP implements IndexerMode {
         this.line1OuttakeTimer = new ElapsedTime();
         this.line2OuttakeTimer = new ElapsedTime();
         this.line3OuttakeTimer = new ElapsedTime();
+        this.line4OuttakeTimer = new ElapsedTime();
 
         this.colorSensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
         this.Shooter = shooter;
     }
 
     public void startPreSpin() {
-        wantShoot = true;
+        wantPreSpin = true;
     }
 
     public void stopPreSpinIfIdle() {
         if (!isBusy()) {
+            wantPreSpin = false;
             wantShoot = false;
         }
     }
@@ -84,7 +91,8 @@ public class Indexer_PGP implements IndexerMode {
                 || pgpState3 != ActionState.IDLE
                 || pgpState1_OT != ActionState.IDLE
                 || pgpState2_OT != ActionState.IDLE
-                || pgpState3_OT != ActionState.IDLE);
+                || pgpState3_OT != ActionState.IDLE
+                || pgpState4_OT != ActionState.IDLE);
     }
 
     @Override
@@ -106,6 +114,7 @@ public class Indexer_PGP implements IndexerMode {
         if (line == 1) startLine1Outtake();
         else if (line == 2) startLine2Outtake();
         else if (line == 3) startLine3Outtake();
+        else if (line == 4) startLine4Outtake();
     }
 
     public void startLine1Intake() {
@@ -116,6 +125,7 @@ public class Indexer_PGP implements IndexerMode {
 
     public void startLine1Outtake() {
         if (pgpState1_OT != ActionState.IDLE) return;
+        wantPreSpin = false;
         wantShoot = true;
         intkM.intake();
         line1OuttakeTimer.reset();
@@ -130,6 +140,7 @@ public class Indexer_PGP implements IndexerMode {
 
     public void startLine2Outtake() {
         if (pgpState2_OT != ActionState.IDLE) return;
+        wantPreSpin = false;
         wantShoot = true;
         intkM.intake();
         line2OuttakeTimer.reset();
@@ -144,20 +155,30 @@ public class Indexer_PGP implements IndexerMode {
 
     public void startLine3Outtake() {
         if (pgpState3_OT != ActionState.IDLE) return;
+        wantPreSpin = false;
         wantShoot = true;
         intkM.intake();
         line3OuttakeTimer.reset();
         pgpState3_OT = ActionState.RESET;
     }
 
-    public void SetupOuttake(){
-        switch (setupState){
+    public void startLine4Outtake() {
+        if (pgpState4_OT != ActionState.IDLE) return;
+        wantPreSpin = false;
+        wantShoot = true;
+        intkM.intake();
+        line4OuttakeTimer.reset();
+        pgpState4_OT = ActionState.RESET;
+    }
+
+    public void SetupOuttake() {
+        switch (setupState) {
             case IDLE:
                 wantShoot = true;
                 break;
 
             case START:
-                if (Shooter.flywheelReady()){
+                if (Shooter.flywheelReady()) {
                     setupState = SetupState.IDLE;
                 }
                 break;
@@ -195,7 +216,7 @@ public class Indexer_PGP implements IndexerMode {
                 break;
 
             case WAIT:
-                if (line1IntakeTimer.seconds() > 0.20){
+                if (line1IntakeTimer.seconds() > 0.20) {
                     indexGateBack.setPosition(Indexer_Base.servointkB_Open);
                     pgpState1 = ActionState.FINISH;
                 }
@@ -235,7 +256,7 @@ public class Indexer_PGP implements IndexerMode {
                 break;
 
             case WAIT:
-                if (line1OuttakeTimer.seconds() > IndexerTimings.L1_OUT_WAIT_S){
+                if (line1OuttakeTimer.seconds() > IndexerTimings.L1_OUT_WAIT_S) {
                     indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
                     indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
                     line1OuttakeTimer.reset();
@@ -435,6 +456,39 @@ public class Indexer_PGP implements IndexerMode {
         }
     }
 
+    public void Line4Outtake() {
+        switch (pgpState4_OT) {
+            case IDLE:
+                break;
+
+            case RESET:
+                if (Shooter.flywheelReady()) {
+                    intkM.slowIntake();
+                    line4OuttakeTimer.reset();
+                    pgpState4_OT = ActionState.START;
+                }
+                break;
+
+            case START:
+                if (line4OuttakeTimer.seconds() > IndexerTimings.L4_OUT_START_DELAY_S) {
+                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
+                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
+                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
+                    line4OuttakeTimer.reset();
+                    pgpState4_OT = ActionState.FINISH;
+                }
+                break;
+
+            case FINISH:
+                if (line4OuttakeTimer.seconds() > IndexerTimings.L4_OUT_FINISH_DONE_S) {
+                    intkM.stop();
+                    wantShoot = false;
+                    pgpState4_OT = ActionState.IDLE;
+                }
+                break;
+        }
+    }
+
     @Override
     public void stopAll() {
         pgpState1 = ActionState.IDLE;
@@ -443,8 +497,10 @@ public class Indexer_PGP implements IndexerMode {
         pgpState1_OT = ActionState.IDLE;
         pgpState2_OT = ActionState.IDLE;
         pgpState3_OT = ActionState.IDLE;
+        pgpState4_OT = ActionState.IDLE;
 
         wantShoot = false;
+        wantPreSpin = false;
 
         if (intkM != null) intkM.stop();
         if (Shooter != null) Shooter.setFlywheelTicks(0);
@@ -453,7 +509,14 @@ public class Indexer_PGP implements IndexerMode {
 
     @Override
     public void update() {
-        Shooter.updateShootingAuto(wantShoot, shootX, shootY, shootDistance);
+        if (wantShoot) {
+            Shooter.updateShootingAuto(true, shootX, shootY, shootDistance);
+        } else if (wantPreSpin) {
+            Shooter.setFlywheelTicks(PRESPIN_TPS);
+        } else {
+            Shooter.updateShootingAuto(false, shootX, shootY, shootDistance);
+        }
+
         Shooter.update();
 
         Line1Intake();
@@ -463,8 +526,9 @@ public class Indexer_PGP implements IndexerMode {
         Line1Outtake();
         Line2Outtake();
         Line3Outtake();
+        Line4Outtake();
 
-        if (!isBusy() && !wantShoot) {
+        if (!isBusy() && !wantShoot && !wantPreSpin) {
             Shooter.setFlywheelTicks(0);
         }
     }
