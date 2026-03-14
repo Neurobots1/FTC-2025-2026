@@ -255,7 +255,7 @@ public class Robot {
         Pose3D robotPos = result.getBotpose();
         if (robotPos == null) return null;
 
-        double yawDeg = robotPos.getOrientation().getYaw(AngleUnit.DEGREES) + 90.0 +180;
+        double yawDeg = robotPos.getOrientation().getYaw(AngleUnit.DEGREES) + 90.0 + 180;
         yawDeg = (yawDeg % 360.0 + 360.0) % 360.0;
 
         double xIn = (robotPos.getPosition().y * INCHES_PER_METER) + FIELD_OFFSET_IN;
