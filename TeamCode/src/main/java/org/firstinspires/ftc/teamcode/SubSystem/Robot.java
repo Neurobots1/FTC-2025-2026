@@ -39,18 +39,12 @@ public class Robot {
 
     private Limelight3A limelight;
     private Pose lastLimelightPose = null;
-    private boolean lastValidLimelight = false;
 
     private final ElapsedTime DpadUpTimer = new ElapsedTime();
     private final ElapsedTime DpadDownTimer = new ElapsedTime();
 
-    private final ElapsedTime shooterReadyTimer = new ElapsedTime();
-    private boolean headingLockWasEnabled = false;
-    private boolean shooterReadyRumbleSent = false;
-
     private final Pose startingPose = new Pose(72, 72, Math.toRadians(90));
 
-    // Limelight constants
     private static final double INCHES_PER_METER = 39.37007874015748;
     private static final double FIELD_OFFSET_IN = 70.625;
 
@@ -67,7 +61,9 @@ public class Robot {
 
         PIDFController pid = new PIDFController(follower.constants.coefficientsHeadingPIDF);
         headingLockController = new HeadingLockController(pid, follower);
-        headingLockController.setGoalBlue();
+
+        // Apply alliance goal AFTER creating controller
+        applyAllianceGoal();
 
         indexerBase = new Indexer_Base(hw);
         indexerBase.StartIndexPose();
@@ -77,8 +73,7 @@ public class Robot {
 
             try {
                 limelight.start();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -89,8 +84,7 @@ public class Robot {
         if (USE_LIMELIGHT && limelight != null) {
             try {
                 limelight.start();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
     }
 
@@ -105,66 +99,63 @@ public class Robot {
 
         Pose currentPose = follower.getPose();
 
-        // ---------------- LIMELIGHT ----------------
+        //---------------- LIMELIGHT ----------------//
+
         Pose limelightPose = null;
         boolean limelightValid = false;
         LLResult llResult = null;
 
         if (USE_LIMELIGHT && limelight != null) {
+
             try {
+
                 llResult = limelight.getLatestResult();
                 limelightValid = (llResult != null && llResult.isValid());
 
                 if (limelightValid) {
+
                     limelightPose = convertLimelightResultToPedroPose(llResult);
 
                     if (limelightPose != null) {
                         lastLimelightPose = limelightPose;
                     }
                 }
+
             } catch (Exception ignored) {
                 limelightValid = false;
             }
         }
 
-        // Press B to reset follower pose from latest valid Limelight pose
         if (USE_LIMELIGHT
                 && gamepad.b
                 && tagResetTimer.seconds() >= tagCooldown
                 && lastLimelightPose != null) {
+
             follower.setPose(lastLimelightPose);
             tagResetTimer.reset();
         }
 
-        lastValidLimelight = limelightValid;
-        // ------------------------------------------
+        //-------------------------------------------//
 
         boolean shootButton = gamepad.y;
         double distance = getDistanceToGoal();
-        launcher.updateShooting(shootButton, currentPose.getX(), currentPose.getY(), distance);
+
+        launcher.updateShooting(
+                shootButton,
+                currentPose.getX(),
+                currentPose.getY(),
+                distance
+        );
 
         boolean headingLock = launcher.isHeadingLockEnabled();
 
-        if (headingLock && !headingLockWasEnabled) {
-            shooterReadyTimer.reset();
-            shooterReadyRumbleSent = false;
-        } else if (!headingLock && headingLockWasEnabled) {
-            shooterReadyRumbleSent = false;
-        }
-        headingLockWasEnabled = headingLock;
-
-        boolean shooterReady = launcher.flywheelReady();
-
-        if (headingLock
-                && shooterReady
-                && !shooterReadyRumbleSent
-                && shooterReadyTimer.milliseconds() > 150) {
-            gamepad.rumble(300);
-            shooterReadyRumbleSent = true;
-        }
-
         double manualTurn = -gamepad.right_stick_x;
-        double turn = headingLockController.update(currentPose, headingLock, manualTurn);
+
+        double turn = headingLockController.update(
+                currentPose,
+                headingLock,
+                manualTurn
+        );
 
         double fieldCentricOffset =
                 AllianceSelector.Field.fieldCentricOffset(
@@ -181,7 +172,10 @@ public class Robot {
                 fieldCentricOffset
         );
 
+        //---------------- Intake ----------------//
+
         if (!indexerBase.isBusy()) {
+
             if (gamepad.right_bumper) intake.intake();
             else if (gamepad.left_bumper) intake.outtake();
             else intake.stop();
@@ -191,17 +185,25 @@ public class Robot {
             indexerBase.startOutTake();
         }
 
-        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.2) {
-            double newY = headingLockController.getGoalY() + 3.0;
-            headingLockController.setGoalY(newY);
+        //---------------- Goal adjust ----------------//
+
+        if (gamepad.dpad_up && DpadUpTimer.seconds() >= 0.1) {
+
+            double newX = headingLockController.getGoalX() + 35.0;
+            headingLockController.setGoalX(newX);
+
             DpadUpTimer.reset();
         }
 
-        if (gamepad.dpad_down && DpadDownTimer.seconds() >= 0.2) {
-            double newY = headingLockController.getGoalY() - 3.0;
-            headingLockController.setGoalY(newY);
+        if (gamepad.dpad_down && DpadDownTimer.seconds() >= 0.1) {
+
+            double newX = headingLockController.getGoalX() - 10.0;
+            headingLockController.setGoalX(newX);
+
             DpadDownTimer.reset();
         }
+
+        //---------------- Pose reset ----------------//
 
         if (gamepad.options) {
             follower.setPose(getOptionsResetPose());
@@ -213,118 +215,111 @@ public class Robot {
 
         indexerBase.OutTake();
 
-        jt.addData("Alliance", alliance);
+        //---------------- Telemetry ----------------//
+
         Pose p = follower.getPose();
 
-        jt.addData("position",
-                "x=%.2f y=%.2f h=%.2f",
-                p.getX(),
-                p.getY(),
-                Math.toDegrees(p.getHeading()));
-        jt.addData("Velocity", follower.getVelocity().getMagnitude());
-        jt.addData("distance to goal", getDistanceToGoal());
-        jt.addData("Shooter Target TPS", launcher.getTargetTPS());
-        jt.addData("Shooter Current TPS", launcher.getCurrentRPM());
-        jt.addData("GoalPoseY", headingLockController.getGoalY());
+        jt.addData("Alliance", alliance);
+        jt.addData("X", p.getX());
+        jt.addData("Y", p.getY());
+        jt.addData("Heading", Math.toDegrees(p.getHeading()));
 
-        jt.addData("LL Enabled", USE_LIMELIGHT);
-        jt.addData("LL Result", llResult == null ? "null" : "non-null");
+        jt.addData("GoalX", headingLockController.getGoalX());
+        jt.addData("GoalY", headingLockController.getGoalY());
+
+        jt.addData("Distance To Goal", getDistanceToGoal());
+        jt.addData("LL Enabled", USE_LIMELIGHT); jt.addData("LL Result", llResult == null ? "null" : "non-null");
         jt.addData("LL Result", llResult == null ? "null" : "non-null");
         jt.addData("LL Valid", limelightValid);
 
-        if (limelightPose != null) {
-            jt.addData("LL Pose X", limelightPose.getX());
-            jt.addData("LL Pose Y", limelightPose.getY());
-            jt.addData("LL Pose H deg", Math.toDegrees(limelightPose.getHeading()));
-        }
-
-        if (lastLimelightPose != null) {
-            jt.addData("LL Last X", lastLimelightPose.getX());
-            jt.addData("LL Last Y", lastLimelightPose.getY());
-            jt.addData("LL Last H deg", Math.toDegrees(lastLimelightPose.getHeading()));
-        }
-
-        jt.addData("B reset pose from LL", "cooldown=" + tagCooldown);
         jt.update();
         telemetryManager.update();
     }
 
     private Pose convertLimelightResultToPedroPose(LLResult result) {
+
         if (result == null || !result.isValid()) return null;
 
         Pose3D robotPos = result.getBotpose();
         if (robotPos == null) return null;
 
-        double yawDeg = robotPos.getOrientation().getYaw(AngleUnit.DEGREES) + 90.0 + 180;
-        yawDeg = (yawDeg % 360.0 + 360.0) % 360.0;
+        double yawDeg =
+                robotPos.getOrientation().getYaw(AngleUnit.DEGREES)
+                        + 90.0
+                        + 180;
+
+        yawDeg = (yawDeg % 360 + 360) % 360;
 
         double xIn = (robotPos.getPosition().y * INCHES_PER_METER) + FIELD_OFFSET_IN;
         double yIn = (-robotPos.getPosition().x * INCHES_PER_METER) + FIELD_OFFSET_IN;
-        double headingRad = Math.toRadians(yawDeg);
 
-        return new Pose(xIn, yIn, headingRad);
+        return new Pose(xIn, yIn, Math.toRadians(yawDeg));
     }
 
     public void stop() {
+
         if (USE_LIMELIGHT && limelight != null) {
+
             try {
                 limelight.stop();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
         }
-    }
-
-    private static double wrapRad(double a) {
-        while (a <= -Math.PI) a += 2.0 * Math.PI;
-        while (a > Math.PI) a -= 2.0 * Math.PI;
-        return a;
-    }
-
-    private static double angleDiffRad(double a, double b) {
-        return Math.abs(wrapRad(a - b));
     }
 
     public void setAlliance(Alliance alliance) {
         this.alliance = alliance;
-        if (headingLockController != null) {
-            if (alliance == Alliance.BLUE) headingLockController.setGoalBlue();
-            else headingLockController.setGoalRed();
+        applyAllianceGoal();
+    }
+
+    private void applyAllianceGoal() {
+
+        if (headingLockController == null) return;
+
+        if (alliance == Alliance.BLUE) {
+            headingLockController.setGoalBlue();
+        } else {
+            headingLockController.setGoalRed();
         }
     }
 
     public double getDistanceToGoal() {
+
         double gx = headingLockController.getGoalX();
         double gy = headingLockController.getGoalY();
+
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();
+
         return Math.hypot(dx, dy);
     }
 
-    private AllianceSelector.Alliance toSelectorAlliance() {
-        return (alliance == Alliance.BLUE)
-                ? AllianceSelector.Alliance.BLUE
-                : AllianceSelector.Alliance.RED;
-    }
-
     private Pose getOptionsResetPose() {
-        AllianceSelector.Alliance a = toSelectorAlliance();
+
+        AllianceSelector.Alliance a =
+                alliance == Alliance.BLUE
+                        ? AllianceSelector.Alliance.BLUE
+                        : AllianceSelector.Alliance.RED;
 
         double x = AllianceSelector.Field.resetX(a);
         double y = AllianceSelector.Field.resetY(a);
 
-        double headingRad = Math.toRadians(270);
-
-        return new Pose(x, y, headingRad);
+        return new Pose(x, y, Math.toRadians(270));
     }
 
     private Pose getAutoEndPose() {
-        AllianceSelector.Alliance a = toSelectorAlliance();
+
+        AllianceSelector.Alliance a =
+                alliance == Alliance.BLUE
+                        ? AllianceSelector.Alliance.BLUE
+                        : AllianceSelector.Alliance.RED;
 
         double x = AllianceSelector.Field.EndAutoX(a);
         double y = AllianceSelector.Field.EndAutoY(a);
 
-        double headingRad = Math.toRadians((AllianceSelector.Field.EndAutoH(a)));
+        double heading = Math.toRadians(
+                AllianceSelector.Field.EndAutoH(a)
+        );
 
-        return new Pose(x, y, headingRad);
+        return new Pose(x, y, heading);
     }
 }

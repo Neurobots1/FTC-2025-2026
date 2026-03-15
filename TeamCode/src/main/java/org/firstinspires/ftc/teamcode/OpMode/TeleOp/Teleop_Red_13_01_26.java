@@ -8,6 +8,7 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.HeadingLockController;
 
 import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Robot;
 public class Teleop_Red_13_01_26 extends OpMode {
 
     private Robot robot;
+    private HeadingLockController headingLockController;
     private JoinedTelemetry jt;
     private TelemetryManager telemetryManager;
     private final ElapsedTime tagResetTimer = new ElapsedTime();
@@ -30,6 +32,7 @@ public class Teleop_Red_13_01_26 extends OpMode {
 
         telemetryManager = PanelsTelemetry.INSTANCE.getTelemetry();
         jt = new JoinedTelemetry(PanelsTelemetry.INSTANCE.getFtcTelemetry(), telemetry);
+
 
         tagResetTimer.reset();
     }

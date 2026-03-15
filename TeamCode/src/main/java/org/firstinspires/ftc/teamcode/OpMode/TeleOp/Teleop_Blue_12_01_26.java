@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
+/*package org.firstinspires.ftc.teamcode.OpMode.TeleOp;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.JoinedTelemetry;
@@ -125,11 +125,12 @@ public class Teleop_Blue_12_01_26 extends OpMode {
             rawPowerMode = false;
             usePIDF = true;
         }
-        /*if (gamepad1.dpad_down) {
+        if (gamepad1.dpad_down) {
             usePIDF = false;
             rawPowerMode = true;
-        } */
-        if (gamepad1.a) shooterEnabled = true;
+        }
+
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;if (gamepad1.a) shooterEnabled = true;
         if (gamepad1.b) shooterEnabled = false;
 
 
@@ -141,9 +142,13 @@ public class Teleop_Blue_12_01_26 extends OpMode {
                 //targetTicksPerSecond = shooterLUT.getTicksForDistance(distanceToGoal());
                 launcher.setFlywheelTicks(targetTicksPerSecond);
             } else {
-                launcher.setFlywheelTicks(0);
+                launcher.stop();
             }
             launcher.update();
+        }
+
+        if (targetTicksPerSecond == 0){
+            launcher.stop();
         }
 
 
@@ -282,7 +287,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
         }
     }
 
-  /*  public double distanceToGoal() {
+    public double distanceToGoal() {
         double goalX = 12;
         double goalY = 136;
         double dx = goalX - follower.getPose().getX();
@@ -300,7 +305,7 @@ public class Teleop_Blue_12_01_26 extends OpMode {
 
         public static boolean isInFrontZone(double x, double y) {
         return y >= -x + 144 && y >= x;
-    } */
+    }
 
     private double calculateTargetHeading() {
         Pose currentPose = follower.getPose();
@@ -340,3 +345,4 @@ public class Teleop_Blue_12_01_26 extends OpMode {
     }
 
 }
+*/

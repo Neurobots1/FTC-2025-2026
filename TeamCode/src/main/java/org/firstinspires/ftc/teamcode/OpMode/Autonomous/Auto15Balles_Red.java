@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Rapid;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 
 @Autonomous(name = "Auto15Balles_Red", group = "Examples")
- public class Auto15Balles_Red extends OpMode {
+public class Auto15Balles_Red extends OpMode {
 
     private Follower follower;
 
@@ -40,9 +40,9 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
     private final Pose IntkStart1 = new Pose(94, 88, Math.toRadians(350));
     private final Pose IntkFinal1 = new Pose(121, 82, Math.toRadians(350));
     private final Pose IntkStart2 = new Pose(94, 55, Math.toRadians(0));
-    private final Pose IntkFinal2 = new Pose(129, 55, Math.toRadians(0));
+    private final Pose IntkFinal2 = new Pose(131, 55, Math.toRadians(0));
     private final Pose ControlIntk2 = new Pose(99, 55);
-    private final Pose gateIntk = new Pose(133, 57, Math.toRadians(28));
+    private final Pose gateIntk = new Pose(133, 53, Math.toRadians(32));
     private final Pose gateIntkControl = new Pose(117, 50);
     private final Pose FinalShootPose = new Pose(89, 105, Math.toRadians(35));
 
@@ -74,8 +74,8 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
                 .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(IntkFinal1, Shoot))
-                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), Shoot.getHeading())
+                .addPath(new BezierLine(IntkFinal1, FinalShootPose))
+                .setLinearHeadingInterpolation(IntkFinal1.getHeading(), FinalShootPose.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
@@ -198,7 +198,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
                         actionTimer.resetTimer();
                         gateWaitStarted1 = true;
                     }
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 1.75) {
                         intkM.stop();
                         follower.followPath(Shoot4, 1, true);
                         gateWaitStarted1 = false;
@@ -231,7 +231,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
                         actionTimer.resetTimer();
                         gateWaitStarted2 = true;
                     }
-                    if (actionTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (actionTimer.getElapsedTimeSeconds() > 1.754) {
                         intkM.stop();
                         follower.followPath(FiShoot, 1, true);
                         gateWaitStarted2 = false;
@@ -342,7 +342,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
     }
 
     public double getDistanceToGoal() {
-        double gx = 0;
+        double gx = 140;
         double gy = 140;
         double dx = gx - follower.getPose().getX();
         double dy = gy - follower.getPose().getY();

@@ -28,6 +28,9 @@ public class HeadingLockController {
     public void setGoalY(double y) {
         this.goalY = y;
     }
+    public void setGoalX(double x) {
+        this.goalX = x;
+    }
 
 
 

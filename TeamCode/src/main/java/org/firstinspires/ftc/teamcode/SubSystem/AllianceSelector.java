@@ -9,25 +9,35 @@ public final class AllianceSelector {
     public interface Provider {
         Alliance getAlliance();
 
-        default void setAlliance(Alliance a) {}  // <-- FIXED: now default
+        default void setAlliance(Alliance a) {}
 
         default void toggle() {
             setAlliance(getAlliance() == Alliance.BLUE ? Alliance.RED : Alliance.BLUE);
         }
     }
 
-
     public static final class Manager implements Provider {
         public Alliance alliance;
-        public Manager(Alliance start) { this.alliance = start; }
-        @Override public Alliance getAlliance() { return alliance; }
-        @Override public void setAlliance(Alliance a) { this.alliance = a; }
+
+        public Manager(Alliance start) {
+            this.alliance = start;
+        }
+
+        @Override
+        public Alliance getAlliance() {
+            return alliance;
+        }
+
+        @Override
+        public void setAlliance(Alliance a) {
+            this.alliance = a;
+        }
     }
 
     public static final class Field {
 
-        public static final double RED_GOAL_X_IN  = 144;
-        public static final double RED_GOAL_Y_IN  = 144;
+        public static final double RED_GOAL_X_IN = 144;
+        public static final double RED_GOAL_Y_IN = 144;
         public static final double BLUE_GOAL_X_IN = 0;
         public static final double BLUE_GOAL_Y_IN = 144;
 
@@ -44,19 +54,18 @@ public final class AllianceSelector {
         public static final double BLUE_FINAL_H = 140;
         public static final double RED_FINAL_H = 37;
 
-
-
-        public static double EndAutoX (Alliance a) {
+        public static double EndAutoX(Alliance a) {
             return a == Alliance.BLUE ? BLUE_FINAL_X : RED_FINAL_X;
         }
 
-        public static double EndAutoY (Alliance a) {
+        public static double EndAutoY(Alliance a) {
             return a == Alliance.BLUE ? BLUE_FINAL_Y : RED_FINAL_Y;
         }
 
-        public static double EndAutoH (Alliance a) {
+        public static double EndAutoH(Alliance a) {
             return a == Alliance.BLUE ? BLUE_FINAL_H : RED_FINAL_H;
         }
+
         public static double resetX(Alliance a) {
             return a == Alliance.BLUE ? BLUE_CORNER_X_IN : RED_CORNER_X_IN;
         }
@@ -78,7 +87,6 @@ public final class AllianceSelector {
                     ? Math.toRadians(180)
                     : Math.toRadians(0);
         }
-
 
         public static double headingToGoal(Pose pose, Alliance alliance) {
             double gx = goalX(alliance);
@@ -102,7 +110,6 @@ public final class AllianceSelector {
             alliance = a;
         }
     };
-
 
     private AllianceSelector() {}
 }

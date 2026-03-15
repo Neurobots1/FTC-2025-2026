@@ -42,9 +42,9 @@ public class Auto15Balles extends OpMode {
     private final Pose intkStart1 = new Pose(50, 88, Math.toRadians(190));
     private final Pose intkFinal1 = new Pose(23, 82, Math.toRadians(190));
     private final Pose intkStart2 = new Pose(50, 55, Math.toRadians(180));
-    private final Pose intkFinal2 = new Pose(15, 55, Math.toRadians(180));
+    private final Pose intkFinal2 = new Pose(13, 55, Math.toRadians(180));
     private final Pose intk2Control = new Pose(45, 55);
-    private final Pose gateIntk = new Pose(11, 57, Math.toRadians(152));
+    private final Pose gateIntk = new Pose(11, 53, Math.toRadians(147));
     private final Pose gateIntkControl = new Pose(27, 50);
     private final Pose FinalShootPose = new Pose(55, 105, Math.toRadians(145));
 
@@ -76,8 +76,8 @@ public class Auto15Balles extends OpMode {
                 .build();
 
         Shoot2 = follower.pathBuilder()
-                .addPath(new BezierLine(intkFinal1, shoot))
-                .setLinearHeadingInterpolation(intkFinal1.getHeading(), shoot.getHeading())
+                .addPath(new BezierLine(intkFinal1, FinalShootPose))
+                .setLinearHeadingInterpolation(intkFinal1.getHeading(), FinalShootPose.getHeading())
                 .setBrakingStart(0.2)
                 .setGlobalDeceleration(0.50)
                 .build();
