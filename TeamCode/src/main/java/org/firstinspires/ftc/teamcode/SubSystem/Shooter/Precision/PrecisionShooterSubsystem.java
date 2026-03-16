@@ -1,0 +1,296 @@
+package org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision;
+
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+public final class PrecisionShooterSubsystem {
+
+    public enum Alliance {
+        BLUE,
+        RED
+    }
+
+    public static final class TelemetrySnapshot {
+        public final boolean homed;
+        public final boolean solutionValid;
+        public final boolean ready;
+        public final double targetRpm;
+        public final double actualRpm;
+        public final double nominalHoodDeg;
+        public final double compensatedHoodDeg;
+        public final double turretAngleDeg;
+        public final double turretTargetDeg;
+        public final double predictedRangeInches;
+        public final double timeOfFlightSeconds;
+        public final String status;
+        public final Alliance alliance;
+
+        TelemetrySnapshot(boolean homed,
+                          boolean solutionValid,
+                          boolean ready,
+                          double targetRpm,
+                          double actualRpm,
+                          double nominalHoodDeg,
+                          double compensatedHoodDeg,
+                          double turretAngleDeg,
+                          double turretTargetDeg,
+                          double predictedRangeInches,
+                          double timeOfFlightSeconds,
+                          String status,
+                          Alliance alliance) {
+            this.homed = homed;
+            this.solutionValid = solutionValid;
+            this.ready = ready;
+            this.targetRpm = targetRpm;
+            this.actualRpm = actualRpm;
+            this.nominalHoodDeg = nominalHoodDeg;
+            this.compensatedHoodDeg = compensatedHoodDeg;
+            this.turretAngleDeg = turretAngleDeg;
+            this.turretTargetDeg = turretTargetDeg;
+            this.predictedRangeInches = predictedRangeInches;
+            this.timeOfFlightSeconds = timeOfFlightSeconds;
+            this.status = status;
+            this.alliance = alliance;
+        }
+    }
+
+    private final PrecisionShooterConfig config;
+    private final Follower follower;
+    private final FlywheelVelocityController flywheel;
+    private final ServoHoodController hood;
+    private final TurretAxis turret;
+    private final Servo feedServo;
+    private final ElapsedTime loopTimer = new ElapsedTime();
+    private final ElapsedTime feedTimer = new ElapsedTime();
+
+    private Alliance alliance = Alliance.BLUE;
+    private boolean fireRequested;
+    private boolean spinEnabled;
+    private boolean autoAimEnabled = true;
+    private Pose lastPose;
+    private double robotVx;
+    private double robotVy;
+    private double robotOmega;
+    private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
+    private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
+
+    private PrecisionShooterSubsystem(PrecisionShooterConfig config,
+                                      Follower follower,
+                                      FlywheelVelocityController flywheel,
+                                      ServoHoodController hood,
+                                      TurretAxis turret,
+                                      Servo feedServo) {
+        this.config = config;
+        this.follower = follower;
+        this.flywheel = flywheel;
+        this.hood = hood;
+        this.turret = turret;
+        this.feedServo = feedServo;
+
+        if (feedServo != null) {
+            feedServo.setPosition(config.feedClosedPosition);
+        }
+        loopTimer.reset();
+        feedTimer.reset();
+    }
+
+    public static PrecisionShooterSubsystem create(HardwareMap hardwareMap,
+                                                   Follower follower,
+                                                   PrecisionShooterConfig config) {
+        DcMotorEx left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
+        DcMotorEx right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
+        DcMotorEx turretMotor = hardwareMap.get(DcMotorEx.class, config.turretMotorName);
+        Servo hoodServo = hardwareMap.get(Servo.class, config.hoodServoName);
+        Servo feedServo = null;
+        try {
+            feedServo = hardwareMap.get(Servo.class, config.feedServoName);
+        } catch (Exception ignored) {
+        }
+        VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
+
+        FlywheelVelocityController flywheel = new FlywheelVelocityController(left, right, voltageSensor, config);
+        ServoHoodController hood = new ServoHoodController(hoodServo, config);
+        TurretAxis turret = new TurretAxis(turretMotor, config);
+        return new PrecisionShooterSubsystem(config, follower, flywheel, hood, turret, feedServo);
+    }
+
+    public void setAlliance(Alliance alliance) {
+        this.alliance = alliance;
+    }
+
+    public Alliance getAlliance() {
+        return alliance;
+    }
+
+    public void setSpinEnabled(boolean spinEnabled) {
+        this.spinEnabled = spinEnabled;
+    }
+
+    public void setAutoAimEnabled(boolean autoAimEnabled) {
+        this.autoAimEnabled = autoAimEnabled;
+    }
+
+    public void requestFire(boolean fireRequested) {
+        this.fireRequested = fireRequested;
+    }
+
+    public void start() {
+        follower.startTeleopDrive();
+        lastPose = follower.getPose();
+        loopTimer.reset();
+        feedTimer.reset();
+    }
+
+    public void update() {
+        Pose pose = follower.getPose();
+        updateMotionEstimate(pose);
+        turret.updateHoming();
+
+        if (!turret.isHomed()) {
+            hood.setAngleDegrees(config.hoodMaxAngleDeg);
+            hood.update();
+            flywheel.stop();
+            closeFeed();
+            lastSolution = BallisticAimSolver.Solution.invalid("turret homing");
+            return;
+        }
+
+        double goalX = alliance == Alliance.BLUE ? config.blueGoalXInches : config.redGoalXInches;
+        double goalY = alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches;
+
+        Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
+        double distance = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());
+        lastNominal = config.table.sample(distance);
+
+        double targetRpm = spinEnabled ? lastNominal.targetRpm : 0.0;
+        flywheel.setTargetRpm(targetRpm);
+        flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
+
+        double effectiveRpm = Math.max(flywheel.getMeasuredRpm(), targetRpm * config.minCompensationRpmFraction);
+        lastSolution = solveMovingShot(releasePose, goalX, goalY, targetRpm, effectiveRpm, lastNominal);
+
+        if (lastSolution.valid && autoAimEnabled) {
+            hood.setAngleDegrees(Math.toDegrees(lastSolution.hoodAngleRad));
+            turret.setTargetAngleRadians(
+                    ShooterMath.normalizeRadians(lastSolution.worldYawRad - releasePose.getHeading())
+            );
+        }
+
+        hood.update();
+        turret.updateTracking();
+
+        boolean ready = isReadyToShoot();
+        if (fireRequested && ready) {
+            openFeed();
+        } else if (!fireRequested || feedTimer.seconds() >= config.feedActuationSeconds) {
+            closeFeed();
+        }
+    }
+
+    public TelemetrySnapshot snapshot() {
+        return new TelemetrySnapshot(
+                turret.isHomed(),
+                lastSolution.valid,
+                isReadyToShoot(),
+                flywheel.getTargetRpm(),
+                flywheel.getMeasuredRpm(),
+                lastNominal.hoodAngleDeg,
+                Math.toDegrees(lastSolution.hoodAngleRad),
+                Math.toDegrees(turret.getCurrentAngleRadians()),
+                Math.toDegrees(turret.getTargetAngleRadians()),
+                lastSolution.rangeInches,
+                lastSolution.flightTimeSeconds,
+                lastSolution.reason,
+                alliance
+        );
+    }
+
+    private BallisticAimSolver.Solution solveMovingShot(Pose releasePose,
+                                                        double goalX,
+                                                        double goalY,
+                                                        double targetRpm,
+                                                        double actualRpm,
+                                                        PrecisionShotTable.Entry nominal) {
+        if (targetRpm <= 1.0) {
+            return BallisticAimSolver.Solution.invalid("spin disabled");
+        }
+
+        double nominalSpeed = ShooterMath.solveLaunchSpeed(
+                nominal.distanceInches,
+                config.targetHeightInches - config.shooterHeightInches,
+                Math.toRadians(nominal.hoodAngleDeg),
+                PrecisionShooterConfig.GRAVITY_INCHES_PER_SECOND_SQUARED
+        );
+        if (Double.isNaN(nominalSpeed)) {
+            return BallisticAimSolver.Solution.invalid("nominal speed invalid");
+        }
+
+        double actualSpeed = nominalSpeed * (actualRpm / targetRpm);
+        return BallisticAimSolver.solve(
+                releasePose.getX(),
+                releasePose.getY(),
+                goalX,
+                goalY,
+                config.targetHeightInches - config.shooterHeightInches,
+                robotVx,
+                robotVy,
+                actualSpeed,
+                Math.toRadians(config.hoodMinAngleDeg),
+                Math.toRadians(config.hoodMaxAngleDeg),
+                PrecisionShooterConfig.GRAVITY_INCHES_PER_SECOND_SQUARED
+        );
+    }
+
+    private boolean isReadyToShoot() {
+        return turret.isHomed()
+                && lastSolution.valid
+                && flywheel.atSpeed(config.flywheelReadyToleranceRpm)
+                && hood.isSettled()
+                && turret.atTarget();
+    }
+
+    private Pose predictReleasePose(Pose pose, double lookaheadSeconds) {
+        return new Pose(
+                pose.getX() + robotVx * lookaheadSeconds,
+                pose.getY() + robotVy * lookaheadSeconds,
+                pose.getHeading() + robotOmega * lookaheadSeconds
+        );
+    }
+
+    private void updateMotionEstimate(Pose pose) {
+        double dt = Math.max(1e-3, loopTimer.seconds());
+        loopTimer.reset();
+        if (lastPose == null) {
+            lastPose = pose;
+            robotVx = 0.0;
+            robotVy = 0.0;
+            robotOmega = 0.0;
+            return;
+        }
+        robotVx = (pose.getX() - lastPose.getX()) / dt;
+        robotVy = (pose.getY() - lastPose.getY()) / dt;
+        robotOmega = ShooterMath.normalizeRadians(pose.getHeading() - lastPose.getHeading()) / dt;
+        lastPose = pose;
+    }
+
+    private void openFeed() {
+        if (feedServo == null) {
+            return;
+        }
+        feedServo.setPosition(config.feedOpenPosition);
+        if (feedTimer.seconds() >= config.feedActuationSeconds || feedTimer.seconds() == 0.0) {
+            feedTimer.reset();
+        }
+    }
+
+    private void closeFeed() {
+        if (feedServo != null) {
+            feedServo.setPosition(config.feedClosedPosition);
+        }
+    }
+}

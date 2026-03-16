@@ -93,6 +93,22 @@ public class Robot2 {
         }
     }
 
+    public void startTeleop() {
+        follower.startTeleopDrive();
+        follower.setStartingPose(startingPose);
+
+        if (USE_LIMELIGHT && limelight != null) {
+            try {
+                limelight.start();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public void setAlliance(Alliance alliance) {
+        this.alliance = alliance;
+        applyAllianceGoal();
+    }
+
     public void teleopLoop(Gamepad gamepad,
                            ElapsedTime tagResetTimer,
                            double tagCooldown,
