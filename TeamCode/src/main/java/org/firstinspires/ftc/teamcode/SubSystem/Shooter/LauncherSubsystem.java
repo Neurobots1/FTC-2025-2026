@@ -371,20 +371,16 @@ public class LauncherSubsystem {
         return headingLock;
     }
 
-    public static double radius = 10.0;
-
     public static boolean isInShootingZone(double x, double y) {
-        return isInBackZone(x, y) || isInFrontZone(x, y);
+        return ShootingZones.isInShootingZone(x, y);
     }
 
     public static boolean isInBackZone(double x, double y) {
-        double d = radius * 1.41421356237;
-        return y <= x - 48 + d && y <= -x + 96 + d;
+        return ShootingZones.isInBackZone(x, y);
     }
 
     public static boolean isInFrontZone(double x, double y) {
-        double d = radius * 1.41421356237;
-        return y >= -x + 144 - d && y >= x - d;
+        return ShootingZones.isInFrontZone(x, y);
     }
 
     private static void syncConstants() {

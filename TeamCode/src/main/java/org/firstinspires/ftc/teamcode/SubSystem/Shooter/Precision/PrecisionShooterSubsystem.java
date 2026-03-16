@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Vector;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -9,6 +10,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.ShootingZones;
 
 public final class PrecisionShooterSubsystem {
 
@@ -20,6 +22,7 @@ public final class PrecisionShooterSubsystem {
     public static final class TelemetrySnapshot {
         public final boolean homed;
         public final boolean solutionValid;
+        public final boolean inShootingZone;
         public final boolean ready;
         public final double targetRpm;
         public final double actualRpm;
@@ -34,6 +37,7 @@ public final class PrecisionShooterSubsystem {
 
         TelemetrySnapshot(boolean homed,
                           boolean solutionValid,
+                          boolean inShootingZone,
                           boolean ready,
                           double targetRpm,
                           double actualRpm,
@@ -47,6 +51,7 @@ public final class PrecisionShooterSubsystem {
                           Alliance alliance) {
             this.homed = homed;
             this.solutionValid = solutionValid;
+            this.inShootingZone = inShootingZone;
             this.ready = ready;
             this.targetRpm = targetRpm;
             this.actualRpm = actualRpm;
@@ -95,6 +100,7 @@ public final class PrecisionShooterSubsystem {
     private double robotOmega;
     private double customGoalX;
     private double customGoalY;
+    private boolean lastInShootingZone;
     private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
     private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
 
@@ -205,6 +211,7 @@ public final class PrecisionShooterSubsystem {
 
         Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
         TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
+        lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
         double distance = Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y);
         lastNominal = config.table.sample(distance);
 
@@ -237,6 +244,7 @@ public final class PrecisionShooterSubsystem {
         return new TelemetrySnapshot(
                 turret.isHomed(),
                 lastSolution.valid,
+                lastInShootingZone,
                 isReadyToShoot(),
                 flywheel.getTargetRpm(),
                 flywheel.getMeasuredRpm(),
@@ -290,10 +298,15 @@ public final class PrecisionShooterSubsystem {
 
     private boolean isReadyToShoot() {
         return turret.isHomed()
+                && lastInShootingZone
                 && lastSolution.valid
                 && flywheel.atSpeed(config.flywheelReadyToleranceRpm)
                 && hood.isSettled()
                 && turret.atTarget();
+    }
+
+    public boolean isInShootingZone() {
+        return lastInShootingZone;
     }
 
     private Pose predictReleasePose(Pose pose, double lookaheadSeconds) {
@@ -336,8 +349,21 @@ public final class PrecisionShooterSubsystem {
             robotOmega = 0.0;
             return;
         }
-        robotVx = (pose.getX() - lastPose.getX()) / dt;
-        robotVy = (pose.getY() - lastPose.getY()) / dt;
+
+        try {
+            Vector velocity = follower.getVelocity();
+            if (velocity != null) {
+                robotVx = velocity.getXComponent();
+                robotVy = velocity.getYComponent();
+            } else {
+                robotVx = (pose.getX() - lastPose.getX()) / dt;
+                robotVy = (pose.getY() - lastPose.getY()) / dt;
+            }
+        } catch (Exception ignored) {
+            robotVx = (pose.getX() - lastPose.getX()) / dt;
+            robotVy = (pose.getY() - lastPose.getY()) / dt;
+        }
+
         robotOmega = ShooterMath.normalizeRadians(pose.getHeading() - lastPose.getHeading()) / dt;
         lastPose = pose;
     }

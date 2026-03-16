@@ -137,6 +137,16 @@ public class Indexer_PGP implements IndexerMode {
     }
 
     @Override
+    public boolean isInShootingZone() {
+        return shooter != null && LauncherSubsystem.isInShootingZone(shootX, shootY);
+    }
+
+    @Override
+    public boolean isReadyToShoot() {
+        return isInShootingZone() && shooterReady();
+    }
+
+    @Override
     public void startIntake(int line) {
         if (line == 1) {
             startLine1Intake();

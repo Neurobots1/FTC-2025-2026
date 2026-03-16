@@ -13,4 +13,8 @@ public interface IndexerMode {
     void setShootContext(double x, double y, double distance);
 
     default void setPreSpinEnabled(boolean enabled) {}
+
+    default boolean isInShootingZone() { return true; }
+
+    default boolean isReadyToShoot() { return false; }
 }
