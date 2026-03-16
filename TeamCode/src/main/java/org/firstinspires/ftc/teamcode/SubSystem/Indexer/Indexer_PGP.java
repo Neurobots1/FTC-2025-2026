@@ -77,6 +77,14 @@ public class Indexer_PGP implements IndexerMode {
         wantPreSpin = true;
     }
 
+    @Override
+    public void setPreSpinEnabled(boolean enabled) {
+        wantPreSpin = enabled;
+        if (!enabled && !wantShoot && !isBusy() && Shooter != null) {
+            Shooter.setFlywheelTicks(0);
+        }
+    }
+
     public void stopPreSpinIfIdle() {
         if (!isBusy()) {
             wantPreSpin = false;

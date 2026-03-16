@@ -39,4 +39,9 @@ public class Indexer_NoSort implements IndexerMode {
     public void update() {
         if (pgp != null) pgp.update();
     }
+
+    @Override
+    public void setPreSpinEnabled(boolean enabled) {
+        if (pgp != null) pgp.setPreSpinEnabled(enabled);
+    }
 }

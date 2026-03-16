@@ -48,4 +48,9 @@ public class Indexer_PPG implements IndexerMode {
     public void setShootContext(double x, double y, double distance) {
         base.setShootContext(x, y, distance);
     }
+
+    @Override
+    public void setPreSpinEnabled(boolean enabled) {
+        base.setPreSpinEnabled(enabled);
+    }
 }

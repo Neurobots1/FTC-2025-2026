@@ -11,4 +11,6 @@ public interface IndexerMode {
     void stopAll();
 
     void setShootContext(double x, double y, double distance);
+
+    default void setPreSpinEnabled(boolean enabled) {}
 }
