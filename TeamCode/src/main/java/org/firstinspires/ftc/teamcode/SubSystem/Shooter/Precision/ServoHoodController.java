@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
+
 final class ServoHoodController {
 
     private final Servo servo;

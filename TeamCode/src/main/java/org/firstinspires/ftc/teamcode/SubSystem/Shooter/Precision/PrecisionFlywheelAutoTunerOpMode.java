@@ -8,11 +8,13 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-@TeleOp(name = "Flywheel Auto Tuner", group = "Shooter")
+@TeleOp(name = "TUNE_FLYWHEEL_AUTO", group = "Tuning")
 public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
 
     private enum State {

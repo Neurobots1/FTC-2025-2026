@@ -1,8 +1,14 @@
-package org.firstinspires.ftc.teamcode.Global;
+package org.firstinspires.ftc.teamcode.Constants;
 
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class Constants {
+
+    // ----------------------------
+    // Pedro path behavior
+    // ----------------------------
+    public static double BRAKING_START = 0.2;
+    public static double GLOBAL_DECELERATION = 0.50;
 
     // ----------------------------
     // Flywheel PIDF coefficients

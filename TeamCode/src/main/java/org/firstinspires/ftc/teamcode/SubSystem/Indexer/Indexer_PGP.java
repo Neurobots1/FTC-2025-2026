@@ -1,76 +1,103 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Indexer;
 
+import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Constants.IndexerServoPositions;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 
-import com.qualcomm.hardware.rev.RevColorSensorV3;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import java.util.function.DoubleSupplier;
 
+@Configurable
 @SuppressWarnings("all")
 public class Indexer_PGP implements IndexerMode {
 
-    private Indexer_Base indexerBase;
+    public static double COLOR_DETECT_MM = 60.0;
 
-    private enum ActionState {IDLE, WAIT_FOR_START, START, Color_Detection, SWAP_TO_RIGHT, SWAP_TO_MIDDLE, FINISH, SWAP_TO_LEFT, RESET, WAIT}
-    private enum SetupState {IDLE, START}
+    public static double LINE1_INTAKE_SWAP_TO_MIDDLE_DELAY_S = 0.1;
+    public static double LINE1_INTAKE_FINISH_STOP_S = 1.5;
 
-    public ActionState pgpState1 = ActionState.IDLE;
-    public ActionState pgpState2 = ActionState.IDLE;
-    public ActionState pgpState3 = ActionState.IDLE;
-    public ActionState pgpState1_OT = ActionState.IDLE;
-    public ActionState pgpState2_OT = ActionState.IDLE;
-    public ActionState pgpState3_OT = ActionState.IDLE;
-    public ActionState pgpState4_OT = ActionState.IDLE;
-    public SetupState setupState = SetupState.IDLE;
+    public static double LINE1_OUTTAKE_START_TO_SWAP_DELAY_S = 0.8;
+    public static double LINE1_OUTTAKE_WAIT_S = 1.0;
+    public static double LINE1_OUTTAKE_SWAP_TO_LEFT_DONE_S = 1.0;
 
-    public IntakeMotor intkM;
-    public RevColorSensorV3 colorSensor;
-    public Servo indexLeftServo;
-    public Servo indexRightServo;
-    public Servo indexGateFront;
-    public Servo indexGateBack;
+    public static double LINE2_INTAKE_WAIT_S = 0.75;
+    public static double LINE2_INTAKE_FINISH_STOP_S = 1.0;
 
-    private final LauncherSubsystem Shooter;
+    public static double LINE2_OUTTAKE_START_TO_SWAP_DELAY_S = 0.5;
+    public static double LINE2_OUTTAKE_SWAP_TO_LEFT_DELAY_S = 0.45;
+    public static double LINE2_OUTTAKE_FINISH_DONE_S = 0.5;
 
-    private boolean wantShoot = false;
-    private boolean wantPreSpin = false;
+    public static double LINE3_INTAKE_SWAP_TO_RIGHT_DELAY_S = 0.15;
+    public static double LINE3_INTAKE_SWAP_TO_LEFT_DELAY_S = 0.5;
+    public static double LINE3_INTAKE_FINISH_STOP_S = 1.5;
 
-    private double shootX = 0;
-    private double shootY = 0;
-    private double shootDistance = 0;
+    public static double LINE3_OUTTAKE_START_TO_SWAP_DELAY_S = 0.5;
+    public static double LINE3_OUTTAKE_SWAP_TO_LEFT_DELAY_S = 0.45;
+    public static double LINE3_OUTTAKE_FINISH_DONE_S = 0.5;
+
+    public static double PRELOAD_OUTTAKE_START_DELAY_S = 1.5;
+    public static double PRELOAD_OUTTAKE_FINISH_DONE_S = 1.5;
+
+    private final Indexer_Base indexerBase;
+    private final IntakeMotor intake;
+    private final RevColorSensorV3 colorSensor;
+    private final LauncherSubsystem shooter;
+
+    private final IndexerSequenceRunner line1Intake;
+    private final IndexerSequenceRunner line2Intake;
+    private final IndexerSequenceRunner line3Intake;
+    private final IndexerSequenceRunner line1Outtake;
+    private final IndexerSequenceRunner line2Outtake;
+    private final IndexerSequenceRunner line3Outtake;
+    private final IndexerSequenceRunner preloadOuttake;
+    private final IndexerSequenceRunner[] routines;
+
+    private boolean wantShoot;
+    private boolean wantPreSpin;
+
+    private double shootX;
+    private double shootY;
+    private double shootDistance;
 
     public static double PRESPIN_TPS = 820;
 
-    private final ElapsedTime line1IntakeTimer;
-    private final ElapsedTime line2IntakeTimer;
-    private final ElapsedTime line3IntakeTimer;
-    private final ElapsedTime line1OuttakeTimer;
-    private final ElapsedTime line2OuttakeTimer;
-    private final ElapsedTime line3OuttakeTimer;
-    private final ElapsedTime line4OuttakeTimer;
-
     public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, LauncherSubsystem shooter) {
         this.indexerBase = base;
-
-        this.intkM = base.intkM;
-        this.indexLeftServo = base.indexLeftServo;
-        this.indexRightServo = base.indexRightServo;
-        this.indexGateFront = base.indexGateFront;
-        this.indexGateBack = base.indexGateBack;
-
-        this.line1IntakeTimer = new ElapsedTime();
-        this.line2IntakeTimer = new ElapsedTime();
-        this.line3IntakeTimer = new ElapsedTime();
-        this.line1OuttakeTimer = new ElapsedTime();
-        this.line2OuttakeTimer = new ElapsedTime();
-        this.line3OuttakeTimer = new ElapsedTime();
-        this.line4OuttakeTimer = new ElapsedTime();
-
+        this.intake = base.intkM;
         this.colorSensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
-        this.Shooter = shooter;
+        this.shooter = shooter;
+
+        line1Intake = buildLine1Intake();
+        line2Intake = buildLine2Intake();
+        line3Intake = buildLine3Intake();
+        line1Outtake = buildLine1Outtake();
+        line2Outtake = buildSharedOuttake(
+                "Line 2 Outtake",
+                () -> LINE2_OUTTAKE_START_TO_SWAP_DELAY_S,
+                () -> LINE2_OUTTAKE_SWAP_TO_LEFT_DELAY_S,
+                () -> LINE2_OUTTAKE_FINISH_DONE_S
+        );
+        line3Outtake = buildSharedOuttake(
+                "Line 3 Outtake",
+                () -> LINE3_OUTTAKE_START_TO_SWAP_DELAY_S,
+                () -> LINE3_OUTTAKE_SWAP_TO_LEFT_DELAY_S,
+                () -> LINE3_OUTTAKE_FINISH_DONE_S
+        );
+        preloadOuttake = buildPreloadOuttake();
+
+        routines = new IndexerSequenceRunner[]{
+                line1Intake,
+                line2Intake,
+                line3Intake,
+                line1Outtake,
+                line2Outtake,
+                line3Outtake,
+                preloadOuttake
+        };
     }
 
     public void startPreSpin() {
@@ -80,8 +107,8 @@ public class Indexer_PGP implements IndexerMode {
     @Override
     public void setPreSpinEnabled(boolean enabled) {
         wantPreSpin = enabled;
-        if (!enabled && !wantShoot && !isBusy() && Shooter != null) {
-            Shooter.setFlywheelTicks(0);
+        if (!enabled && !wantShoot && !isBusy() && shooter != null) {
+            shooter.setFlywheelTicks(0);
         }
     }
 
@@ -94,450 +121,357 @@ public class Indexer_PGP implements IndexerMode {
 
     @Override
     public boolean isBusy() {
-        return (pgpState1 != ActionState.IDLE
-                || pgpState2 != ActionState.IDLE
-                || pgpState3 != ActionState.IDLE
-                || pgpState1_OT != ActionState.IDLE
-                || pgpState2_OT != ActionState.IDLE
-                || pgpState3_OT != ActionState.IDLE
-                || pgpState4_OT != ActionState.IDLE);
+        for (IndexerSequenceRunner routine : routines) {
+            if (routine.isRunning()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public void setShootContext(double x, double y, double distance) {
-        this.shootX = x;
-        this.shootY = y;
-        this.shootDistance = distance;
+        shootX = x;
+        shootY = y;
+        shootDistance = distance;
     }
 
     @Override
     public void startIntake(int line) {
-        if (line == 1) startLine1Intake();
-        else if (line == 2) startLine2Intake();
-        else if (line == 3) startLine3Intake();
+        if (line == 1) {
+            startLine1Intake();
+        } else if (line == 2) {
+            startLine2Intake();
+        } else if (line == 3) {
+            startLine3Intake();
+        }
     }
 
     @Override
     public void startOuttake(int line) {
-        if (line == 1) startLine1Outtake();
-        else if (line == 2) startLine2Outtake();
-        else if (line == 3) startLine3Outtake();
-        else if (line == 4) startLine4Outtake();
+        if (line == 1) {
+            startLine1Outtake();
+        } else if (line == 2) {
+            startLine2Outtake();
+        } else if (line == 3) {
+            startLine3Outtake();
+        } else if (line == 4) {
+            startLine4Outtake();
+        }
     }
 
     public void startLine1Intake() {
-        if (pgpState1 != ActionState.IDLE) return;
-        line1IntakeTimer.reset();
-        pgpState1 = ActionState.START;
+        if (isBusy()) {
+            return;
+        }
+        line1Intake.start();
     }
 
     public void startLine1Outtake() {
-        if (pgpState1_OT != ActionState.IDLE) return;
-        wantPreSpin = false;
-        wantShoot = true;
-        intkM.intake();
-        line1OuttakeTimer.reset();
-        pgpState1_OT = ActionState.RESET;
+        if (isBusy()) {
+            return;
+        }
+        beginShootSequence(line1Outtake);
     }
 
     public void startLine2Intake() {
-        if (pgpState2 != ActionState.IDLE) return;
-        line2IntakeTimer.reset();
-        pgpState2 = ActionState.START;
+        if (isBusy()) {
+            return;
+        }
+        line2Intake.start();
     }
 
     public void startLine2Outtake() {
-        if (pgpState2_OT != ActionState.IDLE) return;
-        wantPreSpin = false;
-        wantShoot = true;
-        intkM.intake();
-        line2OuttakeTimer.reset();
-        pgpState2_OT = ActionState.RESET;
+        if (isBusy()) {
+            return;
+        }
+        beginShootSequence(line2Outtake);
     }
 
     public void startLine3Intake() {
-        if (pgpState3 != ActionState.IDLE) return;
-        line3IntakeTimer.reset();
-        pgpState3 = ActionState.START;
+        if (isBusy()) {
+            return;
+        }
+        line3Intake.start();
     }
 
     public void startLine3Outtake() {
-        if (pgpState3_OT != ActionState.IDLE) return;
-        wantPreSpin = false;
-        wantShoot = true;
-        intkM.intake();
-        line3OuttakeTimer.reset();
-        pgpState3_OT = ActionState.RESET;
+        if (isBusy()) {
+            return;
+        }
+        beginShootSequence(line3Outtake);
     }
 
     public void startLine4Outtake() {
-        if (pgpState4_OT != ActionState.IDLE) return;
-        wantPreSpin = false;
-        wantShoot = true;
-        intkM.intake();
-        line4OuttakeTimer.reset();
-        pgpState4_OT = ActionState.RESET;
-    }
-
-    public void SetupOuttake() {
-        switch (setupState) {
-            case IDLE:
-                wantShoot = true;
-                break;
-
-            case START:
-                if (Shooter.flywheelReady()) {
-                    setupState = SetupState.IDLE;
-                }
-                break;
+        if (isBusy()) {
+            return;
         }
-    }
-
-    public void Line1Intake() {
-        switch (pgpState1) {
-            case IDLE:
-                break;
-
-            case START:
-                intkM.intake();
-                indexLeftServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                indexRightServo.setPosition(Indexer_Base.indexer_L_Engage);
-                indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                line1IntakeTimer.reset();
-                pgpState1 = ActionState.Color_Detection;
-                break;
-
-            case Color_Detection:
-                if (colorSensor.getDistance(DistanceUnit.MM) <= IndexerTimings.COLOR_DETECT_MM) {
-                    line1IntakeTimer.reset();
-                    pgpState1 = ActionState.SWAP_TO_MIDDLE;
-                }
-                break;
-
-            case SWAP_TO_MIDDLE:
-                if (line1IntakeTimer.seconds() > IndexerTimings.L1_IN_SWAP_TO_MIDDLE_DELAY_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    line1IntakeTimer.reset();
-                    pgpState1 = ActionState.WAIT;
-                }
-                break;
-
-            case WAIT:
-                if (line1IntakeTimer.seconds() > 0.20) {
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    pgpState1 = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line1IntakeTimer.seconds() >= IndexerTimings.L1_IN_FINISH_STOP_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Blocker);
-                    intkM.stop();
-                    pgpState1 = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line1Outtake() {
-        switch (pgpState1_OT) {
-            case IDLE:
-                break;
-
-            case RESET:
-                if (Shooter.flywheelReady()) {
-                    intkM.slowIntake();
-                    line1OuttakeTimer.reset();
-                    pgpState1_OT = ActionState.START;
-                }
-                break;
-
-            case START:
-                if (line1OuttakeTimer.seconds() > IndexerTimings.L1_OUT_START_TO_SWAP_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_R_Engage);
-                    indexRightServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line1OuttakeTimer.reset();
-                    pgpState1_OT = ActionState.WAIT;
-                }
-                break;
-
-            case WAIT:
-                if (line1OuttakeTimer.seconds() > IndexerTimings.L1_OUT_WAIT_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
-                    line1OuttakeTimer.reset();
-                    pgpState1_OT = ActionState.SWAP_TO_LEFT;
-                }
-                break;
-
-            case SWAP_TO_LEFT:
-                if (line1OuttakeTimer.seconds() >= IndexerTimings.L1_OUT_SWAP_TO_LEFT_DONE_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    wantShoot = false;
-                    intkM.stop();
-                    pgpState1_OT = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line2Intake() {
-        switch (pgpState2) {
-            case IDLE:
-                break;
-
-            case START:
-                intkM.intake();
-                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
-                indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                line2IntakeTimer.reset();
-                pgpState2 = ActionState.Color_Detection;
-                break;
-
-            case Color_Detection:
-                if (colorSensor.getDistance(DistanceUnit.MM) <= IndexerTimings.COLOR_DETECT_MM) {
-                    line2IntakeTimer.reset();
-                    pgpState2 = ActionState.WAIT;
-                }
-                break;
-
-            case WAIT:
-                if (line2IntakeTimer.seconds() > IndexerTimings.L2_IN_WAIT_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
-                    line2IntakeTimer.reset();
-                    pgpState2 = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line2IntakeTimer.seconds() >= IndexerTimings.L2_IN_FINISH_STOP_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    intkM.stop();
-                    pgpState2 = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line2Outtake() {
-        switch (pgpState2_OT) {
-            case IDLE:
-                break;
-
-            case RESET:
-                if (Shooter.flywheelReady()) {
-                    intkM.slowIntake();
-                    line2OuttakeTimer.reset();
-                    pgpState2_OT = ActionState.START;
-                }
-                break;
-
-            case START:
-                if (line2OuttakeTimer.seconds() > IndexerTimings.L3_OUT_START_TO_SWAP_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_R_Engage);
-                    indexRightServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line2OuttakeTimer.reset();
-                    pgpState2_OT = ActionState.SWAP_TO_LEFT;
-                }
-                break;
-
-            case SWAP_TO_LEFT:
-                if (line2OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_SWAP_TO_LEFT_DELAY_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line2OuttakeTimer.reset();
-                    pgpState2_OT = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line2OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_FINISH_DONE_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    intkM.stop();
-                    wantShoot = false;
-                    pgpState2_OT = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line3Intake() {
-        switch (pgpState3) {
-            case IDLE:
-                break;
-
-            case START:
-                intkM.intake();
-                indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                indexRightServo.setPosition(Indexer_Base.indexer_R_Engage);
-                indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
-                line3IntakeTimer.reset();
-                pgpState3 = ActionState.Color_Detection;
-                break;
-
-            case Color_Detection:
-                if (colorSensor.getDistance(DistanceUnit.MM) <= IndexerTimings.COLOR_DETECT_MM) {
-                    line3IntakeTimer.reset();
-                    pgpState3 = ActionState.SWAP_TO_RIGHT;
-                }
-                break;
-
-            case SWAP_TO_RIGHT:
-                if (line3IntakeTimer.seconds() > IndexerTimings.L3_IN_SWAP_TO_RIGHT_DELAY_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
-                    line3IntakeTimer.reset();
-                    pgpState3 = ActionState.SWAP_TO_LEFT;
-                }
-                break;
-
-            case SWAP_TO_LEFT:
-                if (line3IntakeTimer.seconds() > IndexerTimings.L3_IN_SWAP_TO_LEFT_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line3IntakeTimer.reset();
-                    pgpState3 = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line3IntakeTimer.seconds() >= IndexerTimings.L3_IN_FINISH_STOP_S) {
-                    intkM.stop();
-                    pgpState3 = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line3Outtake() {
-        switch (pgpState3_OT) {
-            case IDLE:
-                break;
-
-            case RESET:
-                if (Shooter.flywheelReady()) {
-                    intkM.slowIntake();
-                    line3OuttakeTimer.reset();
-                    pgpState3_OT = ActionState.START;
-                }
-                break;
-
-            case START:
-                if (line3OuttakeTimer.seconds() > IndexerTimings.L3_OUT_START_TO_SWAP_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_R_Engage);
-                    indexRightServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line3OuttakeTimer.reset();
-                    pgpState3_OT = ActionState.SWAP_TO_LEFT;
-                }
-                break;
-
-            case SWAP_TO_LEFT:
-                if (line3OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_SWAP_TO_LEFT_DELAY_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Engage);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line3OuttakeTimer.reset();
-                    pgpState3_OT = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line3OuttakeTimer.seconds() >= IndexerTimings.L3_OUT_FINISH_DONE_S) {
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    intkM.stop();
-                    wantShoot = false;
-                    pgpState3_OT = ActionState.IDLE;
-                }
-                break;
-        }
-    }
-
-    public void Line4Outtake() {
-        switch (pgpState4_OT) {
-            case IDLE:
-                break;
-
-            case RESET:
-                if (Shooter.flywheelReady()) {
-                    intkM.slowIntake();
-                    line4OuttakeTimer.reset();
-                    pgpState4_OT = ActionState.START;
-                }
-                break;
-
-            case START:
-                if (line4OuttakeTimer.seconds() > IndexerTimings.L4_OUT_START_DELAY_S) {
-                    indexLeftServo.setPosition(Indexer_Base.indexer_L_Retracted);
-                    indexRightServo.setPosition(Indexer_Base.indexer_R_Retracted);
-                    indexGateBack.setPosition(Indexer_Base.servointkB_Open);
-                    line4OuttakeTimer.reset();
-                    pgpState4_OT = ActionState.FINISH;
-                }
-                break;
-
-            case FINISH:
-                if (line4OuttakeTimer.seconds() > IndexerTimings.L4_OUT_FINISH_DONE_S) {
-                    intkM.stop();
-                    wantShoot = false;
-                    pgpState4_OT = ActionState.IDLE;
-                }
-                break;
-        }
+        beginShootSequence(preloadOuttake);
     }
 
     @Override
     public void stopAll() {
-        pgpState1 = ActionState.IDLE;
-        pgpState2 = ActionState.IDLE;
-        pgpState3 = ActionState.IDLE;
-        pgpState1_OT = ActionState.IDLE;
-        pgpState2_OT = ActionState.IDLE;
-        pgpState3_OT = ActionState.IDLE;
-        pgpState4_OT = ActionState.IDLE;
+        for (IndexerSequenceRunner routine : routines) {
+            routine.stop();
+        }
 
         wantShoot = false;
         wantPreSpin = false;
-
-        if (intkM != null) intkM.stop();
-        if (Shooter != null) Shooter.setFlywheelTicks(0);
-        if (indexGateBack != null) indexGateBack.setPosition(Indexer_Base.servointkB_Closed);
+        intake.stop();
+        if (shooter != null) {
+            shooter.setFlywheelTicks(0);
+            shooter.setBlockerOpen(false);
+        }
+        if (indexerBase != null) {
+            indexerBase.StartIndexPose();
+        }
     }
 
     @Override
     public void update() {
+        updateShooterDemand();
+
+        for (IndexerSequenceRunner routine : routines) {
+            routine.update();
+        }
+
+        if (!isBusy() && !wantShoot && !wantPreSpin && shooter != null) {
+            shooter.setFlywheelTicks(0);
+        }
+    }
+
+    public double getColorDistanceMm() {
+        return colorSensor.getDistance(DistanceUnit.MM);
+    }
+
+    public boolean isShootRequested() {
+        return wantShoot;
+    }
+
+    public boolean isPreSpinRequested() {
+        return wantPreSpin;
+    }
+
+    public String getActiveSequenceSummary() {
+        StringBuilder builder = new StringBuilder();
+        for (IndexerSequenceRunner routine : routines) {
+            if (!routine.isRunning()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(" | ");
+            }
+            builder.append(routine.getSequenceName()).append(": ").append(routine.getCurrentStepName());
+        }
+        return builder.length() == 0 ? "IDLE" : builder.toString();
+    }
+
+    private void beginShootSequence(IndexerSequenceRunner routine) {
+        wantPreSpin = false;
+        wantShoot = true;
+        intake.intake();
+        routine.start();
+    }
+
+    private void updateShooterDemand() {
+        if (shooter == null) {
+            return;
+        }
+
         if (wantShoot) {
-            Shooter.updateShootingAuto(true, shootX, shootY, shootDistance);
+            shooter.updateShootingAuto(true, shootX, shootY, shootDistance);
         } else if (wantPreSpin) {
-            Shooter.setFlywheelTicks(PRESPIN_TPS);
+            shooter.setFlywheelTicks(PRESPIN_TPS);
         } else {
-            Shooter.updateShootingAuto(false, shootX, shootY, shootDistance);
+            shooter.updateShootingAuto(false, shootX, shootY, shootDistance);
         }
 
-        Shooter.update();
+        shooter.update();
+    }
 
-        Line1Intake();
-        Line2Intake();
-        Line3Intake();
+    private boolean colorDetected() {
+        return getColorDistanceMm() <= COLOR_DETECT_MM;
+    }
 
-        Line1Outtake();
-        Line2Outtake();
-        Line3Outtake();
-        Line4Outtake();
+    private boolean shooterReady() {
+        return shooter != null && shooter.flywheelReady();
+    }
 
-        if (!isBusy() && !wantShoot && !wantPreSpin) {
-            Shooter.setFlywheelTicks(0);
-        }
+    private void finishShootSequence() {
+        intake.stop();
+        wantShoot = false;
+    }
+
+    private void setLeft(double position) {
+        indexerBase.indexLeftServo.setPosition(position);
+    }
+
+    private void setRight(double position) {
+        indexerBase.indexRightServo.setPosition(position);
+    }
+
+    private void setBackGate(double position) {
+        indexerBase.indexGateBack.setPosition(position);
+    }
+
+    private void setFrontGate(double position) {
+        indexerBase.indexGateFront.setPosition(position);
+    }
+
+    private IndexerScriptBuilder script(String name) {
+        return IndexerScriptBuilder.script(
+                name,
+                intake,
+                this::setLeft,
+                this::setRight,
+                this::setFrontGate,
+                this::setBackGate,
+                this::colorDetected,
+                this::shooterReady
+        );
+    }
+
+    private IndexerSequenceRunner buildLine1Intake() {
+        return script("Line 1 Intake")
+                .step("Capture")
+                .intakeOn()
+                .leftEngaged()
+                .rightRetracted()
+                .backGateClosed()
+                .waitForColor()
+                .step("Wait Swap To Middle")
+                .waitSeconds(() -> LINE1_INTAKE_SWAP_TO_MIDDLE_DELAY_S)
+                .step("Transfer Center")
+                .rightEngaged()
+                .leftRetracted()
+                .waitSeconds(0.20)
+                .step("Gate Open Hold")
+                .backGateOpen()
+                .waitSecondsInclusive(() -> LINE1_INTAKE_FINISH_STOP_S)
+                .step("Cleanup")
+                .rightBlocker()
+                .intakeOff()
+                .done()
+                .build();
+    }
+
+    private IndexerSequenceRunner buildLine2Intake() {
+        return script("Line 2 Intake")
+                .step("Capture")
+                .intakeOn()
+                .rightEngaged()
+                .backGateOpen()
+                .waitForColor()
+                .step("Wait Transfer")
+                .waitSeconds(() -> LINE2_INTAKE_WAIT_S)
+                .step("Transfer Left")
+                .rightRetracted()
+                .leftEngaged()
+                .waitSecondsInclusive(() -> LINE2_INTAKE_FINISH_STOP_S)
+                .step("Cleanup")
+                .leftRetracted()
+                .intakeOff()
+                .done()
+                .build();
+    }
+
+    private IndexerSequenceRunner buildLine3Intake() {
+        return script("Line 3 Intake")
+                .step("Capture")
+                .intakeOn()
+                .leftRetracted()
+                .rightEngaged()
+                .backGateClosed()
+                .waitForColor()
+                .step("Wait Swap Right")
+                .waitSeconds(() -> LINE3_INTAKE_SWAP_TO_RIGHT_DELAY_S)
+                .step("Swap Right")
+                .rightRetracted()
+                .leftEngaged()
+                .waitSeconds(() -> LINE3_INTAKE_SWAP_TO_LEFT_DELAY_S)
+                .step("Open Gate")
+                .leftRetracted()
+                .backGateOpen()
+                .waitSecondsInclusive(() -> LINE3_INTAKE_FINISH_STOP_S)
+                .step("Cleanup")
+                .intakeOff()
+                .done()
+                .build();
+    }
+
+    private IndexerSequenceRunner buildLine1Outtake() {
+        return script("Line 1 Outtake")
+                .step("Wait Shooter Ready")
+                .waitForShooterReady()
+                .step("Slow Feed")
+                .slowFeed()
+                .waitSeconds(() -> LINE1_OUTTAKE_START_TO_SWAP_DELAY_S)
+                .step("Swap Start")
+                .leftRetracted()
+                .rightEngaged()
+                .backGateOpen()
+                .waitSeconds(() -> LINE1_OUTTAKE_WAIT_S)
+                .step("Swap To Left")
+                .rightRetracted()
+                .leftEngaged()
+                .waitSecondsInclusive(() -> LINE1_OUTTAKE_SWAP_TO_LEFT_DONE_S)
+                .step("Cleanup")
+                .action(() -> {
+                    setRight(IndexerServoPositions.RIGHT_RETRACTED);
+                    setLeft(IndexerServoPositions.LEFT_RETRACTED);
+                    setBackGate(IndexerServoPositions.BACK_GATE_OPEN);
+                    finishShootSequence();
+                })
+                .done()
+                .build();
+    }
+
+    private IndexerSequenceRunner buildSharedOuttake(String name,
+                                                     DoubleSupplier startDelay,
+                                                     DoubleSupplier swapToLeftDelay,
+                                                     DoubleSupplier finishDelay) {
+        return script(name)
+                .step("Wait Shooter Ready")
+                .waitForShooterReady()
+                .step("Slow Feed")
+                .slowFeed()
+                .waitSeconds(startDelay)
+                .step("Swap Start")
+                .leftRetracted()
+                .rightEngaged()
+                .backGateOpen()
+                .waitSecondsInclusive(swapToLeftDelay)
+                .step("Swap To Left")
+                .rightRetracted()
+                .leftEngaged()
+                .backGateOpen()
+                .waitSecondsInclusive(finishDelay)
+                .step("Cleanup")
+                .action(() -> {
+                    setRight(IndexerServoPositions.RIGHT_RETRACTED);
+                    setLeft(IndexerServoPositions.LEFT_RETRACTED);
+                    setBackGate(IndexerServoPositions.BACK_GATE_OPEN);
+                    finishShootSequence();
+                })
+                .done()
+                .build();
+    }
+
+    private IndexerSequenceRunner buildPreloadOuttake() {
+        return script("Preload Outtake")
+                .step("Wait Shooter Ready")
+                .waitForShooterReady()
+                .step("Slow Feed")
+                .slowFeed()
+                .waitSeconds(() -> PRELOAD_OUTTAKE_START_DELAY_S)
+                .step("Pass Through")
+                .leftRetracted()
+                .rightRetracted()
+                .backGateOpen()
+                .waitSeconds(() -> PRELOAD_OUTTAKE_FINISH_DONE_S)
+                .step("Cleanup")
+                .action(this::finishShootSequence)
+                .done()
+                .build();
     }
 }

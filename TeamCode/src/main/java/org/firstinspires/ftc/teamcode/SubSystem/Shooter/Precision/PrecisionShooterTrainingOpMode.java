@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -17,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
-@TeleOp(name = "Precision Shooter Trainer", group = "Shooter")
+@TeleOp(name = "TUNE_SHOT_TABLE", group = "Tuning")
 public class PrecisionShooterTrainingOpMode extends OpMode {
 
     private static final String LOG_TAG = "PrecisionShooterTrainer";

@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
+
 public final class PrecisionShooterSubsystem {
 
     public enum Alliance {
@@ -72,10 +74,13 @@ public final class PrecisionShooterSubsystem {
     private boolean fireRequested;
     private boolean spinEnabled;
     private boolean autoAimEnabled = true;
+    private boolean customGoalEnabled;
     private Pose lastPose;
     private double robotVx;
     private double robotVy;
     private double robotOmega;
+    private double customGoalX;
+    private double customGoalY;
     private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
     private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
 
@@ -139,11 +144,28 @@ public final class PrecisionShooterSubsystem {
         this.fireRequested = fireRequested;
     }
 
+    public void setGoalPosition(double goalX, double goalY) {
+        customGoalEnabled = true;
+        customGoalX = goalX;
+        customGoalY = goalY;
+    }
+
+    public void clearGoalPositionOverride() {
+        customGoalEnabled = false;
+    }
+
     public void start() {
         follower.startTeleopDrive();
-        lastPose = follower.getPose();
-        loopTimer.reset();
+        notifyPoseJump();
         feedTimer.reset();
+    }
+
+    public void notifyPoseJump() {
+        lastPose = follower.getPose();
+        robotVx = 0.0;
+        robotVy = 0.0;
+        robotOmega = 0.0;
+        loopTimer.reset();
     }
 
     public void update() {
@@ -160,8 +182,12 @@ public final class PrecisionShooterSubsystem {
             return;
         }
 
-        double goalX = alliance == Alliance.BLUE ? config.blueGoalXInches : config.redGoalXInches;
-        double goalY = alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches;
+        double goalX = customGoalEnabled
+                ? customGoalX
+                : (alliance == Alliance.BLUE ? config.blueGoalXInches : config.redGoalXInches);
+        double goalY = customGoalEnabled
+                ? customGoalY
+                : (alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches);
 
         Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
         double distance = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());

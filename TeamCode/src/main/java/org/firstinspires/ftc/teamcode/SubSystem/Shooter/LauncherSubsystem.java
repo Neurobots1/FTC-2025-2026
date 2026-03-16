@@ -9,26 +9,28 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.controller.PIDFController;
 
+import org.firstinspires.ftc.teamcode.Constants.LauncherConstants;
+
 @Configurable
 public class LauncherSubsystem {
 
-    public static double P = 0.03;
-    public static double I = 0.003;
-    public static double D = 0.00004;
-    public static double F = 0.000039;
+    public static double P = LauncherConstants.P;
+    public static double I = LauncherConstants.I;
+    public static double D = LauncherConstants.D;
+    public static double F = LauncherConstants.F;
 
-    public static double VELOCITY_TOLERANCE = 60;
+    public static double VELOCITY_TOLERANCE = LauncherConstants.VELOCITY_TOLERANCE;
 
-    public static double BlockerOpenPosition = 0.55;
-    public static double BlockerClosedPosition = 0.25;
+    public static double BlockerOpenPosition = LauncherConstants.BLOCKER_OPEN_POSITION;
+    public static double BlockerClosedPosition = LauncherConstants.BLOCKER_CLOSED_POSITION;
 
-    public static double MAX_FLYWHEEL_VELOCITY = 1860;
-    public static double NOMINAL_VOLTAGE = 12.82;
+    public static double MAX_FLYWHEEL_VELOCITY = LauncherConstants.MAX_FLYWHEEL_VELOCITY;
+    public static double NOMINAL_VOLTAGE = LauncherConstants.NOMINAL_VOLTAGE;
 
-    public static boolean MOTOR_ONE_REVERSED = false;
-    public static boolean MOTOR_TWO_REVERSED = true;
+    public static boolean MOTOR_ONE_REVERSED = LauncherConstants.MOTOR_ONE_REVERSED;
+    public static boolean MOTOR_TWO_REVERSED = LauncherConstants.MOTOR_TWO_REVERSED;
 
-    public static double BLOCKER_OPEN_DELAY_S = 0.3;
+    public static double BLOCKER_OPEN_DELAY_S = LauncherConstants.BLOCKER_OPEN_DELAY_S;
 
     private final DcMotorEx flywheelMotorOne;
     private final DcMotorEx flywheelMotorTwo;
@@ -47,7 +49,7 @@ public class LauncherSubsystem {
     private boolean blockerOpenCommanded = false;
 
     // Far zone TPS is a constant (tune this)
-    public static double FAR_ZONE_TPS = 820;
+    public static double FAR_ZONE_TPS = LauncherConstants.FAR_ZONE_TPS;
 
     // Close zone: y = 399.5011 + 4.804155*x - 0.00739844*x^2
     // y is RPM/TPS, x is distance
@@ -76,6 +78,10 @@ public class LauncherSubsystem {
         return computeLutTPSClose(distance);                      // close zone (front/default)
     }
 
+    public static double suggestedTPS(double distance, double x, double y) {
+        return computeLutTPS(distance, x, y);
+    }
+
     public double getTargetTPS() { return targetTPS; }
     public double getCurentRPM() { return flywheelMotorOne.getVelocity(); }
 
@@ -93,6 +99,7 @@ public class LauncherSubsystem {
         this.flywheelMotorTwo = m2;
         this.voltageSensor = vs;
 
+        syncConstants();
         m1.setDirection(MOTOR_ONE_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
         m2.setDirection(MOTOR_TWO_REVERSED ? DcMotor.Direction.FORWARD : DcMotor.Direction.REVERSE);
 
@@ -110,6 +117,7 @@ public class LauncherSubsystem {
     }
 
     public void init() {
+        syncConstants();
         setFlywheelTicks(0);
         shootState = ShootState.IDLE;
         headingLock = false;
@@ -118,6 +126,24 @@ public class LauncherSubsystem {
 
     public double getCurrentRPM() {
         return flywheelMotorOne.getVelocity();
+    }
+
+    public boolean isAtSpeed() {
+        if (targetTPS <= 0) return false;
+        return Math.abs(targetTPS - flywheelMotorOne.getVelocity()) <= VELOCITY_TOLERANCE;
+    }
+
+    public void setBlockerOpen(boolean open) {
+        if (open) {
+            commandBlockerOpen();
+        } else {
+            commandBlockerClosed();
+        }
+    }
+
+    public void aimAtTarget(double x, double y, double distance) {
+        LutTPS = computeLutTPS(distance, x, y);
+        setFlywheelTicks(LutTPS);
     }
 
     public void setBlocker(Servo blocker) {
@@ -145,6 +171,7 @@ public class LauncherSubsystem {
     }
 
     public void update() {
+        syncConstants();
         double desiredTPS = targetTPS;
         if (desiredTPS < 0) desiredTPS = 0;
         if (desiredTPS > MAX_FLYWHEEL_VELOCITY) desiredTPS = MAX_FLYWHEEL_VELOCITY;
@@ -358,5 +385,21 @@ public class LauncherSubsystem {
     public static boolean isInFrontZone(double x, double y) {
         double d = radius * 1.41421356237;
         return y >= -x + 144 - d && y >= x - d;
+    }
+
+    private static void syncConstants() {
+        P = LauncherConstants.P;
+        I = LauncherConstants.I;
+        D = LauncherConstants.D;
+        F = LauncherConstants.F;
+        VELOCITY_TOLERANCE = LauncherConstants.VELOCITY_TOLERANCE;
+        BlockerOpenPosition = LauncherConstants.BLOCKER_OPEN_POSITION;
+        BlockerClosedPosition = LauncherConstants.BLOCKER_CLOSED_POSITION;
+        MAX_FLYWHEEL_VELOCITY = LauncherConstants.MAX_FLYWHEEL_VELOCITY;
+        NOMINAL_VOLTAGE = LauncherConstants.NOMINAL_VOLTAGE;
+        MOTOR_ONE_REVERSED = LauncherConstants.MOTOR_ONE_REVERSED;
+        MOTOR_TWO_REVERSED = LauncherConstants.MOTOR_TWO_REVERSED;
+        BLOCKER_OPEN_DELAY_S = LauncherConstants.BLOCKER_OPEN_DELAY_S;
+        FAR_ZONE_TPS = LauncherConstants.FAR_ZONE_TPS;
     }
 }

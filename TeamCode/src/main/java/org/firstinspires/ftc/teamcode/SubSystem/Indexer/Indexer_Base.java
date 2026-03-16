@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.IndexerServoPositions;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
 
 public class Indexer_Base {
 
@@ -14,15 +14,9 @@ public class Indexer_Base {
     private enum OutTakeState {IDLE,OUTAKE, START, SWAP_TO_LEFT, FINISH}
     private enum IndexIntakeState {IDLE, START, SWAP_TO_LEFT, FINISH}
 
-    private enum PGPstate {IDLE, START, SWAP_TO_LEFT, FINISH}
-    private enum PPGstate {IDLE, START, SWAP_TO_LEFT, FINISH}
-
     private ActionState rightPickState = ActionState.IDLE;
     private ActionState leftPickState  = ActionState.IDLE;
     private IndexIntakeState indexIntakeState = IndexIntakeState.IDLE;
-    public PGPstate pgpState = PGPstate.IDLE;
-    public PPGstate ppgState = PPGstate.IDLE;
-    public LauncherSubsystem Shooter;
 
     private OutTakeState outTakeState = OutTakeState.IDLE;
 
@@ -36,19 +30,6 @@ public class Indexer_Base {
     public Servo indexRightServo;
     public Servo indexGateFront;
     public Servo indexGateBack;
-
-    public static double indexer_L_Retracted = 1;//Indexer1 Left
-    public static double indexer_L_Engage = 0.0;//Indexer1 Center
-    public static double indexer_R_Engage = 1.0;//Indexer2 Center
-    public static double indexer_R_Blocker = 0.5;//Indexer 2 Blocker
-    public static double indexer_R_Retracted = 0.0;//Indexer2 Right
-
-    public static double servointkF_Closed = 1;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointkF_Open = 0.0;//Servo Intk ouver(les balles peuvent passer)
-
-    public static double servointkB_Closed = 0.6;//Servo Intk ferme(les balles ne peuvent pas passer)
-    public static double servointkB_Open = 0.3;//Servo Intk ouvert(les balles peuvent passer)
-
 
     public static double INDEXER_MOVE_TIME = 0.5;      // Temps pour deplacer le rail (secondes)
     public static double INDEXER_COLLECT_TIME = 0.5; // Temps de collecte (secondes)
@@ -75,7 +56,7 @@ public class Indexer_Base {
     }
 
     public void IndexBlocker(){
-        indexRightServo.setPosition(indexer_R_Blocker);
+        indexRightServo.setPosition(IndexerServoPositions.RIGHT_BLOCKER);
     }
 
 
@@ -124,17 +105,17 @@ public class Indexer_Base {
                 break;
 
             case START:
-                indexGateBack.setPosition(servointkB_Open);
-                indexLeftServo.setPosition(indexer_L_Retracted);
-                indexRightServo.setPosition(indexer_R_Engage);
+                indexGateBack.setPosition(IndexerServoPositions.BACK_GATE_OPEN);
+                indexLeftServo.setPosition(IndexerServoPositions.LEFT_RETRACTED);
+                indexRightServo.setPosition(IndexerServoPositions.RIGHT_ENGAGED);
                 ballEntryTimer.reset();
                 outTakeState = OutTakeState.SWAP_TO_LEFT;
                 break;
 
             case SWAP_TO_LEFT:
                 if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-                    indexRightServo.setPosition(indexer_R_Retracted);
-                    indexLeftServo.setPosition(indexer_L_Engage);
+                    indexRightServo.setPosition(IndexerServoPositions.RIGHT_RETRACTED);
+                    indexLeftServo.setPosition(IndexerServoPositions.LEFT_ENGAGED);
                     ballEntryTimer.reset();
                     outTakeState = OutTakeState.FINISH;
                 }
@@ -143,7 +124,7 @@ public class Indexer_Base {
             case FINISH:
                 if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     intkM.stop();
-                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexLeftServo.setPosition(IndexerServoPositions.LEFT_RETRACTED);
                     outTakeState = OutTakeState.IDLE;
                 }
                 break;
@@ -165,9 +146,9 @@ public class Indexer_Base {
                 break;
 
             case START:
-                indexRightServo.setPosition(indexer_R_Engage);
-                indexGateFront.setPosition(servointkF_Open);
-                indexGateBack.setPosition(servointkB_Closed);
+                indexRightServo.setPosition(IndexerServoPositions.RIGHT_ENGAGED);
+                indexGateFront.setPosition(IndexerServoPositions.FRONT_GATE_OPEN);
+                indexGateBack.setPosition(IndexerServoPositions.BACK_GATE_CLOSED);
                 intkM.intake();
                 ballEntryTimer.reset();
                 indexIntakeState = IndexIntakeState.SWAP_TO_LEFT;
@@ -175,8 +156,8 @@ public class Indexer_Base {
 
             case SWAP_TO_LEFT:
                 if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
-                    indexRightServo.setPosition(indexer_R_Retracted);
-                    indexLeftServo.setPosition(indexer_L_Engage);
+                    indexRightServo.setPosition(IndexerServoPositions.RIGHT_RETRACTED);
+                    indexLeftServo.setPosition(IndexerServoPositions.LEFT_ENGAGED);
                     ballEntryTimer.reset();
                     indexIntakeState = IndexIntakeState.FINISH;
                 }
@@ -187,7 +168,7 @@ public class Indexer_Base {
             case FINISH:
                 if (ballEntryTimer.seconds() >= INDEXER_COLLECT_TIME) {
                     intkM.stop();
-                    indexLeftServo.setPosition(indexer_L_Retracted);
+                    indexLeftServo.setPosition(IndexerServoPositions.LEFT_RETRACTED);
                     indexIntakeState = IndexIntakeState.IDLE;
 
                 }
@@ -196,18 +177,18 @@ public class Indexer_Base {
     }
 
     public void Not_active(){
-        indexGateBack.setPosition(servointkB_Open);
-        indexGateFront.setPosition(servointkF_Open);
+        indexGateBack.setPosition(IndexerServoPositions.BACK_GATE_OPEN);
+        indexGateFront.setPosition(IndexerServoPositions.FRONT_GATE_OPEN);
 
-        indexRightServo.setPosition(indexer_R_Retracted);
-        indexLeftServo.setPosition(indexer_L_Retracted);
+        indexRightServo.setPosition(IndexerServoPositions.RIGHT_RETRACTED);
+        indexLeftServo.setPosition(IndexerServoPositions.LEFT_RETRACTED);
     }
 
     public void StartIndexPose(){
-        indexLeftServo.setPosition(indexer_L_Retracted);
-        indexRightServo.setPosition(indexer_R_Retracted);
-        indexGateBack.setPosition(servointkB_Open);
-        indexGateFront.setPosition(servointkF_Open);
+        indexLeftServo.setPosition(IndexerServoPositions.LEFT_RETRACTED);
+        indexRightServo.setPosition(IndexerServoPositions.RIGHT_RETRACTED);
+        indexGateBack.setPosition(IndexerServoPositions.BACK_GATE_OPEN);
+        indexGateFront.setPosition(IndexerServoPositions.FRONT_GATE_OPEN);
 
     }
 
