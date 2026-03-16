@@ -61,6 +61,20 @@ public final class PrecisionShooterSubsystem {
         }
     }
 
+    private static final class TurretKinematics {
+        final double x;
+        final double y;
+        final double vx;
+        final double vy;
+
+        TurretKinematics(double x, double y, double vx, double vy) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+        }
+    }
+
     private final PrecisionShooterConfig config;
     private final Follower follower;
     private final FlywheelVelocityController flywheel;
@@ -190,7 +204,8 @@ public final class PrecisionShooterSubsystem {
                 : (alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches);
 
         Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
-        double distance = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());
+        TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
+        double distance = Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y);
         lastNominal = config.table.sample(distance);
 
         double targetRpm = spinEnabled ? lastNominal.targetRpm : 0.0;
@@ -198,7 +213,7 @@ public final class PrecisionShooterSubsystem {
         flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
 
         double effectiveRpm = Math.max(flywheel.getMeasuredRpm(), targetRpm * config.minCompensationRpmFraction);
-        lastSolution = solveMovingShot(releasePose, goalX, goalY, targetRpm, effectiveRpm, lastNominal);
+        lastSolution = solveMovingShot(releasePose, releaseTurret, goalX, goalY, targetRpm, effectiveRpm, lastNominal);
 
         if (lastSolution.valid && autoAimEnabled) {
             hood.setAngleDegrees(Math.toDegrees(lastSolution.hoodAngleRad));
@@ -237,6 +252,7 @@ public final class PrecisionShooterSubsystem {
     }
 
     private BallisticAimSolver.Solution solveMovingShot(Pose releasePose,
+                                                        TurretKinematics releaseTurret,
                                                         double goalX,
                                                         double goalY,
                                                         double targetRpm,
@@ -258,13 +274,13 @@ public final class PrecisionShooterSubsystem {
 
         double actualSpeed = nominalSpeed * (actualRpm / targetRpm);
         return BallisticAimSolver.solve(
-                releasePose.getX(),
-                releasePose.getY(),
+                releaseTurret.x,
+                releaseTurret.y,
                 goalX,
                 goalY,
                 config.targetHeightInches - config.shooterHeightInches,
-                robotVx,
-                robotVy,
+                releaseTurret.vx,
+                releaseTurret.vy,
                 actualSpeed,
                 Math.toRadians(config.hoodMinAngleDeg),
                 Math.toRadians(config.hoodMaxAngleDeg),
@@ -285,6 +301,28 @@ public final class PrecisionShooterSubsystem {
                 pose.getX() + robotVx * lookaheadSeconds,
                 pose.getY() + robotVy * lookaheadSeconds,
                 pose.getHeading() + robotOmega * lookaheadSeconds
+        );
+    }
+
+    private TurretKinematics computeTurretKinematics(Pose pose) {
+        double heading = pose.getHeading();
+        double cos = Math.cos(heading);
+        double sin = Math.sin(heading);
+
+        double offsetWorldX = config.turretOffsetForwardInches * cos
+                - config.turretOffsetLeftInches * sin;
+        double offsetWorldY = config.turretOffsetForwardInches * sin
+                + config.turretOffsetLeftInches * cos;
+
+        // Rigid-body velocity of the turret pivot = chassis translation + rotation-induced point velocity.
+        double turretVx = robotVx - robotOmega * offsetWorldY;
+        double turretVy = robotVy + robotOmega * offsetWorldX;
+
+        return new TurretKinematics(
+                pose.getX() + offsetWorldX,
+                pose.getY() + offsetWorldY,
+                turretVx,
+                turretVy
         );
     }
 
