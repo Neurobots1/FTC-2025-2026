@@ -8,7 +8,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Indexer.IndexerMode;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_PGP;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.PatternMappedIndexer;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.SortPattern;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
@@ -21,7 +21,7 @@ public class SortedAutoController {
     private final EnumMap<SortPattern, IndexerMode> indexersByPattern = new EnumMap<>(SortPattern.class);
     private SortPattern activePattern = SortPattern.PGP;
 
-    public SortedAutoController(HardwareMap hardwareMap, LauncherSubsystem shooter) {
+    public SortedAutoController(HardwareMap hardwareMap, PrecisionShooterSubsystem shooter) {
         Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
         physicalIndexer = new Indexer_PGP(hardwareMap, indexerBase, shooter);
         indexersByPattern.put(SortPattern.PGP, physicalIndexer);

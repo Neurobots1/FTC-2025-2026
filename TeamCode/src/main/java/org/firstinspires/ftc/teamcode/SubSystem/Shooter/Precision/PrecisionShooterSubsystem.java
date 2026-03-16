@@ -259,6 +259,18 @@ public final class PrecisionShooterSubsystem {
         );
     }
 
+    public boolean isReadyToShootNow() {
+        return isReadyToShoot();
+    }
+
+    public double getTargetRpm() {
+        return flywheel.getTargetRpm();
+    }
+
+    public double getActualRpm() {
+        return flywheel.getMeasuredRpm();
+    }
+
     private BallisticAimSolver.Solution solveMovingShot(Pose releasePose,
                                                         TurretKinematics releaseTurret,
                                                         double goalX,

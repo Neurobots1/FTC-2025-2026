@@ -5,10 +5,8 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.ActionScheduler;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.AutoRobotFacade;
@@ -17,7 +15,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.ModularAutoBu
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.SortedAutoController;
 import org.firstinspires.ftc.teamcode.SubSystem.AutoPoseHandoff;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.SortPattern;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -48,15 +46,14 @@ public class MockSortedAuto extends OpMode {
         paths = new MirroredPathFactory(follower, ALLIANCE);
         follower.setStartingPose(paths.pose(new Pose(20, 119, Math.toRadians(139))));
 
-        DcMotorEx flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
-        DcMotorEx flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
-        VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        LauncherSubsystem launcher = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Servo blocker = hardwareMap.get(Servo.class, "Blocker");
-        launcher.setBlocker(blocker);
-        launcher.init();
+        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
+        shooter.setGoalPosition(
+                ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0,
+                140.0
+        );
+        shooter.setAutoAimEnabled(true);
 
-        sortedController = new SortedAutoController(hardwareMap, launcher);
+        sortedController = new SortedAutoController(hardwareMap, shooter);
         aprilTag = new AprilTagPipeline(hardwareMap);
         aprilTag.startCamera();
 

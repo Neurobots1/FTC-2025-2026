@@ -49,7 +49,7 @@ public class AutoRobotFacade {
         }
 
         if (unsortedShooter != null) {
-            unsortedShooter.setAimContext(pose.getX(), pose.getY(), distance);
+            unsortedShooter.setGoalPosition(goalSupplier.goalX(), goalSupplier.goalY());
             unsortedShooter.update();
         }
     }

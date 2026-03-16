@@ -5,10 +5,8 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.ActionScheduler;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.AutoAlliance;
@@ -18,7 +16,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Modular.ModularAutoBu
 import org.firstinspires.ftc.teamcode.SubSystem.AutoPoseHandoff;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.AutoShooterController;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Mock 15 Ball Auto", group = "Experimental")
@@ -56,15 +54,13 @@ public class Mock15BallAuto extends OpMode {
 
         intake = new IntakeMotor(hardwareMap);
 
-        DcMotorEx flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
-        DcMotorEx flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
-        VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        LauncherSubsystem launcher = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Servo blocker = hardwareMap.get(Servo.class, "Blocker");
-        launcher.setBlocker(blocker);
-        launcher.init();
-
-        shooterController = new AutoShooterController(launcher, intake);
+        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
+        shooter.setGoalPosition(
+                ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0,
+                140.0
+        );
+        shooter.setAutoAimEnabled(true);
+        shooterController = new AutoShooterController(shooter, intake);
         shooterController.setFeedMode(AutoShooterController.FeedMode.AUTO);
 
         robot = new AutoRobotFacade(

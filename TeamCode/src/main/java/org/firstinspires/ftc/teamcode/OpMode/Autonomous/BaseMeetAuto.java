@@ -6,12 +6,10 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.ActionScheduler;
 import org.firstinspires.ftc.teamcode.SubSystem.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.SubSystem.AutoPoseHandoff;
@@ -21,7 +19,7 @@ import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_PGP;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.PatternMappedIndexer;
 import org.firstinspires.ftc.teamcode.SubSystem.Indexer.SortPattern;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.SubSystem.Vision.AprilTagPipeline;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
@@ -56,7 +54,7 @@ abstract class BaseMeetAuto extends OpMode {
     protected IndexerMode activeIndexer;
 
     protected IntakeMotor intake;
-    protected LauncherSubsystem shooter;
+    protected PrecisionShooterSubsystem shooter;
 
     protected final ActionScheduler scheduler = new ActionScheduler();
     protected Timer actionTimer;
@@ -84,13 +82,11 @@ abstract class BaseMeetAuto extends OpMode {
         indexerBase = new Indexer_Base(hardwareMap);
         intake = indexerBase.intkM;
 
-        DcMotorEx flywheelMotorOne = hardwareMap.get(DcMotorEx.class, "ShooterA");
-        DcMotorEx flywheelMotorTwo = hardwareMap.get(DcMotorEx.class, "ShooterB");
-        VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        shooter = new LauncherSubsystem(flywheelMotorOne, flywheelMotorTwo, voltageSensor);
-        Servo blocker = hardwareMap.get(Servo.class, "Blocker");
-        shooter.setBlocker(blocker);
-        shooter.init();
+        shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
+        shooter.setGoalPosition(getGoalX(), getGoalY());
+        shooter.setAutoAimEnabled(true);
+        shooter.setSpinEnabled(false);
+        shooter.requestFire(false);
 
         indexerPgp = new Indexer_PGP(hardwareMap, indexerBase, shooter);
         indexerGpp = new PatternMappedIndexer(indexerPgp, SortPattern.GPP);
@@ -304,6 +300,10 @@ abstract class BaseMeetAuto extends OpMode {
         Pose pose = follower.getPose();
         double distance = getDistanceToGoal();
 
+        if (shooter != null) {
+            shooter.setGoalPosition(getGoalX(), getGoalY());
+        }
+
         if (activeIndexer != null) {
             activeIndexer.setShootContext(pose.getX(), pose.getY(), distance);
             activeIndexer.update();
@@ -311,7 +311,8 @@ abstract class BaseMeetAuto extends OpMode {
             indexerPgp.setShootContext(pose.getX(), pose.getY(), distance);
             indexerPgp.update();
         } else if (shooter != null) {
-            shooter.updateShootingAuto(false, pose.getX(), pose.getY(), distance);
+            shooter.setSpinEnabled(false);
+            shooter.requestFire(false);
             shooter.update();
         }
     }

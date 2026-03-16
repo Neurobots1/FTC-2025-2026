@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Constants.IndexerServoPositions;
 import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.LauncherSubsystem;
+import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 
 import java.util.function.DoubleSupplier;
 
@@ -45,7 +45,7 @@ public class Indexer_PGP implements IndexerMode {
     private final Indexer_Base indexerBase;
     private final IntakeMotor intake;
     private final RevColorSensorV3 colorSensor;
-    private final LauncherSubsystem shooter;
+    private final PrecisionShooterSubsystem shooter;
 
     private final IndexerSequenceRunner line1Intake;
     private final IndexerSequenceRunner line2Intake;
@@ -65,7 +65,7 @@ public class Indexer_PGP implements IndexerMode {
 
     public static double PRESPIN_TPS = 820;
 
-    public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, LauncherSubsystem shooter) {
+    public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, PrecisionShooterSubsystem shooter) {
         this.indexerBase = base;
         this.intake = base.intkM;
         this.colorSensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
@@ -108,7 +108,8 @@ public class Indexer_PGP implements IndexerMode {
     public void setPreSpinEnabled(boolean enabled) {
         wantPreSpin = enabled;
         if (!enabled && !wantShoot && !isBusy() && shooter != null) {
-            shooter.setFlywheelTicks(0);
+            shooter.setSpinEnabled(false);
+            shooter.requestFire(false);
         }
     }
 
@@ -138,7 +139,7 @@ public class Indexer_PGP implements IndexerMode {
 
     @Override
     public boolean isInShootingZone() {
-        return shooter != null && LauncherSubsystem.isInShootingZone(shootX, shootY);
+        return shooter != null && shooter.isInShootingZone();
     }
 
     @Override
@@ -229,8 +230,9 @@ public class Indexer_PGP implements IndexerMode {
         wantPreSpin = false;
         intake.stop();
         if (shooter != null) {
-            shooter.setFlywheelTicks(0);
-            shooter.setBlockerOpen(false);
+            shooter.setSpinEnabled(false);
+            shooter.requestFire(false);
+            shooter.update();
         }
         if (indexerBase != null) {
             indexerBase.StartIndexPose();
@@ -246,7 +248,7 @@ public class Indexer_PGP implements IndexerMode {
         }
 
         if (!isBusy() && !wantShoot && !wantPreSpin && shooter != null) {
-            shooter.setFlywheelTicks(0);
+            shooter.setSpinEnabled(false);
         }
     }
 
@@ -289,11 +291,17 @@ public class Indexer_PGP implements IndexerMode {
         }
 
         if (wantShoot) {
-            shooter.updateShootingAuto(true, shootX, shootY, shootDistance);
+            shooter.setSpinEnabled(true);
+            shooter.setAutoAimEnabled(true);
+            shooter.requestFire(true);
         } else if (wantPreSpin) {
-            shooter.setFlywheelTicks(PRESPIN_TPS);
+            shooter.setSpinEnabled(true);
+            shooter.setAutoAimEnabled(true);
+            shooter.requestFire(false);
         } else {
-            shooter.updateShootingAuto(false, shootX, shootY, shootDistance);
+            shooter.setSpinEnabled(false);
+            shooter.setAutoAimEnabled(true);
+            shooter.requestFire(false);
         }
 
         shooter.update();
@@ -304,7 +312,7 @@ public class Indexer_PGP implements IndexerMode {
     }
 
     private boolean shooterReady() {
-        return shooter != null && shooter.flywheelReady();
+        return shooter != null && shooter.isReadyToShootNow();
     }
 
     private void finishShootSequence() {
