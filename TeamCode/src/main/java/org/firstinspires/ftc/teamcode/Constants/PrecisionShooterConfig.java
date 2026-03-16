@@ -32,8 +32,8 @@ public class PrecisionShooterConfig {
 
     public double hoodMinAngleDeg = 30.0;
     public double hoodMaxAngleDeg = 55.0;
-    public double hoodServoMinPosition = 0.16;
-    public double hoodServoMaxPosition = 0.79;
+    public double hoodServoMinPosition = 1.0;
+    public double hoodServoMaxPosition = 0.0;
     public double hoodSettleSeconds = 0.18;
 
     public double turretMechanicalRangeDeg = 180.0;

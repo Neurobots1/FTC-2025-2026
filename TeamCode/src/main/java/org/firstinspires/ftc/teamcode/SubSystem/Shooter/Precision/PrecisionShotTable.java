@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -8,9 +9,16 @@ import java.util.Locale;
 
 public final class PrecisionShotTable {
 
+    private static final int ROW_DISTANCE_INCHES = 0;
+    private static final int ROW_TARGET_RPM = 1;
+    private static final int ROW_HOOD_ANGLE_DEG = 2;
+
     public static final class Entry {
+        // Horizontal distance from the shooter/turret pivot to the goal center.
         public final double distanceInches;
+        // Flywheel speed target for this distance.
         public final double targetRpm;
+        // Hood launch angle in degrees for this distance.
         public final double hoodAngleDeg;
 
         public Entry(double distanceInches, double targetRpm, double hoodAngleDeg) {
@@ -61,7 +69,8 @@ public final class PrecisionShotTable {
         StringBuilder builder = new StringBuilder();
         builder.append("public static final PrecisionShotTable ")
                 .append(tableName)
-                .append(" = new PrecisionShotTable(Arrays.asList(\n");
+                .append(" = new PrecisionShotTable(Arrays.asList(\n")
+                .append("        // Entry(distanceInches, targetRpm, hoodAngleDeg)\n");
         for (int i = 0; i < entries.size(); i++) {
             Entry entry = entries.get(i);
             builder.append(String.format(Locale.US,
@@ -79,22 +88,27 @@ public final class PrecisionShotTable {
         ArrayList<Entry> entries = new ArrayList<>();
         for (double[] row : rows) {
             if (row.length >= 3) {
-                entries.add(new Entry(row[0], row[1], row[2]));
+                entries.add(new Entry(
+                        row[ROW_DISTANCE_INCHES],
+                        row[ROW_TARGET_RPM],
+                        row[ROW_HOOD_ANGLE_DEG]
+                ));
             }
         }
         return new PrecisionShotTable(entries);
     }
 
     public static PrecisionShotTable defaultTable() {
-        return PrecisionShotTable.fromArray(new double[][]{
-                {36.0, 2650.0, 52.0},
-                {48.0, 2800.0, 49.0},
-                {60.0, 2950.0, 46.0},
-                {72.0, 3080.0, 43.5},
-                {84.0, 3220.0, 40.5},
-                {96.0, 3375.0, 38.0},
-                {108.0, 3525.0, 35.5},
-                {120.0, 3680.0, 33.0}
-        });
+        return new PrecisionShotTable(Arrays.asList(
+                // Entry(distanceInches, targetRpm, hoodAngleDeg)
+                new Entry(36.0, 2650.0, 52.0),
+                new Entry(48.0, 2800.0, 49.0),
+                new Entry(60.0, 2950.0, 46.0),
+                new Entry(72.0, 3080.0, 43.5),
+                new Entry(84.0, 3220.0, 40.5),
+                new Entry(96.0, 3375.0, 38.0),
+                new Entry(108.0, 3525.0, 35.5),
+                new Entry(120.0, 3680.0, 33.0)
+        ));
     }
 }
