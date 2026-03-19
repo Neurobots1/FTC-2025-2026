@@ -129,9 +129,15 @@ public final class PrecisionShooterSubsystem {
                                                    PrecisionShooterConfig config) {
         DcMotorEx left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
         DcMotorEx right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
-        DcMotorEx turretMotor = hardwareMap.get(DcMotorEx.class, config.turretMotorName);
         Servo hoodServo = hardwareMap.get(Servo.class, config.hoodServoName);
         Servo feedServo = null;
+        TurretAxis turret = null;
+
+        if (config.turretEnabled) {
+            DcMotorEx turretMotor = hardwareMap.get(DcMotorEx.class, config.turretMotorName);
+            turret = new TurretAxis(turretMotor, config);
+        }
+
         try {
             feedServo = hardwareMap.get(Servo.class, config.feedServoName);
         } catch (Exception ignored) {
@@ -140,7 +146,6 @@ public final class PrecisionShooterSubsystem {
 
         FlywheelVelocityController flywheel = new FlywheelVelocityController(left, right, voltageSensor, config);
         ServoHoodController hood = new ServoHoodController(hoodServo, config);
-        TurretAxis turret = new TurretAxis(turretMotor, config);
         return new PrecisionShooterSubsystem(config, follower, flywheel, hood, turret, feedServo);
     }
 
@@ -191,9 +196,11 @@ public final class PrecisionShooterSubsystem {
     public void update() {
         Pose pose = follower.getPose();
         updateMotionEstimate(pose);
-        turret.updateHoming();
+        if (turret != null) {
+            turret.updateHoming();
+        }
 
-        if (!turret.isHomed()) {
+        if (turret != null && !turret.isHomed()) {
             hood.setAngleDegrees(config.hoodMaxAngleDeg);
             hood.update();
             flywheel.stop();
@@ -213,7 +220,7 @@ public final class PrecisionShooterSubsystem {
         TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
         lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
         double distance = Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y);
-        lastNominal = config.table.sample(distance);
+        lastNominal = PrecisionShooterConfig.currentTable().sample(distance);
 
         double targetRpm = spinEnabled ? lastNominal.targetRpm : 0.0;
         flywheel.setTargetRpm(targetRpm);
@@ -224,13 +231,17 @@ public final class PrecisionShooterSubsystem {
 
         if (lastSolution.valid && autoAimEnabled) {
             hood.setAngleDegrees(Math.toDegrees(lastSolution.hoodAngleRad));
-            turret.setTargetAngleRadians(
-                    ShooterMath.normalizeRadians(lastSolution.worldYawRad - releasePose.getHeading())
-            );
+            if (turret != null) {
+                turret.setTargetAngleRadians(
+                        ShooterMath.normalizeRadians(lastSolution.worldYawRad - releasePose.getHeading())
+                );
+            }
         }
 
         hood.update();
-        turret.updateTracking();
+        if (turret != null) {
+            turret.updateTracking();
+        }
 
         boolean ready = isReadyToShoot();
         if (fireRequested && ready) {
@@ -242,7 +253,7 @@ public final class PrecisionShooterSubsystem {
 
     public TelemetrySnapshot snapshot() {
         return new TelemetrySnapshot(
-                turret.isHomed(),
+                turret == null || turret.isHomed(),
                 lastSolution.valid,
                 lastInShootingZone,
                 isReadyToShoot(),
@@ -250,8 +261,8 @@ public final class PrecisionShooterSubsystem {
                 flywheel.getMeasuredRpm(),
                 lastNominal.hoodAngleDeg,
                 Math.toDegrees(lastSolution.hoodAngleRad),
-                Math.toDegrees(turret.getCurrentAngleRadians()),
-                Math.toDegrees(turret.getTargetAngleRadians()),
+                Math.toDegrees(turret == null ? 0.0 : turret.getCurrentAngleRadians()),
+                Math.toDegrees(turret == null ? 0.0 : turret.getTargetAngleRadians()),
                 lastSolution.rangeInches,
                 lastSolution.flightTimeSeconds,
                 lastSolution.reason,
@@ -261,6 +272,33 @@ public final class PrecisionShooterSubsystem {
 
     public boolean isReadyToShootNow() {
         return isReadyToShoot();
+    }
+
+    public boolean isTurretEnabled() {
+        return turret != null;
+    }
+
+    public boolean shouldUseChassisHeadingLock() {
+        return turret == null && config.lockChassisHeadingWhenTurretDisabled;
+    }
+
+    public double getChassisAimManualOverrideThreshold() {
+        return config.chassisAimManualOverrideThreshold;
+    }
+
+    public double getChassisHeadingErrorRadians() {
+        if (!lastSolution.valid) {
+            return 0.0;
+        }
+        return ShooterMath.normalizeRadians(lastSolution.worldYawRad - follower.getPose().getHeading());
+    }
+
+    public double getChassisAimTurnCommand() {
+        if (!shouldUseChassisHeadingLock() || !lastSolution.valid) {
+            return 0.0;
+        }
+        double command = getChassisHeadingErrorRadians() * config.chassisAimKp;
+        return ShooterMath.clamp(command, -config.chassisAimMaxTurnCommand, config.chassisAimMaxTurnCommand);
     }
 
     public double getTargetRpm() {
@@ -309,12 +347,19 @@ public final class PrecisionShooterSubsystem {
     }
 
     private boolean isReadyToShoot() {
-        return turret.isHomed()
+        return (turret == null || turret.isHomed())
                 && lastInShootingZone
                 && lastSolution.valid
                 && flywheel.atSpeed(config.flywheelReadyToleranceRpm)
                 && hood.isSettled()
-                && turret.atTarget();
+                && isAimAligned();
+    }
+
+    private boolean isAimAligned() {
+        if (turret != null) {
+            return turret.atTarget();
+        }
+        return Math.abs(getChassisHeadingErrorRadians()) <= Math.toRadians(config.chassisAimToleranceDeg);
     }
 
     public boolean isInShootingZone() {

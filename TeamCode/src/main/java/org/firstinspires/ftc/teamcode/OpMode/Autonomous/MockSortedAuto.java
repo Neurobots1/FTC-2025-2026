@@ -31,6 +31,8 @@ public class MockSortedAuto extends OpMode {
     private AutoRobotFacade robot;
     private MirroredPathFactory paths;
     private AprilTagPipeline aprilTag;
+    private double goalX;
+    private double goalY;
 
     private PathChain toPreloadShot;
     private PathChain toLine1Start;
@@ -43,14 +45,20 @@ public class MockSortedAuto extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
-        paths = new MirroredPathFactory(follower, ALLIANCE);
+        PrecisionShooterConfig shooterConfig = new PrecisionShooterConfig();
+        goalX = ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0;
+        goalY = 140.0;
+        paths = new MirroredPathFactory(
+                follower,
+                ALLIANCE,
+                goalX,
+                goalY,
+                !shooterConfig.turretEnabled && shooterConfig.lockChassisHeadingWhenTurretDisabled
+        );
         follower.setStartingPose(paths.pose(new Pose(20, 119, Math.toRadians(139))));
 
-        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
-        shooter.setGoalPosition(
-                ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0,
-                140.0
-        );
+        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, shooterConfig);
+        shooter.setGoalPosition(goalX, goalY);
         shooter.setAutoAimEnabled(true);
 
         sortedController = new SortedAutoController(hardwareMap, shooter);
@@ -64,12 +72,12 @@ public class MockSortedAuto extends OpMode {
                 new AutoRobotFacade.GoalSupplier() {
                     @Override
                     public double goalX() {
-                        return ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0;
+                        return goalX;
                     }
 
                     @Override
                     public double goalY() {
-                        return 140.0;
+                        return goalY;
                     }
                 }
         );
@@ -142,12 +150,12 @@ public class MockSortedAuto extends OpMode {
         Pose line2Control = new Pose(45, 55);
         Pose finalShot = new Pose(55, 105, Math.toRadians(145));
 
-        toPreloadShot = paths.line(startPose, preloadShot);
+        toPreloadShot = paths.shotLine(startPose, preloadShot);
         toLine1Start = paths.line(preloadShot, line1Start);
         toLine1Finish = paths.line(line1Start, line1Finish);
-        line1ToShot = paths.line(line1Finish, preloadShot);
+        line1ToShot = paths.shotLine(line1Finish, preloadShot);
         toLine2Start = paths.line(preloadShot, line2Start);
         toLine2Finish = paths.line(line2Start, line2Finish);
-        line2ToFinalShot = paths.curve(line2Finish, line2Control, finalShot);
+        line2ToFinalShot = paths.shotCurve(line2Finish, line2Control, finalShot);
     }
 }

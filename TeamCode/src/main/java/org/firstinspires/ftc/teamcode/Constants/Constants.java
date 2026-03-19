@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-
+@Configurable
 public class Constants {
 
     // ----------------------------

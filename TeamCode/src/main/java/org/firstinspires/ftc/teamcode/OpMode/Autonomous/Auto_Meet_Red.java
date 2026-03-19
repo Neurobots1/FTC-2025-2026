@@ -71,47 +71,92 @@ public class Auto_Meet_Red extends BaseMeetAuto {
 
         cycles = new CyclePaths[]{
                 new CyclePaths(
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(shootPose, intakeStart1))
-                                .setLinearHeadingInterpolation(shootPose.getHeading(), intakeStart1.getHeading())
+                                ,
+                                shootPose,
+                                intakeStart1,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(intakeStart1, intakeFinal1))
-                                .setLinearHeadingInterpolation(intakeStart1.getHeading(), intakeFinal1.getHeading())
+                                ,
+                                intakeStart1,
+                                intakeFinal1,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(intakeFinal1, shootPose))
-                                .setLinearHeadingInterpolation(intakeFinal1.getHeading(), shootPose.getHeading())
+                                ,
+                                intakeFinal1,
+                                shootPose,
+                                true
+                        )
                                 .build(),
                         DEFAULT_INTAKE_FINAL_SPEED_L1
                 ),
                 new CyclePaths(
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(shootPose, intakeStart2))
-                                .setLinearHeadingInterpolation(shootPose.getHeading(), intakeStart2.getHeading())
+                                ,
+                                shootPose,
+                                intakeStart2,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(intakeStart2, intakeFinal2))
-                                .setLinearHeadingInterpolation(intakeStart2.getHeading(), intakeFinal2.getHeading())
+                                ,
+                                intakeStart2,
+                                intakeFinal2,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierCurve(intakeFinal2, intakeControl2, shootPose))
-                                .setLinearHeadingInterpolation(intakeFinal2.getHeading(), shootPose.getHeading())
+                                ,
+                                intakeFinal2,
+                                shootPose,
+                                true
+                        )
                                 .build(),
                         DEFAULT_INTAKE_FINAL_SPEED_L2
                 ),
                 new CyclePaths(
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(shootPose, intakeStart3))
-                                .setLinearHeadingInterpolation(shootPose.getHeading(), intakeStart3.getHeading())
+                                ,
+                                shootPose,
+                                intakeStart3,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(intakeStart3, intakeFinal3))
-                                .setLinearHeadingInterpolation(intakeStart3.getHeading(), intakeFinal3.getHeading())
+                                ,
+                                intakeStart3,
+                                intakeFinal3,
+                                false
+                        )
                                 .build(),
-                        follower.pathBuilder()
+                        applyAutoHeading(
+                                follower.pathBuilder()
                                 .addPath(new BezierLine(intakeFinal3, finalShootPose))
-                                .setLinearHeadingInterpolation(intakeFinal3.getHeading(), finalShootPose.getHeading())
+                                ,
+                                intakeFinal3,
+                                finalShootPose,
+                                true
+                        )
                                 .build(),
                         DEFAULT_INTAKE_FINAL_SPEED_L3
                 )

@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
 import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
+import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
+import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
 import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
@@ -18,6 +20,7 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
 
     private Follower follower;
     private PrecisionShooterSubsystem shooter;
+    private IntakeMotor intake;
     private PrecisionShooterSubsystem.Alliance alliance = PrecisionShooterSubsystem.Alliance.BLUE;
     private boolean spinEnabled;
     private boolean autoAimEnabled = true;
@@ -31,6 +34,9 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
     public void init() {
         follower = Constants.createFollower(hardwareMap);
         follower.update();
+        Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
+        indexerBase.StartIndexPose();
+        intake = indexerBase.intkM;
         shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, config);
         applyAllianceDefaults();
         adjustTimer.reset();
@@ -101,6 +107,8 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         shooter.update();
 
         PrecisionShooterSubsystem.TelemetrySnapshot snapshot = shooter.snapshot();
+        updateFeedAssist(snapshot.ready);
+
         telemetry.addData("Alliance", alliance);
         telemetry.addData("Goal", "(%.1f, %.1f)", goalX, goalY);
         telemetry.addData("Pose", follower.getPose());
@@ -117,9 +125,18 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         telemetry.addData("Predicted Range", "%.2f", snapshot.predictedRangeInches);
         telemetry.addData("TOF", "%.3f", snapshot.timeOfFlightSeconds);
         telemetry.addData("Status", snapshot.status);
-        telemetry.addLine("Y spin, X auto-aim, RB fire, B alliance, A reset goal");
+        telemetry.addData("Feed Assist", gamepad1.left_bumper ? "Manual Intake" : (gamepad1.left_trigger > 0.2 ? "Reverse" : (gamepad1.right_bumper && snapshot.ready ? "Auto Feed" : "Off")));
+        telemetry.addLine("Y spin, X auto-aim, RB fire, LB intake, LT reverse");
+        telemetry.addLine("B alliance, A reset goal");
         telemetry.addLine("Dpad adjusts goal X/Y by 2 inches");
         telemetry.update();
+    }
+
+    @Override
+    public void stop() {
+        if (intake != null) {
+            intake.stop();
+        }
     }
 
     private void applyAllianceDefaults() {
@@ -129,5 +146,21 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         goalY = alliance == PrecisionShooterSubsystem.Alliance.BLUE
                 ? config.blueGoalYInches
                 : config.redGoalYInches;
+    }
+
+    private void updateFeedAssist(boolean shooterReady) {
+        if (intake == null) {
+            return;
+        }
+
+        if (gamepad1.left_trigger > 0.2) {
+            intake.outtake();
+        } else if (gamepad1.left_bumper) {
+            intake.intake();
+        } else if (gamepad1.right_bumper && shooterReady) {
+            intake.slowIntake();
+        } else {
+            intake.stop();
+        }
     }
 }

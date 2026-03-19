@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.geometry.Pose;
-
+@Configurable
 public final class CompetitionTeleopConstants {
 
     public static final double INCHES_PER_METER = 39.37007874015748;

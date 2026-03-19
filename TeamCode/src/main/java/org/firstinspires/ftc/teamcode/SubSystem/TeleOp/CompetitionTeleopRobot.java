@@ -106,10 +106,19 @@ public final class CompetitionTeleopRobot {
         shooter.requestFire(shooterEnabled && gamepad.right_bumper);
         shooter.update();
 
+        double turnCommand = -gamepad.right_stick_x;
+        boolean chassisHeadingLockActive = false;
+        if (shooterEnabled
+                && shooter.shouldUseChassisHeadingLock()
+                && Math.abs(gamepad.right_stick_x) < shooter.getChassisAimManualOverrideThreshold()) {
+            turnCommand = shooter.getChassisAimTurnCommand();
+            chassisHeadingLockActive = true;
+        }
+
         follower.setTeleOpDrive(
                 -gamepad.left_stick_y,
                 -gamepad.left_stick_x,
-                -gamepad.right_stick_x,
+                turnCommand,
                 false,
                 AllianceSelector.Field.fieldCentricOffset(
                         alliance == Alliance.BLUE
@@ -147,6 +156,8 @@ public final class CompetitionTeleopRobot {
 
         joinedTelemetry.addData("Alliance", alliance);
         joinedTelemetry.addData("Shooter Enabled", shooterEnabled);
+        joinedTelemetry.addData("Turret Enabled", shooter.isTurretEnabled());
+        joinedTelemetry.addData("Chassis Aim Lock", chassisHeadingLockActive);
         joinedTelemetry.addData("Shot Zone", shooterSnapshot.inShootingZone);
         joinedTelemetry.addData("Ready", shooterSnapshot.ready);
         joinedTelemetry.addData("Homed", shooterSnapshot.homed);
@@ -154,6 +165,7 @@ public final class CompetitionTeleopRobot {
         joinedTelemetry.addData("Actual RPM", "%.1f", shooterSnapshot.actualRpm);
         joinedTelemetry.addData("Hood", "%.2f / %.2f", shooterSnapshot.nominalHoodDeg, shooterSnapshot.compensatedHoodDeg);
         joinedTelemetry.addData("Turret", "%.2f / %.2f", shooterSnapshot.turretAngleDeg, shooterSnapshot.turretTargetDeg);
+        joinedTelemetry.addData("Aim Error Deg", "%.2f", Math.toDegrees(shooter.getChassisHeadingErrorRadians()));
         joinedTelemetry.addData("Goal", "(%.1f, %.1f)", goalXInches, goalYInches);
         joinedTelemetry.addData("X", pose.getX());
         joinedTelemetry.addData("Y", pose.getY());

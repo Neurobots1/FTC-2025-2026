@@ -33,6 +33,8 @@ public class Mock15BallAuto extends OpMode {
     private AutoShooterController shooterController;
     private AutoRobotFacade robot;
     private MirroredPathFactory paths;
+    private double goalX;
+    private double goalY;
 
     private PathChain toPreloadShot;
     private PathChain toLine2Start;
@@ -49,16 +51,22 @@ public class Mock15BallAuto extends OpMode {
     @Override
     public void init() {
         follower = Constants.createFollower(hardwareMap);
-        paths = new MirroredPathFactory(follower, ALLIANCE);
+        PrecisionShooterConfig shooterConfig = new PrecisionShooterConfig();
+        goalX = ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0;
+        goalY = 140.0;
+        paths = new MirroredPathFactory(
+                follower,
+                ALLIANCE,
+                goalX,
+                goalY,
+                !shooterConfig.turretEnabled && shooterConfig.lockChassisHeadingWhenTurretDisabled
+        );
         follower.setStartingPose(paths.pose(new Pose(20, 119, Math.toRadians(139))));
 
         intake = new IntakeMotor(hardwareMap);
 
-        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
-        shooter.setGoalPosition(
-                ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0,
-                140.0
-        );
+        PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, shooterConfig);
+        shooter.setGoalPosition(goalX, goalY);
         shooter.setAutoAimEnabled(true);
         shooterController = new AutoShooterController(shooter, intake);
         shooterController.setFeedMode(AutoShooterController.FeedMode.AUTO);
@@ -70,12 +78,12 @@ public class Mock15BallAuto extends OpMode {
                 new AutoRobotFacade.GoalSupplier() {
                     @Override
                     public double goalX() {
-                        return ALLIANCE == AutoAlliance.BLUE ? 0.0 : 140.0;
+                        return goalX;
                     }
 
                     @Override
                     public double goalY() {
-                        return 140.0;
+                        return goalY;
                     }
                 }
         );
@@ -176,16 +184,16 @@ public class Mock15BallAuto extends OpMode {
         Pose line1Finish = new Pose(23, 82, Math.toRadians(190));
         Pose finalShot = new Pose(55, 105, Math.toRadians(145));
 
-        toPreloadShot = paths.line(startPose, preloadShot);
+        toPreloadShot = paths.shotLine(startPose, preloadShot);
         toLine2Start = paths.line(preloadShot, line2Start);
         toLine2Finish = paths.line(line2Start, line2Finish);
-        line2ToShot = paths.curve(line2Finish, line2Control, preloadShot);
+        line2ToShot = paths.shotCurve(line2Finish, line2Control, preloadShot);
         shotToGate = paths.curve(preloadShot, gateControl, gatePose);
-        gateToShot = paths.curve(gatePose, line2Control, preloadShot);
+        gateToShot = paths.shotCurve(gatePose, line2Control, preloadShot);
         shotToGateAgain = paths.curve(preloadShot, gateControl, gatePose);
-        gateToFinalShot = paths.curve(gatePose, line2Control, finalShot);
+        gateToFinalShot = paths.shotCurve(gatePose, line2Control, finalShot);
         shotToLine1Start = paths.line(finalShot, line1Start);
         line1StartToFinish = paths.line(line1Start, line1Finish);
-        line1ToFinalShot = paths.line(line1Finish, finalShot);
+        line1ToFinalShot = paths.shotLine(line1Finish, finalShot);
     }
 }

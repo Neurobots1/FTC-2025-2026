@@ -28,9 +28,10 @@ final class FlywheelVelocityController {
     private final DcMotorEx left;
     private final DcMotorEx right;
     private final VoltageSensor voltageSensor;
+    private final PrecisionShooterConfig config;
     private final ElapsedTime timer = new ElapsedTime();
 
-    private Gains gains;
+    private Gains gainsOverride;
     private double targetRpm;
     private double integral;
     private double lastError;
@@ -42,13 +43,7 @@ final class FlywheelVelocityController {
         this.left = left;
         this.right = right;
         this.voltageSensor = voltageSensor;
-        this.gains = new Gains(
-                config.flywheelKp,
-                config.flywheelKi,
-                config.flywheelKd,
-                config.flywheelKv,
-                config.flywheelKs
-        );
+        this.config = config;
 
         left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -60,11 +55,11 @@ final class FlywheelVelocityController {
     }
 
     void setGains(Gains gains) {
-        this.gains = gains;
+        this.gainsOverride = gains;
     }
 
     Gains getGains() {
-        return gains;
+        return currentGains();
     }
 
     void setTargetRpm(double targetRpm) {
@@ -103,6 +98,7 @@ final class FlywheelVelocityController {
         double derivative = (error - lastError) / dt;
         lastError = error;
 
+        Gains gains = currentGains();
         double voltageScale = nominalVoltage / Math.max(1e-6, voltageSensor.getVoltage());
         double feedforward = gains.kV * targetRpm + gains.kS;
         double feedback = gains.kP * error + gains.kI * integral + gains.kD * derivative;
@@ -118,5 +114,18 @@ final class FlywheelVelocityController {
 
     static double ticksPerSecondToRpm(double ticksPerSecond) {
         return ticksPerSecond * 60.0 / PrecisionShooterConfig.TICKS_PER_REV;
+    }
+
+    private Gains currentGains() {
+        if (gainsOverride != null) {
+            return gainsOverride;
+        }
+        return new Gains(
+                config.flywheelKp,
+                config.flywheelKi,
+                config.flywheelKd,
+                config.flywheelKv,
+                config.flywheelKs
+        );
     }
 }

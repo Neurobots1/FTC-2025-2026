@@ -2,7 +2,9 @@ package org.firstinspires.ftc.teamcode.OpMode.Autonomous;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.PathChain;
+import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -55,6 +57,7 @@ abstract class BaseMeetAuto extends OpMode {
 
     protected IntakeMotor intake;
     protected PrecisionShooterSubsystem shooter;
+    protected PrecisionShooterConfig shooterConfig;
 
     protected final ActionScheduler scheduler = new ActionScheduler();
     protected Timer actionTimer;
@@ -72,6 +75,7 @@ abstract class BaseMeetAuto extends OpMode {
         actionTimer = new Timer();
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(getStartPose());
+        shooterConfig = new PrecisionShooterConfig();
 
         buildPaths();
 
@@ -82,7 +86,7 @@ abstract class BaseMeetAuto extends OpMode {
         indexerBase = new Indexer_Base(hardwareMap);
         intake = indexerBase.intkM;
 
-        shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
+        shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, shooterConfig);
         shooter.setGoalPosition(getGoalX(), getGoalY());
         shooter.setAutoAimEnabled(true);
         shooter.setSpinEnabled(false);
@@ -151,6 +155,19 @@ abstract class BaseMeetAuto extends OpMode {
     protected abstract double getIntakeFinishSpeed(int line);
 
     protected abstract String getAutoLabel();
+
+    protected final boolean autoUsesChassisAim() {
+        return shooterConfig != null
+                && !shooterConfig.turretEnabled
+                && shooterConfig.lockChassisHeadingWhenTurretDisabled;
+    }
+
+    protected final PathBuilder applyAutoHeading(PathBuilder builder, Pose startPose, Pose endPose, boolean faceGoalWhenTurretDisabled) {
+        if (faceGoalWhenTurretDisabled && autoUsesChassisAim()) {
+            return builder.setHeadingInterpolation(HeadingInterpolator.facingPoint(getGoalX(), getGoalY()));
+        }
+        return builder.setLinearHeadingInterpolation(startPose.getHeading(), endPose.getHeading());
+    }
 
     protected final void buildRoutineIfNeeded() {
         if (routineBuilt) {

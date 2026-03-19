@@ -17,6 +17,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Locale;
 
 @TeleOp(name = "TUNE_SHOT_TABLE", group = "Tuning")
 public class PrecisionShooterTrainingOpMode extends OpMode {
@@ -139,7 +140,7 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
         telemetry.addData("Actual RPM", "%.1f", flywheel.getMeasuredRpm());
         telemetry.addData("Hood Deg", "%.2f", manualHoodDeg);
         telemetry.addData("Samples", samples.size());
-        telemetry.addLine("A = record, X = delete last, B = print Java table, Y = swap alliance");
+        telemetry.addLine("A = record, X = delete last, B = print Panels rows, Y = swap alliance");
         if (!samples.isEmpty()) {
             PrecisionShotTable.Entry last = samples.get(samples.size() - 1);
             telemetry.addData("Last Sample", Arrays.asList(last.distanceInches, last.targetRpm, last.hoodAngleDeg));
@@ -148,12 +149,33 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
     }
 
     private void emitTable() {
+        if (samples.isEmpty()) {
+            telemetry.log().add("No samples recorded yet.");
+            return;
+        }
         ArrayList<PrecisionShotTable.Entry> sorted = new ArrayList<>(samples);
         sorted.sort(Comparator.comparingDouble(e -> e.distanceInches));
         PrecisionShotTable table = new PrecisionShotTable(sorted);
-        String output = table.toJavaInitializer("COMP_TABLE");
-        RobotLog.ii(LOG_TAG, output);
+        String javaOutput = table.toJavaInitializer("COMP_TABLE");
+        String panelsOutput = toPanelsAssignments(sorted);
+        RobotLog.ii(LOG_TAG, javaOutput);
+        RobotLog.ii(LOG_TAG, panelsOutput);
         telemetry.log().add("Table logged to RobotLog.");
-        telemetry.log().add(output);
+        telemetry.log().add(panelsOutput);
+    }
+
+    private String toPanelsAssignments(ArrayList<PrecisionShotTable.Entry> sorted) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("PrecisionShooterConfig Panels rows:\n");
+        for (int i = 0; i < 8; i++) {
+            PrecisionShotTable.Entry entry = i < sorted.size()
+                    ? sorted.get(i)
+                    : sorted.get(sorted.size() - 1);
+            int row = i + 1;
+            builder.append(String.format(Locale.US, "shot%dDistanceInches = %.2f%n", row, entry.distanceInches));
+            builder.append(String.format(Locale.US, "shot%dTargetRpm = %.1f%n", row, entry.targetRpm));
+            builder.append(String.format(Locale.US, "shot%dHoodAngleDeg = %.2f%n", row, entry.hoodAngleDeg));
+        }
+        return builder.toString();
     }
 }
