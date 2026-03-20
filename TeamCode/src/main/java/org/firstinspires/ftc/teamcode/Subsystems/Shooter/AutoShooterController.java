@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Subsystems.Shooter;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 
@@ -21,6 +22,7 @@ public class AutoShooterController {
     private boolean autoFeedRequested;
     private boolean driverGateRequested;
     private boolean feeding;
+    private boolean gateOpenedForShot;
     private double goalX;
     private double goalY;
 
@@ -41,6 +43,7 @@ public class AutoShooterController {
         shooter.setAutoAimEnabled(enabled);
         if (!enabled) {
             feeding = false;
+            gateOpenedForShot = false;
             autoFeedRequested = false;
             driverGateRequested = false;
             shooter.requestFire(false);
@@ -57,6 +60,7 @@ public class AutoShooterController {
         autoFeedRequested = requested;
         if (!requested) {
             feeding = false;
+            gateOpenedForShot = false;
             shooter.requestFire(false);
             intake.stop();
         }
@@ -104,26 +108,36 @@ public class AutoShooterController {
             shooter.requestFire(false);
             intake.stop();
             feeding = false;
+            gateOpenedForShot = false;
             return;
         }
-
-        shooter.requestFire(true);
 
         if (!feeding) {
             if (shooter.isReadyToShootNow()) {
                 feeding = true;
+                gateOpenedForShot = true;
                 feedTimer.reset();
-                intake.slowIntake();
+                shooter.requestFire(true);
+                intake.stop();
             } else {
+                shooter.requestFire(false);
                 intake.stop();
             }
             return;
         }
 
+        shooter.requestFire(gateOpenedForShot);
+
+        if (feedTimer.seconds() < ShooterConstants.feedOpenSettlingSeconds) {
+            intake.stop();
+            return;
+        }
+
         intake.slowIntake();
-        if (feedTimer.seconds() >= AUTO_FEED_SECONDS) {
+        if (feedTimer.seconds() >= ShooterConstants.feedOpenSettlingSeconds + AUTO_FEED_SECONDS) {
             autoFeedRequested = false;
             feeding = false;
+            gateOpenedForShot = false;
             shooter.requestFire(false);
             intake.stop();
         }
