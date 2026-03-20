@@ -7,6 +7,11 @@ import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShot
 @Configurable
 public class ShooterConstants {
 
+    public enum FlywheelFeedbackMotor {
+        LEFT,
+        RIGHT
+    }
+
     public static final double TICKS_PER_REV = 28.0;
     public static final double GRAVITY_INCHES_PER_SECOND_SQUARED = 386.0886;
 
@@ -21,6 +26,7 @@ public class ShooterConstants {
 
     public static boolean leftFlywheelReversed = true;
     public static boolean rightFlywheelReversed = false;
+    public static FlywheelFeedbackMotor flywheelFeedbackMotor = FlywheelFeedbackMotor.LEFT;
     public static boolean turretMotorReversed = false;
 
     public static double nominalBatteryVoltage = 12.40;

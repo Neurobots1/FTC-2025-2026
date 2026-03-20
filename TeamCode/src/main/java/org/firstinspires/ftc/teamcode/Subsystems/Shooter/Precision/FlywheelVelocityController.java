@@ -71,7 +71,8 @@ final class FlywheelVelocityController {
     }
 
     double getMeasuredRpm() {
-        return 0.5 * (ticksPerSecondToRpm(left.getVelocity()) + ticksPerSecondToRpm(right.getVelocity()));
+        // The flywheels are mechanically linked, so we only need one encoder feedback source.
+        return ticksPerSecondToRpm(feedbackMotor().getVelocity());
     }
 
     void stop() {
@@ -114,6 +115,12 @@ final class FlywheelVelocityController {
 
     static double ticksPerSecondToRpm(double ticksPerSecond) {
         return ticksPerSecond * 60.0 / ShooterConstants.TICKS_PER_REV;
+    }
+
+    private DcMotorEx feedbackMotor() {
+        return config.flywheelFeedbackMotor == ShooterConstants.FlywheelFeedbackMotor.RIGHT
+                ? right
+                : left;
     }
 
     private Gains currentGains() {

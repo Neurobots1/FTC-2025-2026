@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
-import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PredictiveBrakingCoefficients;
 import com.pedropathing.follower.Follower;
@@ -17,23 +16,13 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class PedroConstants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            //Follower Constant
+            // Predictive braking setup: keep heading PIDF, predictive braking, and
+            // disable centripetal correction because predictive braking naturally handles it.
             .mass(13.6078)
-            .forwardZeroPowerAcceleration(-29.9662)
-            .lateralZeroPowerAcceleration(-67.0801)
             .centripetalScaling(0)
             .automaticHoldEnd(true)
-
-
-    //PIDF
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.2,0,0.03,0))
             .headingPIDFCoefficients(new PIDFCoefficients(0.85 ,0,0.1,0.01))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.008,0,0,0.6,0))
-            // TODO: 3/20/2026
-            .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(0.1, 0.04, 0.0016))
-            .useSecondaryTranslationalPIDF(false)
-            .useSecondaryHeadingPIDF(false)
-            .useSecondaryDrivePIDF(false);
+            .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(0.1, 0.04, 0.0016));
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
