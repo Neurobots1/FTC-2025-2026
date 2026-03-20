@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.OpMode.Autonomous.Sorted.balls9;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 
+import org.firstinspires.ftc.teamcode.Constants.AutoPoseConstants;
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseSortedAutoTemplate;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.ModularAutoBuilder;
@@ -22,24 +23,22 @@ public abstract class Sorted9BallAuto extends BaseSortedAutoTemplate {
 
     @Override
     protected Pose startPose() {
-        return paths().pose(new Pose(20, 119, Math.toRadians(139)));
+        return paths().pose(AutoPoseConstants.CloseStartPose());
     }
 
     @Override
     protected void buildPaths() {
-        Pose startPose = new Pose(20, 119, Math.toRadians(139));
-        Pose preloadShot = new Pose(47, 92, Math.toRadians(139));
-        Pose line1Start = new Pose(50, 88, Math.toRadians(190));
-        Pose line1Finish = new Pose(23, 82, Math.toRadians(190));
-        Pose line2Start = new Pose(50, 55, Math.toRadians(180));
-        Pose line2Finish = new Pose(15, 55, Math.toRadians(180));
-        Pose line2Control = new Pose(45, 55);
-        // TODO: Confirm the blue-side start and finish coordinates for sorted line 3.
-        Pose line3Start = new Pose(50, 26, Math.toRadians(180));
-        Pose line3Finish = new Pose(15, 26, Math.toRadians(180));
-        // TODO: Confirm the preferred control point and shot pose for the sorted line 3 return.
-        Pose line3Control = new Pose(45, 26);
-        Pose finalShot = new Pose(55, 105, Math.toRadians(145));
+        Pose startPose = AutoPoseConstants.CloseStartPose();
+        Pose preloadShot = AutoPoseConstants.CloseShootPose();
+        Pose line1Start = AutoPoseConstants.line1StartPose();
+        Pose line1Finish = AutoPoseConstants.line1FinishPose();
+        Pose line2Start = AutoPoseConstants.line2StartPose();
+        Pose line2Finish = AutoPoseConstants.line2FinishPoseSorted();
+        Pose line2Control = AutoPoseConstants.line2ControlPose();
+        Pose line3Start = AutoPoseConstants.line3StartPose();
+        Pose line3Finish = AutoPoseConstants.line3FinishPose();
+        Pose line3Control = AutoPoseConstants.line3ControlPose();
+        Pose finalShot = AutoPoseConstants.finalShotPose();
 
         toLine1Start = paths().line(startPose, line1Start);
         toLine1Finish = paths().line(line1Start, line1Finish);

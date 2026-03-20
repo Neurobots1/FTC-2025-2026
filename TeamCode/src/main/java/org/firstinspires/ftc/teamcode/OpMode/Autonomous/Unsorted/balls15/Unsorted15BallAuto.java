@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.OpMode.Autonomous.Unsorted.balls15;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 
+import org.firstinspires.ftc.teamcode.Constants.AutoPoseConstants;
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseUnsortedAutoTemplate;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
@@ -26,21 +27,21 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
 
     @Override
     protected Pose startPose() {
-        return paths().pose(new Pose(20, 119, Math.toRadians(139)));
+        return paths().pose(AutoPoseConstants.CloseStartPose());
     }
 
     @Override
     protected void buildPaths() {
-        Pose startPose = new Pose(20, 119, Math.toRadians(139));
-        Pose preloadShot = new Pose(47, 92, Math.toRadians(139));
-        Pose line2Start = new Pose(50, 55, Math.toRadians(180));
-        Pose line2Finish = new Pose(13, 55, Math.toRadians(180));
-        Pose line2Control = new Pose(45, 55);
-        Pose gatePose = new Pose(11, 53, Math.toRadians(147));
-        Pose gateControl = new Pose(27, 50);
-        Pose line1Start = new Pose(50, 88, Math.toRadians(190));
-        Pose line1Finish = new Pose(23, 82, Math.toRadians(190));
-        Pose finalShot = new Pose(55, 105, Math.toRadians(145));
+        Pose startPose = AutoPoseConstants.CloseStartPose();
+        Pose preloadShot = AutoPoseConstants.CloseShootPose();
+        Pose line2Start = AutoPoseConstants.line2StartPose();
+        Pose line2Finish = AutoPoseConstants.line2FinishPoseUnsorted();
+        Pose line2Control = AutoPoseConstants.line2ControlPose();
+        Pose gatePose = AutoPoseConstants.gatePose();
+        Pose gateControl = AutoPoseConstants.gateControlPose();
+        Pose line1Start = AutoPoseConstants.line1StartPose();
+        Pose line1Finish = AutoPoseConstants.line1FinishPose();
+        Pose finalShot = AutoPoseConstants.finalShotPose();
 
         toPreloadShot = paths().shotLine(startPose, preloadShot);
         toLine2Start = paths().line(preloadShot, line2Start);
