@@ -5,17 +5,17 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
-import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
-import org.firstinspires.ftc.teamcode.SubSystem.IntakeMotor;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
+import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
+import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
+import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 
 @TeleOp(name = "TUNE_SHOOTER_SYSTEM", group = "Tuning")
 public class PrecisionShooterTuningTeleOp extends OpMode {
 
-    private final PrecisionShooterConfig config = new PrecisionShooterConfig();
+    private final ShooterConstants config = new ShooterConstants();
     private final ElapsedTime adjustTimer = new ElapsedTime();
 
     private Follower follower;
@@ -32,7 +32,7 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
 
     @Override
     public void init() {
-        follower = Constants.createFollower(hardwareMap);
+        follower = PedroConstants.createFollower(hardwareMap);
         follower.update();
         Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
         indexerBase.StartIndexPose();

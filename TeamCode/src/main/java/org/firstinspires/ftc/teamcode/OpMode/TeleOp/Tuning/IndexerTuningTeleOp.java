@@ -5,15 +5,15 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Constants.PrecisionShooterConfig;
-import org.firstinspires.ftc.teamcode.SubSystem.AllianceSelector;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.IndexerMode;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_Base;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.Indexer_PGP;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.PatternMappedIndexer;
-import org.firstinspires.ftc.teamcode.SubSystem.Indexer.SortPattern;
-import org.firstinspires.ftc.teamcode.SubSystem.Shooter.Precision.PrecisionShooterSubsystem;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
+import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.IndexerMode;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_PGP;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.PatternMappedIndexer;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.SortPattern;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
+import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 
 @TeleOp(name = "TUNE_INDEXER", group = "Tuning")
 public class IndexerTuningTeleOp extends OpMode {
@@ -40,10 +40,10 @@ public class IndexerTuningTeleOp extends OpMode {
 
     @Override
     public void init() {
-        follower = Constants.createFollower(hardwareMap);
+        follower = PedroConstants.createFollower(hardwareMap);
         follower.update();
 
-        shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new PrecisionShooterConfig());
+        shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, new ShooterConstants());
         shooter.setAutoAimEnabled(true);
 
         Indexer_Base indexerBase = new Indexer_Base(hardwareMap);

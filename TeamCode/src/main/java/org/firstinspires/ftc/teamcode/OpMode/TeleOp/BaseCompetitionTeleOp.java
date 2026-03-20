@@ -6,7 +6,7 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.SubSystem.TeleOp.CompetitionTeleopRobot;
+import org.firstinspires.ftc.teamcode.Subsystems.TeleOp.CompetitionTeleopRobot;
 
 abstract class BaseCompetitionTeleOp extends OpMode {
 
@@ -38,7 +38,7 @@ abstract class BaseCompetitionTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        robot.teleopLoop(gamepad1, tagResetTimer, getTagResetCooldownSeconds(), joinedTelemetry, telemetryManager);
+        robot.teleopLoop(gamepad1, gamepad2, tagResetTimer, getTagResetCooldownSeconds(), joinedTelemetry, telemetryManager);
     }
 
     @Override
