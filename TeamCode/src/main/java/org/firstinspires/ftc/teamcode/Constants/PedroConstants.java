@@ -27,10 +27,10 @@ public class PedroConstants {
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             //motor
-            .rightFrontMotorName("frontR")
-            .rightRearMotorName("backR")
-            .leftRearMotorName("backL")
-            .leftFrontMotorName("frontL")
+            .rightFrontMotorName(HardwareMapConstants.RIGHT_FRONT_DRIVE_MOTOR)
+            .rightRearMotorName(HardwareMapConstants.RIGHT_REAR_DRIVE_MOTOR)
+            .leftRearMotorName(HardwareMapConstants.LEFT_REAR_DRIVE_MOTOR)
+            .leftFrontMotorName(HardwareMapConstants.LEFT_FRONT_DRIVE_MOTOR)
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
@@ -50,7 +50,7 @@ public class PedroConstants {
             .forwardPodY(-7.959645669)
             .strafePodX(-1.0837192913)
             .distanceUnit(DistanceUnit.INCH)
-            .hardwareMapName("pinpoint")
+            .hardwareMapName(HardwareMapConstants.PINPOINT)
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);

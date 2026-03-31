@@ -256,7 +256,8 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
         DcMotorEx feedbackMotor = config.flywheelFeedbackMotor == ShooterConstants.FlywheelFeedbackMotor.RIGHT
                 ? right
                 : left;
-        return FlywheelVelocityController.ticksPerSecondToRpm(feedbackMotor.getVelocity());
+        double measuredRpm = FlywheelVelocityController.ticksPerSecondToRpm(feedbackMotor.getVelocity());
+        return config.flywheelFeedbackEncoderReversed ? -measuredRpm : measuredRpm;
     }
 
     private void updateStabilityTracker() {

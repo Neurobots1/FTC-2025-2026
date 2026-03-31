@@ -10,8 +10,11 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
+import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
+import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 
 import java.util.ArrayList;
@@ -32,35 +35,47 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
     private Follower follower;
     private FlywheelVelocityController flywheel;
     private ServoHoodController hood;
+    private IntakeMotor intake;
 
     private boolean spinEnabled;
     private boolean prevA;
     private boolean prevBButton;
-    private boolean prevRightBumper;
+    private boolean prevRightStickButton;
     private boolean prevX;
     private boolean prevY;
+    private boolean prevOptions;
     private double manualRpm = 3000.0;
     private double manualHoodDeg = 40.0;
     private PrecisionShooterSubsystem.Alliance alliance = PrecisionShooterSubsystem.Alliance.BLUE;
 
     @Override
     public void init() {
+        samples.clear();
+        telemetry.log().clear();
         follower = PedroConstants.createFollower(hardwareMap);
+        follower.setStartingPose(TeleopConstants.DRIVER_START_POSE);
+        follower.setPose(TeleopConstants.DRIVER_START_POSE);
         follower.update();
 
         DcMotorEx left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
         DcMotorEx right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
         Servo hoodServo = hardwareMap.get(Servo.class, config.hoodServoName);
         VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
+        Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
+        indexerBase.StartIndexPose();
 
         flywheel = new FlywheelVelocityController(left, right, voltageSensor, config);
         hood = new ServoHoodController(hoodServo, config);
+        intake = indexerBase.intkM;
         adjustTimer.reset();
     }
 
     @Override
     public void start() {
         follower.startTeleopDrive();
+        follower.setStartingPose(TeleopConstants.DRIVER_START_POSE);
+        follower.setPose(TeleopConstants.DRIVER_START_POSE);
+        telemetry.log().clear();
     }
 
     @Override
@@ -97,7 +112,7 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
         manualRpm = ShooterMath.clamp(manualRpm, 0.0, 5000.0);
         manualHoodDeg = ShooterMath.clamp(manualHoodDeg, config.hoodMinAngleDeg, config.hoodMaxAngleDeg);
 
-        if (gamepad1.right_bumper && !prevRightBumper) {
+        if (gamepad1.right_stick_button && !prevRightStickButton) {
             spinEnabled = !spinEnabled;
         }
 
@@ -107,16 +122,23 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
                     : PrecisionShooterSubsystem.Alliance.BLUE;
         }
 
+        if (gamepad1.options && !prevOptions) {
+            follower.setStartingPose(TeleopConstants.DRIVER_START_POSE);
+            follower.setPose(TeleopConstants.DRIVER_START_POSE);
+        }
+
         hood.setAngleDegrees(manualHoodDeg);
         hood.update();
         flywheel.setTargetRpm(spinEnabled ? manualRpm : 0.0);
         flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
+        updateIntake();
+
+        Pose pose = follower.getPose();
+        double goalX = alliance == PrecisionShooterSubsystem.Alliance.BLUE ? config.blueGoalXInches : config.redGoalXInches;
+        double goalY = alliance == PrecisionShooterSubsystem.Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches;
+        double distance = Math.hypot(goalX - pose.getX(), goalY - pose.getY());
 
         if (gamepad1.a && !prevA) {
-            Pose pose = follower.getPose();
-            double goalX = alliance == PrecisionShooterSubsystem.Alliance.BLUE ? config.blueGoalXInches : config.redGoalXInches;
-            double goalY = alliance == PrecisionShooterSubsystem.Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches;
-            double distance = Math.hypot(goalX - pose.getX(), goalY - pose.getY());
             samples.add(new PrecisionShotTable.Entry(distance, manualRpm, manualHoodDeg));
         }
 
@@ -130,18 +152,23 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
 
         prevA = gamepad1.a;
         prevBButton = gamepad1.b;
-        prevRightBumper = gamepad1.right_bumper;
+        prevRightStickButton = gamepad1.right_stick_button;
         prevX = gamepad1.x;
         prevY = gamepad1.y;
+        prevOptions = gamepad1.options;
 
         telemetry.addData("Alliance", alliance);
-        telemetry.addData("Pose", follower.getPose());
+        telemetry.addData("Pose", pose);
+        telemetry.addData("Goal", "(%.1f, %.1f)", goalX, goalY);
+        telemetry.addData("Distance To Goal", "%.2f", distance);
         telemetry.addData("Spin", spinEnabled);
         telemetry.addData("Manual RPM", "%.1f", manualRpm);
         telemetry.addData("Actual RPM", "%.1f", flywheel.getMeasuredRpm());
         telemetry.addData("Hood Deg", "%.2f", manualHoodDeg);
         telemetry.addData("Samples", samples.size());
+        telemetry.addLine("RS click = spin toggle, RB = intake, LB = outtake");
         telemetry.addLine("A = record, X = delete last, B = print Panels rows, Y = swap alliance");
+        telemetry.addLine("Options = reset pose to (72,72,90)");
         if (!samples.isEmpty()) {
             PrecisionShotTable.Entry last = samples.get(samples.size() - 1);
             telemetry.addData("Last Sample", Arrays.asList(last.distanceInches, last.targetRpm, last.hoodAngleDeg));
@@ -150,6 +177,7 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
     }
 
     private void emitTable() {
+        telemetry.log().clear();
         if (samples.isEmpty()) {
             telemetry.log().add("No samples recorded yet.");
             return;
@@ -178,5 +206,29 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
             builder.append(String.format(Locale.US, "shot%dHoodAngleDeg = %.2f%n", row, entry.hoodAngleDeg));
         }
         return builder.toString();
+    }
+
+    @Override
+    public void stop() {
+        if (intake != null) {
+            intake.stop();
+        }
+        if (flywheel != null) {
+            flywheel.stop();
+        }
+    }
+
+    private void updateIntake() {
+        if (intake == null) {
+            return;
+        }
+
+        if (gamepad1.right_bumper) {
+            intake.intake();
+        } else if (gamepad1.left_bumper) {
+            intake.outtake();
+        } else {
+            intake.stop();
+        }
     }
 }

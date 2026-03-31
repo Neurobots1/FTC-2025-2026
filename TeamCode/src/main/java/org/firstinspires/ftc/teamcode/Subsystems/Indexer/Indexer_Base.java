@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 import org.firstinspires.ftc.teamcode.Constants.IndexerConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 
@@ -38,9 +39,9 @@ public class Indexer_Base {
 
 
     public Indexer_Base(HardwareMap hardwareMap) {
-        indexLeftServo = hardwareMap.get(Servo.class, "indexLeftServo");
-        indexRightServo = hardwareMap.get(Servo.class, "indexRightServo");
-        indexGateBack = hardwareMap.get(Servo.class,"indexGateBack");
+        indexLeftServo = hardwareMap.get(Servo.class, HardwareMapConstants.INDEX_LEFT_SERVO);
+        indexRightServo = hardwareMap.get(Servo.class, HardwareMapConstants.INDEX_RIGHT_SERVO);
+        indexGateBack = hardwareMap.get(Servo.class, HardwareMapConstants.INDEX_BACK_GATE_SERVO);
         intkM = new IntakeMotor(hardwareMap);
         ballEntryTimer = new ElapsedTime();
     }

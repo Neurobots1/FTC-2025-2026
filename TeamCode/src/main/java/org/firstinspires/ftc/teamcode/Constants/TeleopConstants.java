@@ -6,7 +6,10 @@ import com.pedropathing.geometry.Pose;
 public final class TeleopConstants {
     public static final Pose DRIVER_START_POSE = new Pose(72, 72, Math.toRadians(90));
 
-    public static final Pose BLUE_GOAL_POSE = new Pose(0.0, 140.0, 0.0);
+    public static final Pose BLUE_GOAL_POSE = new Pose(0.0, 144.0, 0.0);
+    public static boolean ALWAYS_SPIN_FLYWHEEL = true;
+    public static boolean ENABLE_HEADING_LOCK = true;
+    public static double HEADING_LOCK_TURN_SCALE = 1.0;
 
     private TeleopConstants() {
     }

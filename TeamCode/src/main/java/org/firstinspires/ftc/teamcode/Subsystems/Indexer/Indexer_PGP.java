@@ -5,6 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 import org.firstinspires.ftc.teamcode.Constants.IndexerConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
@@ -68,7 +69,7 @@ public class Indexer_PGP implements IndexerMode {
     public Indexer_PGP(HardwareMap hardwareMap, Indexer_Base base, PrecisionShooterSubsystem shooter) {
         this.indexerBase = base;
         this.intake = base.intkM;
-        this.colorSensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+        this.colorSensor = hardwareMap.get(RevColorSensorV3.class, HardwareMapConstants.COLOR_SENSOR);
         this.shooter = shooter;
 
         line1Intake = buildLine1Intake();

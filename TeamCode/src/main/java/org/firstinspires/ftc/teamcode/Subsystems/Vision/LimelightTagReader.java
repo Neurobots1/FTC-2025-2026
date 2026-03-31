@@ -6,6 +6,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Constants.CameraConstants;
+import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class LimelightTagReader {
 
         if (limelight == null) {
             try {
-                limelight = hardwareMap.get(Limelight3A.class, "limelight");
+                limelight = hardwareMap.get(Limelight3A.class, HardwareMapConstants.LIMELIGHT);
             } catch (Exception ignored) {
                 limelight = null;
                 return;

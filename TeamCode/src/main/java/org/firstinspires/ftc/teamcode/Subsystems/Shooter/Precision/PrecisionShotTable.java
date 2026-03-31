@@ -87,7 +87,9 @@ public final class PrecisionShotTable {
     public static PrecisionShotTable fromArray(double[][] rows) {
         ArrayList<Entry> entries = new ArrayList<>();
         for (double[] row : rows) {
-            if (row.length >= 3) {
+            if (row.length >= 3
+                    && row[ROW_DISTANCE_INCHES] > 0.0
+                    && row[ROW_TARGET_RPM] > 0.0) {
                 entries.add(new Entry(
                         row[ROW_DISTANCE_INCHES],
                         row[ROW_TARGET_RPM],

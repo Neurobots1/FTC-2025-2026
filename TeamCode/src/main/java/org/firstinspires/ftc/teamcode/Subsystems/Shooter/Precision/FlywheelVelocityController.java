@@ -72,7 +72,8 @@ final class FlywheelVelocityController {
 
     double getMeasuredRpm() {
         // The flywheels are mechanically linked, so we only need one encoder feedback source.
-        return ticksPerSecondToRpm(feedbackMotor().getVelocity());
+        double measuredRpm = ticksPerSecondToRpm(feedbackMotor().getVelocity());
+        return config.flywheelFeedbackEncoderReversed ? -measuredRpm : measuredRpm;
     }
 
     void stop() {

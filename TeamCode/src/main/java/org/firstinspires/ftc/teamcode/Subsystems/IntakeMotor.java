@@ -5,11 +5,13 @@ package org.firstinspires.ftc.teamcode.Subsystems;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
+
 public class IntakeMotor {
     private DcMotorEx intakeMotor;
 
     public IntakeMotor(HardwareMap hardwareMap) {
-        intakeMotor = hardwareMap.get(DcMotorEx.class, "intakeMotor");
+        intakeMotor = hardwareMap.get(DcMotorEx.class, HardwareMapConstants.INTAKE_MOTOR);
 
     }
 

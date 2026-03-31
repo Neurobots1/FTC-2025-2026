@@ -21,7 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.Constants.CameraConstants;
-import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
+import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
 import org.firstinspires.ftc.teamcode.Subsystems.AutoPoseHandoff;
@@ -31,6 +31,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
+import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 
 public final class CompetitionTeleopRobot {
 
@@ -130,17 +131,18 @@ public final class CompetitionTeleopRobot {
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setYawTrimDegrees(yawTrimDegrees);
         shooter.setRpmTrim(rpmTrim);
-        shooter.setSpinEnabled(true);
+        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || feedingEnabled);
         shooter.setAutoAimEnabled(true);
         shooter.requestFire(feedingEnabled);
         shooter.update();
 
         double turnCommand = -driverGamepad.right_stick_x;
         boolean chassisHeadingLockActive = false;
-        if (feedingEnabled
+        if (TeleopConstants.ENABLE_HEADING_LOCK
+                && feedingEnabled
                 && shooter.shouldUseChassisHeadingLock()
                 && Math.abs(driverGamepad.right_stick_x) < shooter.getChassisAimManualOverrideThreshold()) {
-            turnCommand = shooter.getChassisAimTurnCommand();
+            turnCommand = shooter.getChassisAimTurnCommand() * TeleopConstants.HEADING_LOCK_TURN_SCALE;
             chassisHeadingLockActive = true;
         }
 
@@ -193,6 +195,9 @@ public final class CompetitionTeleopRobot {
 
         joinedTelemetry.addData("Alliance", alliance);
         joinedTelemetry.addData("Feeding Enabled", feedingEnabled);
+        joinedTelemetry.addData("Always Spin", TeleopConstants.ALWAYS_SPIN_FLYWHEEL);
+        joinedTelemetry.addData("Heading Lock Enabled", TeleopConstants.ENABLE_HEADING_LOCK);
+        joinedTelemetry.addData("Heading Lock Scale", "%.2f", TeleopConstants.HEADING_LOCK_TURN_SCALE);
         joinedTelemetry.addData("Turret Enabled", shooter.isTurretEnabled());
         joinedTelemetry.addData("Chassis Aim Lock", chassisHeadingLockActive);
         joinedTelemetry.addData("Driver 1", "Drive / Intake / Shoot");
@@ -204,6 +209,7 @@ public final class CompetitionTeleopRobot {
         joinedTelemetry.addData("Homed", shooterSnapshot.homed);
         joinedTelemetry.addData("Target RPM", "%.1f", shooterSnapshot.targetRpm);
         joinedTelemetry.addData("Actual RPM", "%.1f", shooterSnapshot.actualRpm);
+        joinedTelemetry.addData("Table Dist", "%.2f", shooterSnapshot.tableDistanceInches);
         joinedTelemetry.addData("Hood", "%.2f / %.2f", shooterSnapshot.nominalHoodDeg, shooterSnapshot.compensatedHoodDeg);
         joinedTelemetry.addData("Turret", "%.2f / %.2f", shooterSnapshot.turretAngleDeg, shooterSnapshot.turretTargetDeg);
         joinedTelemetry.addData("Aim Error Deg", "%.2f", Math.toDegrees(shooter.getAdjustedChassisHeadingErrorRadians()));
@@ -236,14 +242,14 @@ public final class CompetitionTeleopRobot {
     }
 
     private void handleFireToggle(Gamepad gamepad) {
-        if (gamepad.a && !fireToggleLast) {
+        if (gamepad.y && !fireToggleLast) {
             feedingEnabled = !feedingEnabled;
             if (!feedingEnabled) {
                 blockerOpenCommanded = false;
                 blockerOpenTimer.reset();
             }
         }
-        fireToggleLast = gamepad.a;
+        fireToggleLast = gamepad.y;
     }
 
     private void updateTrimAdjustments(Gamepad gamepad) {
@@ -334,7 +340,7 @@ public final class CompetitionTeleopRobot {
         }
 
         try {
-            limelight = hardwareMap.get(Limelight3A.class, "limelight");
+            limelight = hardwareMap.get(Limelight3A.class, HardwareMapConstants.LIMELIGHT);
             limelight.pipelineSwitch(CameraConstants.TELEOP_LIMELIGHT_PIPELINE);
             limelight.start();
         } catch (Exception ignored) {

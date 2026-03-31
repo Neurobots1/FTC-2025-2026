@@ -31,6 +31,7 @@ public final class PrecisionShooterSubsystem {
         public final double turretAngleDeg;
         public final double turretTargetDeg;
         public final double predictedRangeInches;
+        public final double tableDistanceInches;
         public final double timeOfFlightSeconds;
         public final String status;
         public final Alliance alliance;
@@ -46,6 +47,7 @@ public final class PrecisionShooterSubsystem {
                           double turretAngleDeg,
                           double turretTargetDeg,
                           double predictedRangeInches,
+                          double tableDistanceInches,
                           double timeOfFlightSeconds,
                           String status,
                           Alliance alliance) {
@@ -60,6 +62,7 @@ public final class PrecisionShooterSubsystem {
             this.turretAngleDeg = turretAngleDeg;
             this.turretTargetDeg = turretTargetDeg;
             this.predictedRangeInches = predictedRangeInches;
+            this.tableDistanceInches = tableDistanceInches;
             this.timeOfFlightSeconds = timeOfFlightSeconds;
             this.status = status;
             this.alliance = alliance;
@@ -88,6 +91,7 @@ public final class PrecisionShooterSubsystem {
     private final Servo feedServo;
     private final ElapsedTime loopTimer = new ElapsedTime();
     private final ElapsedTime feedTimer = new ElapsedTime();
+    private final ElapsedTime chassisAimTimer = new ElapsedTime();
 
     private Alliance alliance = Alliance.BLUE;
     private boolean fireRequested;
@@ -105,6 +109,10 @@ public final class PrecisionShooterSubsystem {
     private boolean lastInShootingZone;
     private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
     private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
+    private double lastTableDistanceInches;
+    private boolean filteredAimInitialized;
+    private double filteredWorldYawRadians;
+    private double lastChassisAimTurnCommand;
 
     private PrecisionShooterSubsystem(ShooterConstants config,
                                       Follower follower,
@@ -124,6 +132,7 @@ public final class PrecisionShooterSubsystem {
         }
         loopTimer.reset();
         feedTimer.reset();
+        chassisAimTimer.reset();
     }
 
     public static PrecisionShooterSubsystem create(HardwareMap hardwareMap,
@@ -208,7 +217,10 @@ public final class PrecisionShooterSubsystem {
         robotVx = 0.0;
         robotVy = 0.0;
         robotOmega = 0.0;
+        filteredAimInitialized = false;
+        lastChassisAimTurnCommand = 0.0;
         loopTimer.reset();
+        chassisAimTimer.reset();
     }
 
     public void update() {
@@ -234,11 +246,11 @@ public final class PrecisionShooterSubsystem {
                 ? customGoalY
                 : (alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches);
 
+        lastTableDistanceInches = Math.hypot(goalX - pose.getX(), goalY - pose.getY());
         Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
         TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
         lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
-        double distance = Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y);
-        lastNominal = ShooterConstants.currentTable().sample(distance);
+        lastNominal = ShooterConstants.currentTable().sample(lastTableDistanceInches);
 
         double targetRpm = spinEnabled ? Math.max(0.0, lastNominal.targetRpm + rpmTrim) : 0.0;
         flywheel.setTargetRpm(targetRpm);
@@ -246,12 +258,16 @@ public final class PrecisionShooterSubsystem {
 
         double effectiveRpm = Math.max(flywheel.getMeasuredRpm(), targetRpm * config.minCompensationRpmFraction);
         lastSolution = solveMovingShot(releasePose, releaseTurret, goalX, goalY, targetRpm, effectiveRpm, lastNominal);
+        updateFilteredAimTarget();
 
         if (lastSolution.valid && autoAimEnabled) {
-            hood.setAngleDegrees(Math.toDegrees(lastSolution.hoodAngleRad));
+            double commandedHoodDeg = config.useEmpiricalShotTableHood
+                    ? lastNominal.hoodAngleDeg
+                    : Math.toDegrees(lastSolution.hoodAngleRad);
+            hood.setAngleDegrees(commandedHoodDeg);
             if (turret != null) {
                 turret.setTargetAngleRadians(
-                        ShooterMath.normalizeRadians(lastSolution.worldYawRad + yawTrimRadians - releasePose.getHeading())
+                        ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - releasePose.getHeading())
                 );
             }
         }
@@ -278,10 +294,13 @@ public final class PrecisionShooterSubsystem {
                 flywheel.getTargetRpm(),
                 flywheel.getMeasuredRpm(),
                 lastNominal.hoodAngleDeg,
-                Math.toDegrees(lastSolution.hoodAngleRad),
+                config.useEmpiricalShotTableHood
+                        ? lastNominal.hoodAngleDeg
+                        : Math.toDegrees(lastSolution.hoodAngleRad),
                 Math.toDegrees(turret == null ? 0.0 : turret.getCurrentAngleRadians()),
                 Math.toDegrees(turret == null ? 0.0 : turret.getTargetAngleRadians()),
                 lastSolution.rangeInches,
+                lastTableDistanceInches,
                 lastSolution.flightTimeSeconds,
                 lastSolution.reason,
                 alliance
@@ -305,25 +324,43 @@ public final class PrecisionShooterSubsystem {
     }
 
     public double getChassisHeadingErrorRadians() {
-        if (!lastSolution.valid) {
+        if (!lastSolution.valid || !filteredAimInitialized) {
             return 0.0;
         }
-        return ShooterMath.normalizeRadians(lastSolution.worldYawRad - follower.getPose().getHeading());
+        return ShooterMath.normalizeRadians(getFilteredWorldYawRadians() - follower.getPose().getHeading());
     }
 
     public double getAdjustedChassisHeadingErrorRadians() {
-        if (!lastSolution.valid) {
+        if (!lastSolution.valid || !filteredAimInitialized) {
             return 0.0;
         }
-        return ShooterMath.normalizeRadians(lastSolution.worldYawRad + yawTrimRadians - follower.getPose().getHeading());
+        return ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - follower.getPose().getHeading());
     }
 
     public double getChassisAimTurnCommand() {
         if (!shouldUseChassisHeadingLock() || !lastSolution.valid) {
+            lastChassisAimTurnCommand = 0.0;
             return 0.0;
         }
-        double command = getAdjustedChassisHeadingErrorRadians() * config.chassisAimKp;
-        return ShooterMath.clamp(command, -config.chassisAimMaxTurnCommand, config.chassisAimMaxTurnCommand);
+        double dt = Math.max(1e-3, chassisAimTimer.seconds());
+        chassisAimTimer.reset();
+        double error = getAdjustedChassisHeadingErrorRadians();
+        if (Math.abs(error) <= Math.toRadians(config.chassisAimDeadbandDeg)) {
+            lastChassisAimTurnCommand = 0.0;
+            return 0.0;
+        }
+
+        double command = error * config.chassisAimKp - robotOmega * config.chassisAimKd;
+        command = ShooterMath.clamp(command, -config.chassisAimMaxTurnCommand, config.chassisAimMaxTurnCommand);
+
+        double maxStep = config.chassisAimMaxCommandStepPerSecond * dt;
+        double delta = command - lastChassisAimTurnCommand;
+        if (Math.abs(delta) > maxStep) {
+            command = lastChassisAimTurnCommand + Math.signum(delta) * maxStep;
+        }
+
+        lastChassisAimTurnCommand = command;
+        return command;
     }
 
     public double getTargetRpm() {
@@ -464,5 +501,27 @@ public final class PrecisionShooterSubsystem {
         if (feedServo != null) {
             feedServo.setPosition(config.feedClosedPosition);
         }
+    }
+
+    private void updateFilteredAimTarget() {
+        if (!lastSolution.valid) {
+            filteredAimInitialized = false;
+            return;
+        }
+
+        if (!filteredAimInitialized) {
+            filteredWorldYawRadians = lastSolution.worldYawRad;
+            filteredAimInitialized = true;
+            return;
+        }
+
+        double error = ShooterMath.normalizeRadians(lastSolution.worldYawRad - filteredWorldYawRadians);
+        filteredWorldYawRadians = ShooterMath.normalizeRadians(
+                filteredWorldYawRadians + error * config.chassisAimTargetFilterGain
+        );
+    }
+
+    private double getFilteredWorldYawRadians() {
+        return filteredAimInitialized ? filteredWorldYawRadians : lastSolution.worldYawRad;
     }
 }
