@@ -98,6 +98,7 @@ public final class PrecisionShooterSubsystem {
     private boolean spinEnabled;
     private boolean autoAimEnabled = true;
     private boolean customGoalEnabled;
+    private boolean customAimGoalEnabled;
     private Pose lastPose;
     private double robotVx;
     private double robotVy;
@@ -106,13 +107,23 @@ public final class PrecisionShooterSubsystem {
     private double rpmTrim;
     private double customGoalX;
     private double customGoalY;
+    private double customAimGoalX;
+    private double customAimGoalY;
     private boolean lastInShootingZone;
     private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
     private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
     private double lastTableDistanceInches;
+    private double lastCompensatedHoodDeg = 40.0;
     private boolean filteredAimInitialized;
     private double filteredWorldYawRadians;
+    private double lastAimWorldYawRadians;
     private double lastChassisAimTurnCommand;
+    private boolean feedGateOpen;
+    private double chassisAimIntegral;
+    private double lastChassisAimProportionalTerm;
+    private double lastChassisAimIntegralTerm;
+    private double lastChassisAimDerivativeTerm;
+    private double lastChassisAimFeedforwardTerm;
 
     private PrecisionShooterSubsystem(ShooterConstants config,
                                       Follower follower,
@@ -190,6 +201,16 @@ public final class PrecisionShooterSubsystem {
         customGoalEnabled = false;
     }
 
+    public void setAimPosition(double goalX, double goalY) {
+        customAimGoalEnabled = true;
+        customAimGoalX = goalX;
+        customAimGoalY = goalY;
+    }
+
+    public void clearAimPositionOverride() {
+        customAimGoalEnabled = false;
+    }
+
     public void setYawTrimDegrees(double yawTrimDegrees) {
         yawTrimRadians = Math.toRadians(yawTrimDegrees);
     }
@@ -210,6 +231,7 @@ public final class PrecisionShooterSubsystem {
         follower.startTeleopDrive();
         notifyPoseJump();
         feedTimer.reset();
+        feedGateOpen = false;
     }
 
     public void notifyPoseJump() {
@@ -219,6 +241,7 @@ public final class PrecisionShooterSubsystem {
         robotOmega = 0.0;
         filteredAimInitialized = false;
         lastChassisAimTurnCommand = 0.0;
+        resetChassisAimController();
         loopTimer.reset();
         chassisAimTimer.reset();
     }
@@ -245,6 +268,8 @@ public final class PrecisionShooterSubsystem {
         double goalY = customGoalEnabled
                 ? customGoalY
                 : (alliance == Alliance.BLUE ? config.blueGoalYInches : config.redGoalYInches);
+        double aimGoalX = customAimGoalEnabled ? customAimGoalX : goalX;
+        double aimGoalY = customAimGoalEnabled ? customAimGoalY : goalY;
 
         lastTableDistanceInches = Math.hypot(goalX - pose.getX(), goalY - pose.getY());
         Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
@@ -256,13 +281,33 @@ public final class PrecisionShooterSubsystem {
         flywheel.setTargetRpm(targetRpm);
         flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
 
-        double effectiveRpm = Math.max(flywheel.getMeasuredRpm(), targetRpm * config.minCompensationRpmFraction);
+        double effectiveRpm = Math.max(flywheel.getFilteredMeasuredRpm(), targetRpm * config.minCompensationRpmFraction);
+        BallisticAimSolver.Solution nominalBallisticSolution = solveMovingShot(
+                releasePose,
+                releaseTurret,
+                goalX,
+                goalY,
+                targetRpm,
+                targetRpm,
+                lastNominal
+        );
         lastSolution = solveMovingShot(releasePose, releaseTurret, goalX, goalY, targetRpm, effectiveRpm, lastNominal);
-        updateFilteredAimTarget();
+        BallisticAimSolver.Solution aimSolution = solveMovingShot(
+                releasePose,
+                releaseTurret,
+                aimGoalX,
+                aimGoalY,
+                targetRpm,
+                effectiveRpm,
+                lastNominal
+        );
+        lastCompensatedHoodDeg = computeCompensatedHoodDegrees(lastNominal, nominalBallisticSolution, lastSolution);
+        double desiredAimWorldYawRadians = aimSolution.valid ? aimSolution.worldYawRad : lastSolution.worldYawRad;
+        updateFilteredAimTarget(aimSolution.valid || lastSolution.valid, desiredAimWorldYawRadians);
 
         if (lastSolution.valid && autoAimEnabled) {
             double commandedHoodDeg = config.useEmpiricalShotTableHood
-                    ? lastNominal.hoodAngleDeg
+                    ? lastCompensatedHoodDeg
                     : Math.toDegrees(lastSolution.hoodAngleRad);
             hood.setAngleDegrees(commandedHoodDeg);
             if (turret != null) {
@@ -278,10 +323,10 @@ public final class PrecisionShooterSubsystem {
         }
 
         boolean ready = isReadyToShoot();
-        if (fireRequested && ready) {
-            openFeed();
-        } else if (!fireRequested || feedTimer.seconds() >= config.feedActuationSeconds) {
+        if (!fireRequested) {
             closeFeed();
+        } else if (!feedGateOpen && ready) {
+            openFeed();
         }
     }
 
@@ -294,9 +339,7 @@ public final class PrecisionShooterSubsystem {
                 flywheel.getTargetRpm(),
                 flywheel.getMeasuredRpm(),
                 lastNominal.hoodAngleDeg,
-                config.useEmpiricalShotTableHood
-                        ? lastNominal.hoodAngleDeg
-                        : Math.toDegrees(lastSolution.hoodAngleRad),
+                lastCompensatedHoodDeg,
                 Math.toDegrees(turret == null ? 0.0 : turret.getCurrentAngleRadians()),
                 Math.toDegrees(turret == null ? 0.0 : turret.getTargetAngleRadians()),
                 lastSolution.rangeInches,
@@ -313,6 +356,10 @@ public final class PrecisionShooterSubsystem {
 
     public boolean isTurretEnabled() {
         return turret != null;
+    }
+
+    public boolean isFeedGateOpen() {
+        return feedGateOpen;
     }
 
     public boolean shouldUseChassisHeadingLock() {
@@ -339,28 +386,72 @@ public final class PrecisionShooterSubsystem {
 
     public double getChassisAimTurnCommand() {
         if (!shouldUseChassisHeadingLock() || !lastSolution.valid) {
-            lastChassisAimTurnCommand = 0.0;
+            resetChassisAimController();
             return 0.0;
         }
         double dt = Math.max(1e-3, chassisAimTimer.seconds());
         chassisAimTimer.reset();
         double error = getAdjustedChassisHeadingErrorRadians();
         if (Math.abs(error) <= Math.toRadians(config.chassisAimDeadbandDeg)) {
-            lastChassisAimTurnCommand = 0.0;
+            resetChassisAimController();
             return 0.0;
         }
 
-        double command = error * config.chassisAimKp - robotOmega * config.chassisAimKd;
+        double integralZone = Math.toRadians(config.chassisAimIntegralZoneDeg);
+        if (integralZone <= 0.0 || Math.abs(error) >= integralZone) {
+            chassisAimIntegral = 0.0;
+        } else {
+            chassisAimIntegral += error * dt;
+            double maxIntegral = Math.abs(config.chassisAimIntegralLimit);
+            chassisAimIntegral = ShooterMath.clamp(chassisAimIntegral, -maxIntegral, maxIntegral);
+        }
+
+        lastChassisAimProportionalTerm = error * config.chassisAimKp;
+        lastChassisAimIntegralTerm = chassisAimIntegral * config.chassisAimKi;
+        lastChassisAimDerivativeTerm = -robotOmega * config.chassisAimKd;
+        lastChassisAimFeedforwardTerm = Math.signum(error) * config.chassisAimKf;
+
+        double command = lastChassisAimProportionalTerm
+                + lastChassisAimIntegralTerm
+                + lastChassisAimDerivativeTerm
+                + lastChassisAimFeedforwardTerm;
         command = ShooterMath.clamp(command, -config.chassisAimMaxTurnCommand, config.chassisAimMaxTurnCommand);
 
-        double maxStep = config.chassisAimMaxCommandStepPerSecond * dt;
-        double delta = command - lastChassisAimTurnCommand;
-        if (Math.abs(delta) > maxStep) {
-            command = lastChassisAimTurnCommand + Math.signum(delta) * maxStep;
+        double maxStepRate = config.chassisAimMaxCommandStepPerSecond;
+        if (maxStepRate > 0.0) {
+            double maxStep = maxStepRate * dt;
+            double delta = command - lastChassisAimTurnCommand;
+            if (Math.abs(delta) > maxStep) {
+                command = lastChassisAimTurnCommand + Math.signum(delta) * maxStep;
+            }
         }
 
         lastChassisAimTurnCommand = command;
         return command;
+    }
+
+    public double getLastChassisAimTurnCommand() {
+        return lastChassisAimTurnCommand;
+    }
+
+    public double getLastChassisAimProportionalTerm() {
+        return lastChassisAimProportionalTerm;
+    }
+
+    public double getLastChassisAimIntegralTerm() {
+        return lastChassisAimIntegralTerm;
+    }
+
+    public double getLastChassisAimDerivativeTerm() {
+        return lastChassisAimDerivativeTerm;
+    }
+
+    public double getLastChassisAimFeedforwardTerm() {
+        return lastChassisAimFeedforwardTerm;
+    }
+
+    public double getRobotOmegaRadiansPerSecond() {
+        return robotOmega;
     }
 
     public double getTargetRpm() {
@@ -492,36 +583,74 @@ public final class PrecisionShooterSubsystem {
             return;
         }
         feedServo.setPosition(config.feedOpenPosition);
-        if (feedTimer.seconds() >= config.feedActuationSeconds || feedTimer.seconds() == 0.0) {
-            feedTimer.reset();
-        }
+        feedTimer.reset();
+        feedGateOpen = true;
     }
 
     private void closeFeed() {
         if (feedServo != null) {
             feedServo.setPosition(config.feedClosedPosition);
         }
+        feedGateOpen = false;
     }
 
-    private void updateFilteredAimTarget() {
-        if (!lastSolution.valid) {
+    private double computeCompensatedHoodDegrees(PrecisionShotTable.Entry nominal,
+                                                 BallisticAimSolver.Solution nominalBallisticSolution,
+                                                 BallisticAimSolver.Solution compensatedSolution) {
+        if (!config.useEmpiricalShotTableHood) {
+            if (!compensatedSolution.valid) {
+                return nominal.hoodAngleDeg;
+            }
+            return ShooterMath.clamp(
+                    Math.toDegrees(compensatedSolution.hoodAngleRad),
+                    config.hoodMinAngleDeg,
+                    config.hoodMaxAngleDeg
+            );
+        }
+
+        if (!nominalBallisticSolution.valid || !compensatedSolution.valid) {
+            return nominal.hoodAngleDeg;
+        }
+
+        double hoodCompensationDeg = Math.toDegrees(
+                compensatedSolution.hoodAngleRad - nominalBallisticSolution.hoodAngleRad
+        );
+        return ShooterMath.clamp(
+                nominal.hoodAngleDeg + hoodCompensationDeg,
+                config.hoodMinAngleDeg,
+                config.hoodMaxAngleDeg
+        );
+    }
+
+    private void updateFilteredAimTarget(boolean targetValid, double desiredWorldYawRadians) {
+        lastAimWorldYawRadians = desiredWorldYawRadians;
+        if (!targetValid) {
             filteredAimInitialized = false;
             return;
         }
 
         if (!filteredAimInitialized) {
-            filteredWorldYawRadians = lastSolution.worldYawRad;
+            filteredWorldYawRadians = desiredWorldYawRadians;
             filteredAimInitialized = true;
             return;
         }
 
-        double error = ShooterMath.normalizeRadians(lastSolution.worldYawRad - filteredWorldYawRadians);
+        double error = ShooterMath.normalizeRadians(desiredWorldYawRadians - filteredWorldYawRadians);
         filteredWorldYawRadians = ShooterMath.normalizeRadians(
                 filteredWorldYawRadians + error * config.chassisAimTargetFilterGain
         );
     }
 
     private double getFilteredWorldYawRadians() {
-        return filteredAimInitialized ? filteredWorldYawRadians : lastSolution.worldYawRad;
+        return filteredAimInitialized ? filteredWorldYawRadians : lastAimWorldYawRadians;
+    }
+
+    private void resetChassisAimController() {
+        chassisAimIntegral = 0.0;
+        lastChassisAimTurnCommand = 0.0;
+        lastChassisAimProportionalTerm = 0.0;
+        lastChassisAimIntegralTerm = 0.0;
+        lastChassisAimDerivativeTerm = 0.0;
+        lastChassisAimFeedforwardTerm = 0.0;
     }
 }

@@ -35,6 +35,9 @@ final class FlywheelVelocityController {
     private double targetRpm;
     private double integral;
     private double lastError;
+    private double measuredRpm;
+    private double filteredMeasuredRpm;
+    private boolean filteredMeasuredRpmInitialized;
 
     FlywheelVelocityController(DcMotorEx left,
                                DcMotorEx right,
@@ -71,15 +74,24 @@ final class FlywheelVelocityController {
     }
 
     double getMeasuredRpm() {
-        // The flywheels are mechanically linked, so we only need one encoder feedback source.
-        double measuredRpm = ticksPerSecondToRpm(feedbackMotor().getVelocity());
-        return config.flywheelFeedbackEncoderReversed ? -measuredRpm : measuredRpm;
+        measuredRpm = readMeasuredRpm();
+        return measuredRpm;
+    }
+
+    double getFilteredMeasuredRpm() {
+        if (!filteredMeasuredRpmInitialized) {
+            filteredMeasuredRpm = getMeasuredRpm();
+            filteredMeasuredRpmInitialized = true;
+        }
+        return filteredMeasuredRpmInitialized ? filteredMeasuredRpm : measuredRpm;
     }
 
     void stop() {
         targetRpm = 0.0;
         integral = 0.0;
         lastError = 0.0;
+        measuredRpm = readMeasuredRpm();
+        filteredMeasuredRpmInitialized = false;
         left.setPower(0.0);
         right.setPower(0.0);
     }
@@ -93,7 +105,8 @@ final class FlywheelVelocityController {
             return;
         }
 
-        double measuredRpm = getMeasuredRpm();
+        measuredRpm = getMeasuredRpm();
+        updateFilteredMeasuredRpm();
         double error = targetRpm - measuredRpm;
         integral += error * dt;
         integral = ShooterMath.clamp(integral, -integralLimit, integralLimit);
@@ -122,6 +135,22 @@ final class FlywheelVelocityController {
         return config.flywheelFeedbackMotor == ShooterConstants.FlywheelFeedbackMotor.RIGHT
                 ? right
                 : left;
+    }
+
+    private double readMeasuredRpm() {
+        // The flywheels are mechanically linked, so we only need one encoder feedback source.
+        double rawMeasuredRpm = ticksPerSecondToRpm(feedbackMotor().getVelocity());
+        return config.flywheelFeedbackEncoderReversed ? -rawMeasuredRpm : rawMeasuredRpm;
+    }
+
+    private void updateFilteredMeasuredRpm() {
+        if (!filteredMeasuredRpmInitialized) {
+            filteredMeasuredRpm = measuredRpm;
+            filteredMeasuredRpmInitialized = true;
+            return;
+        }
+
+        filteredMeasuredRpm += (measuredRpm - filteredMeasuredRpm) * config.flywheelCompensationFilterGain;
     }
 
     private Gains currentGains() {
