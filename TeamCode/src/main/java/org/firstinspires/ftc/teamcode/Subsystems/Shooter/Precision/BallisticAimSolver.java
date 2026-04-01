@@ -34,6 +34,26 @@ final class BallisticAimSolver {
 
     private BallisticAimSolver() {}
 
+    static Solution solveWithFixedHood(double robotX,
+                                       double robotY,
+                                       double targetX,
+                                       double targetY,
+                                       double targetDeltaZ,
+                                       double robotVx,
+                                       double robotVy,
+                                       double launchSpeedIps,
+                                       double hoodAngleRad,
+                                       double gravityIps2) {
+        double dx = targetX - robotX;
+        double dy = targetY - robotY;
+        double range = Math.hypot(dx, dy);
+        if (range < 1e-6 || launchSpeedIps <= 1e-6) {
+            return Solution.invalid("target unreachable");
+        }
+
+        return buildSolution(dx, dy, robotVx, robotVy, targetDeltaZ, launchSpeedIps, hoodAngleRad, gravityIps2);
+    }
+
     static Solution solve(double robotX,
                           double robotY,
                           double targetX,

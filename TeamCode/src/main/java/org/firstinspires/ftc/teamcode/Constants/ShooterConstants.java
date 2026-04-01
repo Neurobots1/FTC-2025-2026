@@ -107,7 +107,11 @@ public class ShooterConstants {
     public static double feedActuationSeconds = 0.10;
     public static double feedOpenSettlingSeconds = 0.30;
     public static double shotReleaseLatencySeconds = 0.11;
-    public static boolean useEmpiricalShotTableHood = true;
+    public static boolean useEmpiricalShotTableHood = false;
+    public static double hoodRpmCompensationGain = 1.0;
+    public static double hoodCompensationMaxDeltaDeg = 8.0;
+    public static double hoodCompensationRpmFilterGain = 0.22;
+    public static double headingAimForwardOffsetInches = 9.0;
 
     public static double shooterHeightInches = 12.0;
     public static double targetHeightInches = 36.0;

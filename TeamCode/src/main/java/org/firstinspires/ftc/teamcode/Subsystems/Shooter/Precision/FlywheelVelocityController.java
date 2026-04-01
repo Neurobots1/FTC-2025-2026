@@ -38,6 +38,9 @@ final class FlywheelVelocityController {
     private double measuredRpm;
     private double filteredMeasuredRpm;
     private boolean filteredMeasuredRpmInitialized;
+    private double lastErrorRpm;
+    private double lastOutputPower;
+    private double lastBatteryVoltage;
 
     FlywheelVelocityController(DcMotorEx left,
                                DcMotorEx right,
@@ -54,6 +57,7 @@ final class FlywheelVelocityController {
         right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         left.setDirection(config.leftFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         right.setDirection(config.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        lastBatteryVoltage = voltageSensor.getVoltage();
         timer.reset();
     }
 
@@ -90,6 +94,8 @@ final class FlywheelVelocityController {
         targetRpm = 0.0;
         integral = 0.0;
         lastError = 0.0;
+        lastErrorRpm = 0.0;
+        lastOutputPower = 0.0;
         measuredRpm = readMeasuredRpm();
         filteredMeasuredRpmInitialized = false;
         left.setPower(0.0);
@@ -108,16 +114,19 @@ final class FlywheelVelocityController {
         measuredRpm = getMeasuredRpm();
         updateFilteredMeasuredRpm();
         double error = targetRpm - measuredRpm;
+        lastErrorRpm = error;
         integral += error * dt;
         integral = ShooterMath.clamp(integral, -integralLimit, integralLimit);
         double derivative = (error - lastError) / dt;
         lastError = error;
 
         Gains gains = currentGains();
-        double voltageScale = nominalVoltage / Math.max(1e-6, voltageSensor.getVoltage());
+        lastBatteryVoltage = voltageSensor.getVoltage();
+        double voltageScale = nominalVoltage / Math.max(1e-6, lastBatteryVoltage);
         double feedforward = gains.kV * targetRpm + gains.kS;
         double feedback = gains.kP * error + gains.kI * integral + gains.kD * derivative;
         double output = ShooterMath.clamp((feedforward + feedback) * voltageScale, 0.0, 1.0);
+        lastOutputPower = output;
 
         left.setPower(output);
         right.setPower(output);
@@ -125,6 +134,18 @@ final class FlywheelVelocityController {
 
     boolean atSpeed(double toleranceRpm) {
         return Math.abs(targetRpm - getMeasuredRpm()) <= toleranceRpm;
+    }
+
+    double getLastErrorRpm() {
+        return lastErrorRpm;
+    }
+
+    double getLastOutputPower() {
+        return lastOutputPower;
+    }
+
+    double getLastBatteryVoltage() {
+        return lastBatteryVoltage;
     }
 
     static double ticksPerSecondToRpm(double ticksPerSecond) {
