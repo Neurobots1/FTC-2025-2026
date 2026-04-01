@@ -41,8 +41,18 @@ public class ShooterConstants {
     public static double flywheelKs = 0.000172;
     public static double flywheelIntegralLimit = 5000.0;
     public static double flywheelReadyToleranceRpm = 45.0;
-    public static double flywheelCompensationFilterGain = 0.22;
+    public static double flywheelCompensationDropFilterGain = 0.65;
+    public static double flywheelCompensationRecoveryFilterGain = 0.06;
+    public static double flywheelCompensationCloseDeadbandRpm = 70.0;
+    public static double flywheelCompensationFarDeadbandRpm = 20.0;
+    public static double flywheelCompensationCloseDeadbandFraction = 0.03;
+    public static double flywheelCompensationFarDeadbandFraction = 0.005;
     public static double minCompensationRpmFraction = 0.82;
+    public static double flywheelCompensationCloseDistanceInches = 40.0;
+    public static double flywheelCompensationFarDistanceInches = 145.0;
+    public static double flywheelCompensationMaxHoodDeltaDeg = 10.0;
+    public static double hoodCompensationCloseDegPerRpm = 0.0020;
+    public static double hoodCompensationFarDegPerRpm = 0.0075;
     public static double flywheelAutoTuneSweepMinSeconds = 1.5;
     public static double flywheelAutoTuneSweepMaxSeconds = 4.5;
     public static double flywheelAutoTuneStepMinSeconds = 1.0;
@@ -58,8 +68,8 @@ public class ShooterConstants {
     public static double hoodServoMinPosition = 1.0;
     public static double hoodServoMaxPosition = 0.0;
     public static double hoodCommandDeadbandDeg = 0.20;
-    public static double hoodMaxDegreesPerSecond = 90.0;
-    public static double hoodSettleSeconds = 0.18;
+    public static double hoodMaxDegreesPerSecond = 360.0;
+    public static double hoodSettleSeconds = 0.08;
 
     public static double turretMechanicalRangeDeg = 359;
     public static double turretCenterOffsetDeg = 0.0;
@@ -74,7 +84,7 @@ public class ShooterConstants {
     public static double turretPositionKp = 2.3;
     public static double turretPositionKd = 0.04;
     public static double turretStatic = 0.05;
-    public static double turretAngleToleranceDeg = 0.35;
+    public static double turretAngleToleranceDeg = 0.8;
     public static double turretMaxCommand = 0.65;
     public static double chassisAimToleranceDeg = 5;
     public static double chassisAimKp = 0.55;
@@ -106,6 +116,10 @@ public class ShooterConstants {
     public static double blueGoalYInches = 144.0;
     public static double redGoalXInches = 144.0;
     public static double redGoalYInches = 144.0;
+    public static double blueHeadingAimXInches = 12.0;
+    public static double blueHeadingAimYInches = 132.0;
+    public static double redHeadingAimXInches = 132.0;
+    public static double redHeadingAimYInches = 132.0;
 
     // Panels can tune primitive fields live, so the shot table is exposed as rows instead
     // of a single complex object.

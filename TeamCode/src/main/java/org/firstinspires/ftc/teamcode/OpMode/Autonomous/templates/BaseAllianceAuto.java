@@ -28,6 +28,7 @@ public abstract class BaseAllianceAuto extends OpMode {
     // This should return the facade used by the shared scheduler/update loop.
     protected abstract AutoRobotFacade createRobot(Follower follower,
                                                    ShooterConstants shooterConfig,
+                                                   AutoAlliance alliance,
                                                    double goalX,
                                                    double goalY);
 
@@ -66,7 +67,7 @@ public abstract class BaseAllianceAuto extends OpMode {
                 !shooterConfig.turretEnabled && shooterConfig.lockChassisHeadingWhenTurretDisabled
         );
 
-        robot = createRobot(follower, shooterConfig, goalX, goalY);
+        robot = createRobot(follower, shooterConfig, alliance, goalX, goalY);
         onPostRobotInit();
         buildPaths();
         buildRoutine();

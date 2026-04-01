@@ -150,7 +150,10 @@ final class FlywheelVelocityController {
             return;
         }
 
-        filteredMeasuredRpm += (measuredRpm - filteredMeasuredRpm) * config.flywheelCompensationFilterGain;
+        double gain = measuredRpm < filteredMeasuredRpm
+                ? config.flywheelCompensationDropFilterGain
+                : config.flywheelCompensationRecoveryFilterGain;
+        filteredMeasuredRpm += (measuredRpm - filteredMeasuredRpm) * gain;
     }
 
     private Gains currentGains() {

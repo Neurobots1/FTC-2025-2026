@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates;
 import com.pedropathing.follower.Follower;
 
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
+import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoRobotFacade;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.SortedAutoController;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
@@ -16,6 +17,7 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
     @Override
     protected final AutoRobotFacade createRobot(Follower follower,
                                                 ShooterConstants shooterConfig,
+                                                AutoAlliance alliance,
                                                 double goalX,
                                                 double goalY) {
         // Define the blue start pose in your subclass, and the alliance helper will
@@ -23,6 +25,11 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
         follower.setStartingPose(startPose());
 
         PrecisionShooterSubsystem shooter = PrecisionShooterSubsystem.create(hardwareMap, follower, shooterConfig);
+        shooter.setAlliance(
+                alliance == AutoAlliance.BLUE
+                        ? PrecisionShooterSubsystem.Alliance.BLUE
+                        : PrecisionShooterSubsystem.Alliance.RED
+        );
         shooter.setGoalPosition(goalX, goalY);
         shooter.setAutoAimEnabled(true);
 

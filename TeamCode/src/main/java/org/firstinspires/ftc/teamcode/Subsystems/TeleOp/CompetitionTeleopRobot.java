@@ -265,9 +265,13 @@ public final class CompetitionTeleopRobot {
 
     private void handleFireToggle(Gamepad gamepad) {
         if (gamepad.y && !fireToggleLast) {
-            setShootFeedState(feedingEnabled
-                    ? ShootFeedState.IDLE
-                    : ShootFeedState.ARMED_WAITING_READY);
+            boolean armingShooter = !feedingEnabled;
+            setShootFeedState(armingShooter
+                    ? ShootFeedState.ARMED_WAITING_READY
+                    : ShootFeedState.IDLE);
+            if (armingShooter) {
+                shooter.primeHeadingLock();
+            }
         }
         fireToggleLast = gamepad.y;
     }
