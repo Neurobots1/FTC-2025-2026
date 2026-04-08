@@ -14,7 +14,6 @@ public final class TeleopConstants {
     );
     public static boolean ALWAYS_SPIN_FLYWHEEL = true;
     public static boolean ENABLE_HEADING_LOCK = true;
-    public static double HEADING_LOCK_TURN_SCALE = 1.0;
 
     private TeleopConstants() {
     }

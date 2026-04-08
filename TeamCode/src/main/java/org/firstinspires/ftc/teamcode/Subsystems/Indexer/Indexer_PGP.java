@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 import org.firstinspires.ftc.teamcode.Constants.IndexerConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShotFeedCadenceController;
 
 import java.util.function.DoubleSupplier;
 
@@ -56,6 +57,7 @@ public class Indexer_PGP implements IndexerMode {
     private final IndexerSequenceRunner line3Outtake;
     private final IndexerSequenceRunner preloadOuttake;
     private final IndexerSequenceRunner[] routines;
+    private final ShotFeedCadenceController shotFeedController = new ShotFeedCadenceController();
 
     private boolean wantShoot;
     private boolean wantPreSpin;
@@ -111,6 +113,7 @@ public class Indexer_PGP implements IndexerMode {
         if (!enabled && !wantShoot && !isBusy() && shooter != null) {
             shooter.setSpinEnabled(false);
             shooter.requestFire(false);
+            shotFeedController.setArmed(false);
         }
     }
 
@@ -229,6 +232,7 @@ public class Indexer_PGP implements IndexerMode {
 
         wantShoot = false;
         wantPreSpin = false;
+        shotFeedController.setArmed(false);
         intake.stop();
         if (shooter != null) {
             shooter.setSpinEnabled(false);
@@ -248,6 +252,8 @@ public class Indexer_PGP implements IndexerMode {
             routine.update();
         }
 
+        updateShootFeedIntakeDemand();
+
         if (!isBusy() && !wantShoot && !wantPreSpin && shooter != null) {
             shooter.setSpinEnabled(false);
         }
@@ -263,6 +269,12 @@ public class Indexer_PGP implements IndexerMode {
 
     public boolean isPreSpinRequested() {
         return wantPreSpin;
+    }
+
+    public boolean wantsGoalTrackingControl() {
+        return shooter != null
+                && shooter.shouldUseChassisHeadingLock()
+                && (wantShoot || wantPreSpin);
     }
 
     public String getActiveSequenceSummary() {
@@ -282,7 +294,7 @@ public class Indexer_PGP implements IndexerMode {
     private void beginShootSequence(IndexerSequenceRunner routine) {
         wantPreSpin = false;
         wantShoot = true;
-        intake.intake();
+        shotFeedController.setArmed(true);
         routine.start();
     }
 
@@ -295,17 +307,21 @@ public class Indexer_PGP implements IndexerMode {
             shooter.setSpinEnabled(true);
             shooter.setAutoAimEnabled(true);
             shooter.requestFire(true);
+            shotFeedController.setArmed(true);
         } else if (wantPreSpin) {
             shooter.setSpinEnabled(true);
             shooter.setAutoAimEnabled(true);
             shooter.requestFire(false);
+            shotFeedController.setArmed(false);
         } else {
             shooter.setSpinEnabled(false);
             shooter.setAutoAimEnabled(true);
             shooter.requestFire(false);
+            shotFeedController.setArmed(false);
         }
 
         shooter.update();
+        shotFeedController.update(shooter.isFeedGateOpen(), shooter.snapshot());
     }
 
     private boolean colorDetected() {
@@ -319,6 +335,19 @@ public class Indexer_PGP implements IndexerMode {
     private void finishShootSequence() {
         intake.stop();
         wantShoot = false;
+        shotFeedController.setArmed(false);
+    }
+
+    private void updateShootFeedIntakeDemand() {
+        if (!wantShoot) {
+            return;
+        }
+
+        if (shotFeedController.shouldForceFeedIntake()) {
+            intake.slowIntake();
+        } else {
+            intake.stop();
+        }
     }
 
     private void setLeft(double position) {

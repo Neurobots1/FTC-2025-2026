@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.Subsystems.Shooter;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 
@@ -15,16 +14,18 @@ public class AutoShooterController {
 
     private final PrecisionShooterSubsystem shooter;
     private final IntakeMotor intake;
-    private final ElapsedTime feedTimer = new ElapsedTime();
+    private final ElapsedTime activeFeedTimer = new ElapsedTime();
+    private final ShotFeedCadenceController shotFeedController = new ShotFeedCadenceController();
 
     private FeedMode feedMode = FeedMode.AUTO;
     private boolean enabled;
     private boolean autoFeedRequested;
     private boolean driverGateRequested;
-    private boolean feeding;
-    private boolean gateOpenedForShot;
     private double goalX;
     private double goalY;
+    private double aimGoalX;
+    private double aimGoalY;
+    private double accumulatedFeedSeconds;
 
     public static double AUTO_FEED_SECONDS = 0.45;
 
@@ -40,12 +41,12 @@ public class AutoShooterController {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         shooter.setSpinEnabled(enabled);
-        shooter.setAutoAimEnabled(enabled);
+        shooter.setAutoAimEnabled(true);
         if (!enabled) {
-            feeding = false;
-            gateOpenedForShot = false;
             autoFeedRequested = false;
             driverGateRequested = false;
+            shotFeedController.setArmed(false);
+            accumulatedFeedSeconds = 0.0;
             shooter.requestFire(false);
             intake.stop();
         }
@@ -56,11 +57,19 @@ public class AutoShooterController {
         goalY = y;
     }
 
+    public void setAimPosition(double x, double y) {
+        aimGoalX = x;
+        aimGoalY = y;
+    }
+
     public void requestAutoFeed(boolean requested) {
+        if (requested && !autoFeedRequested) {
+            accumulatedFeedSeconds = 0.0;
+            activeFeedTimer.reset();
+        }
         autoFeedRequested = requested;
+        shotFeedController.setArmed(requested);
         if (!requested) {
-            feeding = false;
-            gateOpenedForShot = false;
             shooter.requestFire(false);
             intake.stop();
         }
@@ -79,15 +88,23 @@ public class AutoShooterController {
     }
 
     public boolean isBusy() {
-        return feeding || autoFeedRequested;
+        return autoFeedRequested || shotFeedController.isArmed() || shooter.isFeedGateOpen();
+    }
+
+    public boolean wantsGoalTrackingControl() {
+        return enabled
+                && shooter.shouldUseChassisHeadingLock()
+                && shooter.isInShootingZone();
     }
 
     public void update() {
         shooter.setGoalPosition(goalX, goalY);
+        shooter.setAimPosition(aimGoalX, aimGoalY);
         shooter.setSpinEnabled(enabled);
-        shooter.setAutoAimEnabled(enabled);
+        shooter.setAutoAimEnabled(true);
 
         if (!enabled) {
+            shotFeedController.setArmed(false);
             shooter.requestFire(false);
             intake.stop();
             shooter.update();
@@ -95,55 +112,48 @@ public class AutoShooterController {
         }
 
         if (feedMode == FeedMode.AUTO) {
+            shotFeedController.setArmed(autoFeedRequested);
+            shooter.requestFire(autoFeedRequested);
+        } else {
+            shotFeedController.setArmed(driverGateRequested);
+            shooter.requestFire(driverGateRequested);
+        }
+
+        shooter.update();
+        shotFeedController.update(shooter.isFeedGateOpen(), shooter.snapshot());
+
+        if (feedMode == FeedMode.AUTO) {
             updateAutoFeed();
         } else {
             updateDriverFeed();
         }
-
-        shooter.update();
     }
 
     private void updateAutoFeed() {
         if (!autoFeedRequested) {
-            shooter.requestFire(false);
-            intake.stop();
-            feeding = false;
-            gateOpenedForShot = false;
-            return;
-        }
-
-        if (!feeding) {
-            if (shooter.isReadyToShootNow()) {
-                feeding = true;
-                gateOpenedForShot = true;
-                feedTimer.reset();
-                shooter.requestFire(true);
-                intake.stop();
-            } else {
-                shooter.requestFire(false);
-                intake.stop();
-            }
-            return;
-        }
-
-        shooter.requestFire(gateOpenedForShot);
-
-        if (feedTimer.seconds() < ShooterConstants.feedOpenSettlingSeconds) {
+            shotFeedController.setArmed(false);
             intake.stop();
             return;
         }
 
-        intake.slowIntake();
-        if (feedTimer.seconds() >= ShooterConstants.feedOpenSettlingSeconds + AUTO_FEED_SECONDS) {
+        double dt = Math.max(0.0, activeFeedTimer.seconds());
+        activeFeedTimer.reset();
+        if (shotFeedController.shouldForceFeedIntake()) {
+            intake.slowIntake();
+            accumulatedFeedSeconds += dt;
+        } else {
+            intake.stop();
+        }
+
+        if (accumulatedFeedSeconds >= AUTO_FEED_SECONDS) {
             autoFeedRequested = false;
-            feeding = false;
-            gateOpenedForShot = false;
+            shotFeedController.setArmed(false);
             shooter.requestFire(false);
             intake.stop();
         }
     }
 
     private void updateDriverFeed() {
-        shooter.requestFire(driverGateRequested);
+        intake.stop();
     }
 }

@@ -19,9 +19,9 @@ public class PedroConstants {
             // Predictive braking setup: keep heading PIDF, predictive braking, and
             // disable centripetal correction because predictive braking naturally handles it.
             .mass(13.6078)
-            .centripetalScaling(0)
+            .centripetalScaling(0.004)
             .automaticHoldEnd(true)
-            .headingPIDFCoefficients(new PIDFCoefficients(0.85 ,0,0.1,0.01))
+            .headingPIDFCoefficients(new PIDFCoefficients(0.75 ,0,0.1,0.01))
             .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(0.1, 0.04, 0.0016));
 
 
@@ -35,6 +35,7 @@ public class PedroConstants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .useBrakeModeInTeleOp(true)
             //Drive constant
             .maxPower(1)
             .useVoltageCompensation(true)

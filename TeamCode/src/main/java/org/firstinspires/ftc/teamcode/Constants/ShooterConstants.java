@@ -24,35 +24,33 @@ public class ShooterConstants {
     public static boolean turretEnabled = false;
     public static boolean lockChassisHeadingWhenTurretDisabled = true;
 
-    public static boolean leftFlywheelReversed = false;
-    public static boolean rightFlywheelReversed = true;
-    public static FlywheelFeedbackMotor flywheelFeedbackMotor = FlywheelFeedbackMotor.LEFT;
+    public static boolean leftFlywheelReversed = true;
+    public static boolean rightFlywheelReversed = false;
+    public static FlywheelFeedbackMotor flywheelFeedbackMotor = FlywheelFeedbackMotor.RIGHT;
     public static boolean flywheelFeedbackEncoderReversed = true;
     public static boolean turretMotorReversed = false;
 
     public static double nominalBatteryVoltage = 12.40;
-    public static double flywheelKp = 0.001;
+    public static double flywheelKp = 0.008;
     public static double flywheelKi = 0.0000;
-
-
-    
     public static double flywheelKd = 0.0000;
     public static double flywheelKv = 0.000179;
     public static double flywheelKs = 0.000172;
     public static double flywheelIntegralLimit = 5000.0;
-    public static double flywheelReadyToleranceRpm = 45.0;
+    public static double flywheelReadyToleranceRpm = 70.0;
+    public static double flywheelReadyToleranceFraction = 0.025;
+    public static double flywheelRecoveryDeadbandRpm = 35.0;
+    public static double flywheelRecoveryGain = 0.0012;
+    public static double flywheelRecoveryMaxBoost = 0.18;
+    public static double flywheelOutputRiseRatePerSecond = 12.0;
+    public static double flywheelOutputFallRatePerSecond = 3.5;
+    public static double farZoneFeedPauseDistanceInches = 130.0;
+    public static double farZoneFeedPauseDropRpm = 140.0;
+    public static double farZoneFeedPauseDropFraction = 0.035;
+    public static double farZoneFeedResumeDropRpm = 130.0;
+    public static double farZoneFeedResumeDropFraction = 0.031;
     public static double flywheelCompensationDropFilterGain = 0.65;
     public static double flywheelCompensationRecoveryFilterGain = 0.06;
-    public static double flywheelCompensationCloseDeadbandRpm = 70.0;
-    public static double flywheelCompensationFarDeadbandRpm = 20.0;
-    public static double flywheelCompensationCloseDeadbandFraction = 0.03;
-    public static double flywheelCompensationFarDeadbandFraction = 0.005;
-    public static double minCompensationRpmFraction = 0.82;
-    public static double flywheelCompensationCloseDistanceInches = 40.0;
-    public static double flywheelCompensationFarDistanceInches = 145.0;
-    public static double flywheelCompensationMaxHoodDeltaDeg = 10.0;
-    public static double hoodCompensationCloseDegPerRpm = 0.0020;
-    public static double hoodCompensationFarDegPerRpm = 0.0075;
     public static double flywheelAutoTuneSweepMinSeconds = 1.5;
     public static double flywheelAutoTuneSweepMaxSeconds = 4.5;
     public static double flywheelAutoTuneStepMinSeconds = 1.0;
@@ -87,31 +85,20 @@ public class ShooterConstants {
     public static double turretAngleToleranceDeg = 0.8;
     public static double turretMaxCommand = 0.65;
     public static double chassisAimToleranceDeg = 5;
-    public static double chassisAimKp = 0.55;
+    public static double shotReadyHeadingToleranceDeg = 6.5;
+    public static double shotReadyMaxOmegaDegPerSecond = 22.0;
+    public static double chassisAimKp = 0.6;
     public static double chassisAimKi = 0.0;
-    public static double chassisAimKd = 0.08;
-    public static double chassisAimKf = 0.03;
-    public static double chassisAimMaxTurnCommand = 0.65;
-    public static double chassisAimDeadbandDeg = 0.80;
-    public static double chassisAimIntegralZoneDeg = 8.0;
-    public static double chassisAimIntegralLimit = 0.25;
-    public static double chassisAimTargetFilterGain = 0.35;
-    public static double chassisAimMaxCommandStepPerSecond = 10.0;
-    public static double chassisAimManualOverrideThreshold = 0.06;
+    public static double chassisAimKd = 0.14;
+    public static double chassisAimKf = 0.05;
     public static double aimTrimStepDeg = 0.35;
     public static double rpmTrimStep = 35.0;
     public static double trimAdjustCooldownSeconds = 0.10;
 
     public static double feedClosedPosition = 0.5;
     public static double feedOpenPosition = 0.12;
-    public static double feedActuationSeconds = 0.10;
     public static double feedOpenSettlingSeconds = 0.30;
     public static double shotReleaseLatencySeconds = 0.11;
-    public static boolean useEmpiricalShotTableHood = false;
-    public static double hoodRpmCompensationGain = 1.0;
-    public static double hoodCompensationMaxDeltaDeg = 8.0;
-    public static double hoodCompensationRpmFilterGain = 0.22;
-    public static double headingAimForwardOffsetInches = 9.0;
 
     public static double shooterHeightInches = 12.0;
     public static double targetHeightInches = 36.0;

@@ -57,6 +57,10 @@ public class SortedAutoController {
         return activeIndexer().isReadyToShoot();
     }
 
+    public boolean wantsGoalTrackingControl() {
+        return physicalIndexer.wantsGoalTrackingControl();
+    }
+
     public void setPreSpinEnabled(boolean enabled) {
         activeIndexer().setPreSpinEnabled(enabled);
     }

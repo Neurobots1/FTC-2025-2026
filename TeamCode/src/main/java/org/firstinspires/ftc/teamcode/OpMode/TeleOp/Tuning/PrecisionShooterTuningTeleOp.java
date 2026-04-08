@@ -44,6 +44,7 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
     private PrecisionShooterSubsystem.Alliance alliance = PrecisionShooterSubsystem.Alliance.BLUE;
     private final ShotCsvLogger shotLogger = new ShotCsvLogger();
     private boolean feedingEnabled;
+    private boolean farZoneFeedPaused;
     private boolean prevB;
     private boolean prevRightStickButton;
     private boolean prevX;
@@ -56,6 +57,8 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
     @Override
     public void init() {
         follower = PedroConstants.createFollower(hardwareMap);
+        follower.setStartingPose(TeleopConstants.DRIVER_START_POSE);
+        follower.setPose(TeleopConstants.DRIVER_START_POSE);
         follower.update();
         Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
         indexerBase.StartIndexPose();
@@ -64,32 +67,22 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         applyAllianceDefaults();
         adjustTimer.reset();
         blockerOpenTimer.reset();
+        farZoneFeedPaused = false;
     }
 
     @Override
     public void start() {
         shooter.start();
+        follower.setStartingPose(TeleopConstants.DRIVER_START_POSE);
+        follower.setPose(TeleopConstants.DRIVER_START_POSE);
         setShootFeedState(ShootFeedState.IDLE);
     }
 
     @Override
     public void loop() {
         follower.update();
-        follower.setTeleOpDrive(
-                -gamepad1.left_stick_y,
-                -gamepad1.left_stick_x,
-                -gamepad1.right_stick_x,
-                true,
-                AllianceSelector.Field.fieldCentricOffset(
-                        alliance == PrecisionShooterSubsystem.Alliance.BLUE
-                                ? AllianceSelector.Alliance.BLUE
-                                : AllianceSelector.Alliance.RED
-                )
-        );
 
-        if (gamepad1.y && !prevY) {
-            setShootFeedState(feedingEnabled ? ShootFeedState.IDLE : ShootFeedState.ARMED_WAITING_READY);
-        }
+        handleFireToggle();
         if (gamepad1.x && !prevX) {
             if (feedingEnabled) {
                 setShootFeedState(ShootFeedState.IDLE);
@@ -146,7 +139,20 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         shooter.update();
 
         PrecisionShooterSubsystem.TelemetrySnapshot snapshot = shooter.snapshot();
+        follower.setTeleOpDrive(
+                -gamepad1.left_stick_y,
+                -gamepad1.left_stick_x,
+                -gamepad1.right_stick_x,
+                true,
+                AllianceSelector.Field.fieldCentricOffset(
+                        alliance == PrecisionShooterSubsystem.Alliance.BLUE
+                                ? AllianceSelector.Alliance.BLUE
+                                : AllianceSelector.Alliance.RED
+                )
+        );
+
         updateShootFeedState(shooter.isFeedGateOpen());
+        updateFarZoneFeedPause(snapshot);
         updateFeedAssist();
         shotLogger.logSample(
                 getRuntime(),
@@ -187,9 +193,11 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         telemetry.addData("Hood Delta", "%.2f", snapshot.compensatedHoodDeg - snapshot.nominalHoodDeg);
         telemetry.addData("Goal Fwd Offset", "%.2f", snapshot.goalForwardOffsetInches);
         telemetry.addData("Turret", "%.2f / %.2f", snapshot.turretAngleDeg, snapshot.turretTargetDeg);
+        telemetry.addData("Aim Error Deg", "%.2f", Math.toDegrees(shooter.getAdjustedChassisHeadingErrorRadians()));
         telemetry.addData("Predicted Range", "%.2f", snapshot.predictedRangeInches);
         telemetry.addData("TOF", "%.3f", snapshot.timeOfFlightSeconds);
         telemetry.addData("Feed Gate", shooter.isFeedGateOpen());
+        telemetry.addData("Far Zone Feed Paused", farZoneFeedPaused);
         telemetry.addData("Shot Log", shotLogger.getStatusLine());
         telemetry.addData("Status", snapshot.status);
         telemetry.addData("Feed Assist", gamepad1.left_bumper ? "Manual Intake" : (gamepad1.left_trigger > 0.2 ? "Reverse" : (shootFeedState == ShootFeedState.FEEDING ? "Auto Feed" : "Off")));
@@ -197,6 +205,12 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         telemetry.addLine("B alliance, A reset goal");
         telemetry.addLine("Dpad adjusts goal X/Y by 2 inches, RS click toggles CSV log");
         telemetry.update();
+    }
+
+    private void handleFireToggle() {
+        if (gamepad1.y && !prevY) {
+            setShootFeedState(feedingEnabled ? ShootFeedState.IDLE : ShootFeedState.ARMED_WAITING_READY);
+        }
     }
 
     @Override
@@ -226,7 +240,7 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
             intake.outtake();
         } else if (gamepad1.left_bumper) {
             intake.intake();
-        } else if (shootFeedState == ShootFeedState.FEEDING) {
+        } else if (shootFeedState == ShootFeedState.FEEDING && !farZoneFeedPaused) {
             intake.slowIntake();
         } else {
             intake.stop();
@@ -235,11 +249,13 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
 
     private void updateShootFeedState(boolean gateOpen) {
         if (!feedingEnabled) {
+            farZoneFeedPaused = false;
             shootFeedState = ShootFeedState.IDLE;
             return;
         }
 
         if (!gateOpen) {
+            farZoneFeedPaused = false;
             if (shootFeedState != ShootFeedState.ARMED_WAITING_READY) {
                 shootFeedState = ShootFeedState.ARMED_WAITING_READY;
             }
@@ -258,9 +274,39 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         }
     }
 
+    private void updateFarZoneFeedPause(PrecisionShooterSubsystem.TelemetrySnapshot snapshot) {
+        if (!feedingEnabled
+                || shootFeedState != ShootFeedState.FEEDING
+                || !snapshot.inShootingZone
+                || snapshot.targetRpm <= 1.0
+                || snapshot.tableDistanceInches < ShooterConstants.farZoneFeedPauseDistanceInches) {
+            farZoneFeedPaused = false;
+            return;
+        }
+
+        double rpmDrop = Math.max(0.0, snapshot.targetRpm - snapshot.actualRpm);
+        double pauseThreshold = Math.max(
+                ShooterConstants.farZoneFeedPauseDropRpm,
+                snapshot.targetRpm * ShooterConstants.farZoneFeedPauseDropFraction
+        );
+        double resumeThreshold = Math.max(
+                ShooterConstants.farZoneFeedResumeDropRpm,
+                snapshot.targetRpm * ShooterConstants.farZoneFeedResumeDropFraction
+        );
+
+        if (farZoneFeedPaused) {
+            farZoneFeedPaused = rpmDrop > resumeThreshold;
+        } else {
+            farZoneFeedPaused = rpmDrop >= pauseThreshold;
+        }
+    }
+
     private void setShootFeedState(ShootFeedState nextState) {
         shootFeedState = nextState;
         feedingEnabled = nextState != ShootFeedState.IDLE;
+        if (nextState == ShootFeedState.IDLE) {
+            farZoneFeedPaused = false;
+        }
         if (nextState != ShootFeedState.GATE_OPENING) {
             blockerOpenTimer.reset();
         }

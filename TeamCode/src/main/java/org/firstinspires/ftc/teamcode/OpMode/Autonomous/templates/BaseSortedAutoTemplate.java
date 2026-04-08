@@ -19,7 +19,9 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
                                                 ShooterConstants shooterConfig,
                                                 AutoAlliance alliance,
                                                 double goalX,
-                                                double goalY) {
+                                                double goalY,
+                                                double aimGoalX,
+                                                double aimGoalY) {
         // Define the blue start pose in your subclass, and the alliance helper will
         // mirror it automatically for red through paths().pose(...).
         follower.setStartingPose(startPose());
@@ -31,6 +33,7 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
                         : PrecisionShooterSubsystem.Alliance.RED
         );
         shooter.setGoalPosition(goalX, goalY);
+        shooter.setAimPosition(aimGoalX, aimGoalY);
         shooter.setAutoAimEnabled(true);
 
         sortedController = new SortedAutoController(hardwareMap, shooter);
@@ -41,6 +44,7 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
                 follower,
                 sortedController,
                 null,
+                shooter,
                 new AutoRobotFacade.GoalSupplier() {
                     @Override
                     public double goalX() {
@@ -50,6 +54,16 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
                     @Override
                     public double goalY() {
                         return goalY;
+                    }
+
+                    @Override
+                    public double aimGoalX() {
+                        return aimGoalX;
+                    }
+
+                    @Override
+                    public double aimGoalY() {
+                        return aimGoalY;
                     }
                 }
         );

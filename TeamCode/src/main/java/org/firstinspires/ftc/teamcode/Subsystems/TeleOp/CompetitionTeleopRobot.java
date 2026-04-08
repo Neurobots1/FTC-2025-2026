@@ -29,7 +29,9 @@ import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AllianceMirr
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ChassisHeadingLockController;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShotFeedCadenceController;
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 
@@ -38,13 +40,6 @@ public final class CompetitionTeleopRobot {
     public enum Alliance {
         BLUE,
         RED
-    }
-
-    private enum ShootFeedState {
-        IDLE,
-        ARMED_WAITING_READY,
-        GATE_OPENING,
-        FEEDING
     }
 
     private Alliance alliance = Alliance.BLUE;
@@ -63,19 +58,17 @@ public final class CompetitionTeleopRobot {
 
     private final ElapsedTime aimTrimTimer = new ElapsedTime();
     private final ElapsedTime rpmTrimTimer = new ElapsedTime();
-    private final ElapsedTime blockerOpenTimer = new ElapsedTime();
     private final ElapsedTime limelightFilterTimer = new ElapsedTime();
 
-    private boolean feedingEnabled;
     private boolean fireToggleLast;
-    private boolean blockerOpenCommanded;
     private double yawTrimDegrees;
     private double rpmTrim;
     private double goalXInches;
     private double goalYInches;
     private double aimGoalXInches;
     private double aimGoalYInches;
-    private ShootFeedState shootFeedState = ShootFeedState.IDLE;
+    private final ChassisHeadingLockController headingLockController = new ChassisHeadingLockController();
+    private final ShotFeedCadenceController shotFeedController = new ShotFeedCadenceController();
 
     public void setAlliance(Alliance alliance) {
         this.alliance = alliance;
@@ -100,16 +93,14 @@ public final class CompetitionTeleopRobot {
         applyAllianceGoal();
         initLimelight(hardwareMap);
 
-        feedingEnabled = false;
         fireToggleLast = false;
-        blockerOpenCommanded = false;
-        shootFeedState = ShootFeedState.IDLE;
         yawTrimDegrees = 0.0;
         rpmTrim = 0.0;
+        headingLockController.reset();
+        shotFeedController.setArmed(false);
         initLimelightFilters();
         aimTrimTimer.reset();
         rpmTrimTimer.reset();
-        blockerOpenTimer.reset();
     }
 
     public void startTeleop() {
@@ -120,11 +111,12 @@ public final class CompetitionTeleopRobot {
         }
         follower.setStartingPose(startingPose);
         shooter.start();
-        setShootFeedState(ShootFeedState.IDLE);
+        shotFeedController.setArmed(false);
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         limelightFilterInitialized = false;
         limelightFilterTimer.reset();
+        headingLockController.reset();
         startLimelight();
     }
 
@@ -134,9 +126,8 @@ public final class CompetitionTeleopRobot {
                            double tagCooldown,
                            JoinedTelemetry joinedTelemetry,
                            TelemetryManager telemetryManager) {
-        follower.update();
-
         LimelightState limelightState = updateLimelight(driverGamepad, supportGamepad, tagResetTimer, tagCooldown);
+        updateDriverAimTrim(driverGamepad);
         updateTrimAdjustments(supportGamepad);
         handleTrimReset(supportGamepad);
         handleFireToggle(driverGamepad);
@@ -145,18 +136,21 @@ public final class CompetitionTeleopRobot {
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         shooter.setYawTrimDegrees(yawTrimDegrees);
         shooter.setRpmTrim(rpmTrim);
-        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || feedingEnabled);
+        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || shotFeedController.isArmed());
         shooter.setAutoAimEnabled(true);
-        shooter.requestFire(feedingEnabled);
+        shooter.requestFire(shotFeedController.isArmed());
         shooter.update();
+        PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
 
         double turnCommand = -driverGamepad.right_stick_x;
         boolean chassisHeadingLockActive = false;
         if (TeleopConstants.ENABLE_HEADING_LOCK
-                && feedingEnabled
+                && shotFeedController.isArmed()
                 && shooter.shouldUseChassisHeadingLock()) {
-            turnCommand = shooter.getChassisAimTurnCommand() * TeleopConstants.HEADING_LOCK_TURN_SCALE;
+            turnCommand = getHeadingLockTurnCommand(shooterSnapshot);
             chassisHeadingLockActive = true;
+        } else {
+            headingLockController.reset();
         }
 
         follower.setTeleOpDrive(
@@ -168,12 +162,13 @@ public final class CompetitionTeleopRobot {
                         alliance == Alliance.BLUE
                                 ? AllianceSelector.Alliance.BLUE
                                 : AllianceSelector.Alliance.RED
-                )
+                        )
         );
+        follower.update();
 
-        updateShootFeedState(shooter.isFeedGateOpen());
-        boolean blockerSettledOpen = shootFeedState == ShootFeedState.FEEDING;
-        boolean forceFeedIntake = blockerSettledOpen;
+        shotFeedController.update(shooter.isFeedGateOpen(), shooterSnapshot);
+        boolean blockerSettledOpen = shotFeedController.isBlockerSettledOpen();
+        boolean forceFeedIntake = shotFeedController.shouldForceFeedIntake();
 
         if (!indexerBase.isBusy()) {
             if (forceFeedIntake) {
@@ -200,16 +195,13 @@ public final class CompetitionTeleopRobot {
         }
 
         indexerBase.OutTake();
-
-        PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
         Pose pose = follower.getPose();
 
         joinedTelemetry.addData("Alliance", alliance);
-        joinedTelemetry.addData("Shoot Armed", feedingEnabled);
-        joinedTelemetry.addData("Feed State", shootFeedState);
+        joinedTelemetry.addData("Shoot Armed", shotFeedController.isArmed());
+        joinedTelemetry.addData("Feed State", shotFeedController.getState());
         joinedTelemetry.addData("Always Spin", TeleopConstants.ALWAYS_SPIN_FLYWHEEL);
         joinedTelemetry.addData("Heading Lock Enabled", TeleopConstants.ENABLE_HEADING_LOCK);
-        joinedTelemetry.addData("Heading Lock Scale", "%.2f", TeleopConstants.HEADING_LOCK_TURN_SCALE);
         joinedTelemetry.addData("Turret Enabled", shooter.isTurretEnabled());
         joinedTelemetry.addData("Chassis Aim Lock", chassisHeadingLockActive);
         joinedTelemetry.addData("Driver 1", "Drive / Intake / Shoot");
@@ -217,6 +209,7 @@ public final class CompetitionTeleopRobot {
         joinedTelemetry.addData("Shot Zone", shooterSnapshot.inShootingZone);
         joinedTelemetry.addData("Ready", shooterSnapshot.ready);
         joinedTelemetry.addData("Forced Feed Intake", forceFeedIntake);
+        joinedTelemetry.addData("Far Zone Feed Paused", shotFeedController.isFarZoneFeedPaused());
         joinedTelemetry.addData("Blocker Open", shooter.isFeedGateOpen());
         joinedTelemetry.addData("Blocker Settled Open", blockerSettledOpen);
         joinedTelemetry.addData("Homed", shooterSnapshot.homed);
@@ -226,12 +219,12 @@ public final class CompetitionTeleopRobot {
         joinedTelemetry.addData("Hood", "%.2f / %.2f", shooterSnapshot.nominalHoodDeg, shooterSnapshot.compensatedHoodDeg);
         joinedTelemetry.addData("Turret", "%.2f / %.2f", shooterSnapshot.turretAngleDeg, shooterSnapshot.turretTargetDeg);
         joinedTelemetry.addData("Aim Error Deg", "%.2f", Math.toDegrees(shooter.getAdjustedChassisHeadingErrorRadians()));
-        joinedTelemetry.addData("Aim Turn Cmd", "%.3f", shooter.getLastChassisAimTurnCommand());
+        joinedTelemetry.addData("Aim Turn Cmd", "%.3f", headingLockController.getLastTurnCommand());
         joinedTelemetry.addData("Aim PIDF", "P %.3f I %.3f D %.3f F %.3f",
-                shooter.getLastChassisAimProportionalTerm(),
-                shooter.getLastChassisAimIntegralTerm(),
-                shooter.getLastChassisAimDerivativeTerm(),
-                shooter.getLastChassisAimFeedforwardTerm());
+                headingLockController.getLastProportionalTerm(),
+                headingLockController.getLastIntegralTerm(),
+                headingLockController.getLastDerivativeTerm(),
+                headingLockController.getLastFeedforwardTerm());
         joinedTelemetry.addData("Robot Omega Deg/S", "%.2f", Math.toDegrees(shooter.getRobotOmegaRadiansPerSecond()));
         joinedTelemetry.addData("Yaw Trim Deg", "%.2f", yawTrimDegrees);
         joinedTelemetry.addData("RPM Trim", "%.1f", rpmTrim);
@@ -253,7 +246,7 @@ public final class CompetitionTeleopRobot {
     }
 
     public void stop() {
-        setShootFeedState(ShootFeedState.IDLE);
+        shotFeedController.setArmed(false);
         intake.stop();
         if (limelight != null) {
             try {
@@ -265,12 +258,10 @@ public final class CompetitionTeleopRobot {
 
     private void handleFireToggle(Gamepad gamepad) {
         if (gamepad.y && !fireToggleLast) {
-            boolean armingShooter = !feedingEnabled;
-            setShootFeedState(armingShooter
-                    ? ShootFeedState.ARMED_WAITING_READY
-                    : ShootFeedState.IDLE);
+            boolean armingShooter = !shotFeedController.isArmed();
+            shotFeedController.setArmed(armingShooter);
             if (armingShooter) {
-                shooter.primeHeadingLock();
+                headingLockController.reset();
             }
         }
         fireToggleLast = gamepad.y;
@@ -305,31 +296,15 @@ public final class CompetitionTeleopRobot {
         }
     }
 
-    private void updateShootFeedState(boolean gateOpen) {
-        if (!feedingEnabled) {
-            blockerOpenCommanded = false;
-            shootFeedState = ShootFeedState.IDLE;
-            return;
+    private void updateDriverAimTrim(Gamepad gamepad) {
+        if (gamepad.dpad_left && aimTrimTimer.seconds() >= ShooterConstants.trimAdjustCooldownSeconds) {
+            yawTrimDegrees -= ShooterConstants.aimTrimStepDeg;
+            aimTrimTimer.reset();
         }
 
-        if (!gateOpen) {
-            blockerOpenCommanded = false;
-            if (shootFeedState != ShootFeedState.ARMED_WAITING_READY) {
-                shootFeedState = ShootFeedState.ARMED_WAITING_READY;
-            }
-            return;
-        }
-
-        blockerOpenCommanded = true;
-        if (shootFeedState == ShootFeedState.ARMED_WAITING_READY) {
-            shootFeedState = ShootFeedState.GATE_OPENING;
-            blockerOpenTimer.reset();
-            return;
-        }
-
-        if (shootFeedState == ShootFeedState.GATE_OPENING
-                && blockerOpenTimer.seconds() >= ShooterConstants.feedOpenSettlingSeconds) {
-            shootFeedState = ShootFeedState.FEEDING;
+        if (gamepad.dpad_right && aimTrimTimer.seconds() >= ShooterConstants.trimAdjustCooldownSeconds) {
+            yawTrimDegrees += ShooterConstants.aimTrimStepDeg;
+            aimTrimTimer.reset();
         }
     }
 
@@ -371,6 +346,7 @@ public final class CompetitionTeleopRobot {
     private void resetPose(Pose pose) {
         follower.setPose(pose);
         shooter.notifyPoseJump();
+        headingLockController.reset();
     }
 
     private void initLimelight(HardwareMap hardwareMap) {
@@ -423,17 +399,6 @@ public final class CompetitionTeleopRobot {
             );
             shooter.setGoalPosition(goalXInches, goalYInches);
             shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
-        }
-    }
-
-    private void setShootFeedState(ShootFeedState nextState) {
-        shootFeedState = nextState;
-        feedingEnabled = nextState != ShootFeedState.IDLE;
-        if (nextState != ShootFeedState.GATE_OPENING) {
-            blockerOpenTimer.reset();
-        }
-        if (nextState == ShootFeedState.IDLE) {
-            blockerOpenCommanded = false;
         }
     }
 
@@ -530,6 +495,10 @@ public final class CompetitionTeleopRobot {
                 AllianceSelector.Field.EndAutoY(selectedAlliance),
                 Math.toRadians(AllianceSelector.Field.EndAutoH(selectedAlliance))
         );
+    }
+
+    private double getHeadingLockTurnCommand(PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot) {
+        return headingLockController.update(shooter, shooterSnapshot);
     }
 
     private static final class LimelightState {

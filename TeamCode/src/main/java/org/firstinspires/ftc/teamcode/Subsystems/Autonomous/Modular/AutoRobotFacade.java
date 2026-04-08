@@ -7,6 +7,8 @@ import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.AutoAction;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Indexer.SortPattern;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.AutoShooterController;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ChassisHeadingLockController;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Vision.LimelightTagReader;
 
 public class AutoRobotFacade {
@@ -14,20 +16,27 @@ public class AutoRobotFacade {
     private final Follower follower;
     private final SortedAutoController sortedController;
     private final AutoShooterController unsortedShooter;
+    private final PrecisionShooterSubsystem shooter;
     private final GoalSupplier goalSupplier;
+    private final ChassisHeadingLockController headingLockController = new ChassisHeadingLockController();
+    private boolean headingLockDriveActive;
 
     public interface GoalSupplier {
         double goalX();
         double goalY();
+        double aimGoalX();
+        double aimGoalY();
     }
 
     public AutoRobotFacade(Follower follower,
                            SortedAutoController sortedController,
                            AutoShooterController unsortedShooter,
+                           PrecisionShooterSubsystem shooter,
                            GoalSupplier goalSupplier) {
         this.follower = follower;
         this.sortedController = sortedController;
         this.unsortedShooter = unsortedShooter;
+        this.shooter = shooter;
         this.goalSupplier = goalSupplier;
     }
 
@@ -39,7 +48,39 @@ public class AutoRobotFacade {
         return Actions.waitUntil(() -> follower == null || !follower.isBusy());
     }
 
+    public void updateDriveControl() {
+        if (follower == null || shooter == null) {
+            return;
+        }
+
+        if (follower.isBusy()) {
+            headingLockController.reset();
+            headingLockDriveActive = false;
+            return;
+        }
+
+        if (shouldApplyHeadingLock()) {
+            follower.startTeleopDrive();
+            double turnCommand = headingLockController.update(shooter, shooter.snapshot());
+            follower.setTeleOpDrive(0.0, 0.0, turnCommand, true);
+            headingLockDriveActive = true;
+            return;
+        }
+
+        headingLockController.reset();
+        if (headingLockDriveActive) {
+            follower.startTeleopDrive();
+            follower.setTeleOpDrive(0.0, 0.0, 0.0, true);
+            headingLockDriveActive = false;
+        }
+    }
+
     public void updateSystems() {
+        if (shooter != null) {
+            shooter.setGoalPosition(goalSupplier.goalX(), goalSupplier.goalY());
+            shooter.setAimPosition(goalSupplier.aimGoalX(), goalSupplier.aimGoalY());
+        }
+
         Pose pose = follower.getPose();
         double distance = Math.hypot(goalSupplier.goalX() - pose.getX(), goalSupplier.goalY() - pose.getY());
 
@@ -50,8 +91,19 @@ public class AutoRobotFacade {
 
         if (unsortedShooter != null) {
             unsortedShooter.setGoalPosition(goalSupplier.goalX(), goalSupplier.goalY());
+            unsortedShooter.setAimPosition(goalSupplier.aimGoalX(), goalSupplier.aimGoalY());
             unsortedShooter.update();
         }
+    }
+
+    private boolean shouldApplyHeadingLock() {
+        if (!shooter.shouldUseChassisHeadingLock()) {
+            return false;
+        }
+        if (sortedController != null && sortedController.wantsGoalTrackingControl()) {
+            return true;
+        }
+        return unsortedShooter != null && unsortedShooter.wantsGoalTrackingControl();
     }
 
     public AutoAction enableSortedPreSpin(boolean enabled) {
