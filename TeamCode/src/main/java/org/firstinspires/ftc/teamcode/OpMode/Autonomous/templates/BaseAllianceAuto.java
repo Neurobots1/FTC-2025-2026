@@ -5,6 +5,7 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AutoPoseHandoff;
@@ -75,7 +76,7 @@ public abstract class BaseAllianceAuto extends OpMode {
                 alliance,
                 goalX,
                 goalY,
-                !shooterConfig.turretEnabled && shooterConfig.lockChassisHeadingWhenTurretDisabled
+                !ShooterHardwareConstants.turretEnabled && shooterConfig.lockChassisHeadingWhenTurretDisabled
         );
 
         robot = createRobot(follower, shooterConfig, alliance, goalX, goalY, aimGoalX, aimGoalY);

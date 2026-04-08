@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Shooter;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
-
+import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 
@@ -14,8 +13,8 @@ public class AutoShooterController {
 
     private final PrecisionShooterSubsystem shooter;
     private final IntakeMotor intake;
-    private final ElapsedTime activeFeedTimer = new ElapsedTime();
     private final ShotFeedCadenceController shotFeedController = new ShotFeedCadenceController();
+    private final AutoShotBurstTracker shotBurstTracker = new AutoShotBurstTracker();
 
     private FeedMode feedMode = FeedMode.AUTO;
     private boolean enabled;
@@ -25,9 +24,6 @@ public class AutoShooterController {
     private double goalY;
     private double aimGoalX;
     private double aimGoalY;
-    private double accumulatedFeedSeconds;
-
-    public static double AUTO_FEED_SECONDS = 0.45;
 
     public AutoShooterController(PrecisionShooterSubsystem shooter, IntakeMotor intake) {
         this.shooter = shooter;
@@ -46,7 +42,7 @@ public class AutoShooterController {
             autoFeedRequested = false;
             driverGateRequested = false;
             shotFeedController.setArmed(false);
-            accumulatedFeedSeconds = 0.0;
+            shotBurstTracker.stop();
             shooter.requestFire(false);
             intake.stop();
         }
@@ -64,14 +60,13 @@ public class AutoShooterController {
 
     public void requestAutoFeed(boolean requested) {
         if (requested && !autoFeedRequested) {
-            accumulatedFeedSeconds = 0.0;
-            activeFeedTimer.reset();
+            shotBurstTracker.start(ShooterConstants.autoShotBurstExpectedCount);
         }
         autoFeedRequested = requested;
         shotFeedController.setArmed(requested);
         if (!requested) {
+            shotBurstTracker.stop();
             shooter.requestFire(false);
-            intake.stop();
         }
     }
 
@@ -120,7 +115,9 @@ public class AutoShooterController {
         }
 
         shooter.update();
-        shotFeedController.update(shooter.isFeedGateOpen(), shooter.snapshot());
+        PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
+        shotFeedController.update(shooter.isFeedGateOpen(), shooterSnapshot);
+        shotBurstTracker.update(shooterSnapshot, shotFeedController.isBlockerSettledOpen());
 
         if (feedMode == FeedMode.AUTO) {
             updateAutoFeed();
@@ -132,22 +129,19 @@ public class AutoShooterController {
     private void updateAutoFeed() {
         if (!autoFeedRequested) {
             shotFeedController.setArmed(false);
-            intake.stop();
             return;
         }
 
-        double dt = Math.max(0.0, activeFeedTimer.seconds());
-        activeFeedTimer.reset();
         if (shotFeedController.shouldForceFeedIntake()) {
             intake.slowIntake();
-            accumulatedFeedSeconds += dt;
         } else {
             intake.stop();
         }
 
-        if (accumulatedFeedSeconds >= AUTO_FEED_SECONDS) {
+        if (shotBurstTracker.isComplete()) {
             autoFeedRequested = false;
             shotFeedController.setArmed(false);
+            shotBurstTracker.stop();
             shooter.requestFire(false);
             intake.stop();
         }

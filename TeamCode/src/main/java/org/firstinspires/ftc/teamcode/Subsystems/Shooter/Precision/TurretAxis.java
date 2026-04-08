@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 
 final class TurretAxis {
@@ -36,7 +37,7 @@ final class TurretAxis {
         this.config = config;
         motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor.setDirection(config.turretMotorReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        motor.setDirection(ShooterHardwareConstants.turretMotorReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         lastPositionTicks = motor.getCurrentPosition();
         loopTimer.reset();
         homeTimer.reset();
@@ -97,8 +98,8 @@ final class TurretAxis {
     }
 
     void setTargetAngleRadians(double targetAngleRadians) {
-        double halfRange = Math.toRadians(config.turretMechanicalRangeDeg) * 0.5;
-        double offset = Math.toRadians(config.turretCenterOffsetDeg);
+        double halfRange = Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg) * 0.5;
+        double offset = Math.toRadians(ShooterHardwareConstants.turretCenterOffsetDeg);
         this.targetAngleRadians = ShooterMath.clamp(targetAngleRadians, -halfRange + offset, halfRange + offset);
     }
 
@@ -135,8 +136,8 @@ final class TurretAxis {
         double centerTicks = 0.5 * (leftStopTicks + rightStopTicks);
         double sweepTicks = Math.max(1.0, rightStopTicks - leftStopTicks);
         double normalized = (motor.getCurrentPosition() - centerTicks) / sweepTicks;
-        return normalized * Math.toRadians(config.turretMechanicalRangeDeg)
-                + Math.toRadians(config.turretCenterOffsetDeg);
+        return normalized * Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg)
+                + Math.toRadians(ShooterHardwareConstants.turretCenterOffsetDeg);
     }
 
     double getTargetAngleRadians() {

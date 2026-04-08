@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 
 final class FlywheelVelocityController {
@@ -55,8 +56,8 @@ final class FlywheelVelocityController {
         right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        left.setDirection(config.leftFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
-        right.setDirection(config.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        left.setDirection(ShooterHardwareConstants.leftFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        right.setDirection(ShooterHardwareConstants.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         lastBatteryVoltage = voltageSensor.getVoltage();
         timer.reset();
     }
@@ -157,7 +158,7 @@ final class FlywheelVelocityController {
     }
 
     private DcMotorEx feedbackMotor() {
-        return config.flywheelFeedbackMotor == ShooterConstants.FlywheelFeedbackMotor.RIGHT
+        return ShooterHardwareConstants.flywheelFeedbackMotor == ShooterHardwareConstants.FlywheelFeedbackMotor.RIGHT
                 ? right
                 : left;
     }
@@ -165,7 +166,7 @@ final class FlywheelVelocityController {
     private double readMeasuredRpm() {
         // The flywheels are mechanically linked, so we only need one encoder feedback source.
         double rawMeasuredRpm = ticksPerSecondToRpm(feedbackMotor().getVelocity());
-        return config.flywheelFeedbackEncoderReversed ? -rawMeasuredRpm : rawMeasuredRpm;
+        return ShooterHardwareConstants.flywheelFeedbackEncoderReversed ? -rawMeasuredRpm : rawMeasuredRpm;
     }
 
     private void updateFilteredMeasuredRpm() {

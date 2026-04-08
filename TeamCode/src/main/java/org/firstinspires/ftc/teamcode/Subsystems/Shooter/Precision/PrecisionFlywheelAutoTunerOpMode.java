@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 
 import java.util.ArrayList;
@@ -16,6 +17,15 @@ import java.util.Locale;
 
 @TeleOp(name = "TUNE_FLYWHEEL_AUTO", group = "Tuning")
 public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
+    private static final double AUTO_TUNE_SWEEP_MIN_SECONDS = 1.5;
+    private static final double AUTO_TUNE_SWEEP_MAX_SECONDS = 4.5;
+    private static final double AUTO_TUNE_STEP_MIN_SECONDS = 1.0;
+    private static final double AUTO_TUNE_STEP_MAX_SECONDS = 6.0;
+    private static final double AUTO_TUNE_STOP_TIMEOUT_SECONDS = 3.0;
+    private static final double AUTO_TUNE_STABLE_WINDOW_SECONDS = 0.35;
+    private static final double AUTO_TUNE_STABLE_RPM_RATE = 120.0;
+    private static final double AUTO_TUNE_STOPPED_RPM = 90.0;
+    private static final double AUTO_TUNE_STEP_POWER = 0.62;
 
     private static final class KvSample {
         final double normalizedPower;
@@ -77,11 +87,11 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
 
     @Override
     public void init() {
-        left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
-        right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
+        left = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.leftFlywheelName);
+        right = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.rightFlywheelName);
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        left.setDirection(config.leftFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
-        right.setDirection(config.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        left.setDirection(ShooterHardwareConstants.leftFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
+        right.setDirection(ShooterHardwareConstants.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -138,8 +148,8 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
 
                 double power = sweepPowers[kvIndex];
                 setPower(power);
-                if (sampleWindowComplete(config.flywheelAutoTuneSweepMinSeconds,
-                        config.flywheelAutoTuneSweepMaxSeconds)) {
+                if (sampleWindowComplete(AUTO_TUNE_SWEEP_MIN_SECONDS,
+                        AUTO_TUNE_SWEEP_MAX_SECONDS)) {
                     kvSamples.add(new KvSample(
                             normalizePowerToNominalVoltage(power),
                             getStableRpmEstimate()
@@ -151,11 +161,11 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
                 break;
 
             case STEP_TEST:
-                double stepPower = config.flywheelAutoTuneStepPower;
+                double stepPower = AUTO_TUNE_STEP_POWER;
                 if (Double.isNaN(baselineRpm)) {
                     setPower(0.0);
-                    if (currentRpmBelow(config.flywheelAutoTuneStoppedRpm)
-                            || stateTimer.seconds() >= config.flywheelAutoTuneStopTimeoutSeconds) {
+                    if (currentRpmBelow(AUTO_TUNE_STOPPED_RPM)
+                            || stateTimer.seconds() >= AUTO_TUNE_STOP_TIMEOUT_SECONDS) {
                         baselineRpm = getRpm();
                         stepResponseSamples.clear();
                         stateTimer.reset();
@@ -164,13 +174,13 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
                 } else {
                     setPower(stepPower);
                     stepResponseSamples.add(new StepSample(stateTimer.seconds(), getRpm()));
-                    if (sampleWindowComplete(config.flywheelAutoTuneStepMinSeconds,
-                            config.flywheelAutoTuneStepMaxSeconds)) {
+                    if (sampleWindowComplete(AUTO_TUNE_STEP_MIN_SECONDS,
+                            AUTO_TUNE_STEP_MAX_SECONDS)) {
                         double normalizedStepPower = normalizePowerToNominalVoltage(stepPower);
                         double finalRpm = getStableRpmEstimate();
                         plantGain = (finalRpm - baselineRpm) / Math.max(1e-6, normalizedStepPower);
                         targetRpm63 = baselineRpm + 0.632 * (finalRpm - baselineRpm);
-                        timeConstant = computeTimeConstant(targetRpm63, config.flywheelAutoTuneStepMaxSeconds);
+                        timeConstant = computeTimeConstant(targetRpm63, AUTO_TUNE_STEP_MAX_SECONDS);
                         suggestedGains = synthesizeGains(ks, kv, plantGain, timeConstant);
                         state = State.DONE;
                         stateTimer.reset();
@@ -253,11 +263,11 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
     }
 
     private double getRpm() {
-        DcMotorEx feedbackMotor = config.flywheelFeedbackMotor == ShooterConstants.FlywheelFeedbackMotor.RIGHT
+        DcMotorEx feedbackMotor = ShooterHardwareConstants.flywheelFeedbackMotor == ShooterHardwareConstants.FlywheelFeedbackMotor.RIGHT
                 ? right
                 : left;
         double measuredRpm = FlywheelVelocityController.ticksPerSecondToRpm(feedbackMotor.getVelocity());
-        return config.flywheelFeedbackEncoderReversed ? -measuredRpm : measuredRpm;
+        return ShooterHardwareConstants.flywheelFeedbackEncoderReversed ? -measuredRpm : measuredRpm;
     }
 
     private void updateStabilityTracker() {
@@ -273,7 +283,7 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
 
         double dt = Math.max(1e-3, elapsed - lastLoopTime);
         lastMeasuredRate = (rpm - lastRpm) / dt;
-        if (Math.abs(lastMeasuredRate) <= config.flywheelAutoTuneStableRpmRate) {
+        if (Math.abs(lastMeasuredRate) <= AUTO_TUNE_STABLE_RPM_RATE) {
             stableTime += dt;
             stableRpmAccumulator += rpm;
             stableRpmSamples++;
@@ -299,7 +309,7 @@ public class PrecisionFlywheelAutoTunerOpMode extends OpMode {
     private boolean sampleWindowComplete(double minSeconds, double maxSeconds) {
         return stateTimer.seconds() >= maxSeconds
                 || (stateTimer.seconds() >= minSeconds
-                && stableTime >= config.flywheelAutoTuneStableWindowSeconds);
+                && stableTime >= AUTO_TUNE_STABLE_WINDOW_SECONDS);
     }
 
     private boolean currentRpmBelow(double rpm) {

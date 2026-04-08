@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Constants.LUTConstants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShootingZones;
 
@@ -113,6 +115,7 @@ public final class PrecisionShooterSubsystem {
     private boolean fireRequested;
     private boolean spinEnabled;
     private boolean autoAimEnabled = true;
+    private boolean readyRequiresOnlyFlywheel;
     private boolean customGoalEnabled;
     private boolean customAimGoalEnabled;
     private Pose lastPose;
@@ -121,6 +124,8 @@ public final class PrecisionShooterSubsystem {
     private double robotOmega;
     private double yawTrimRadians;
     private double rpmTrim;
+    private boolean manualHoodOverrideEnabled;
+    private double manualHoodOverrideDeg;
     private double customGoalX;
     private double customGoalY;
     private double customAimGoalX;
@@ -158,7 +163,7 @@ public final class PrecisionShooterSubsystem {
         this.feedServo = feedServo;
 
         if (feedServo != null) {
-            feedServo.setPosition(config.feedClosedPosition);
+            feedServo.setPosition(ShooterHardwareConstants.feedClosedPosition);
         }
         loopTimer.reset();
         feedTimer.reset();
@@ -168,19 +173,19 @@ public final class PrecisionShooterSubsystem {
     public static PrecisionShooterSubsystem create(HardwareMap hardwareMap,
                                                    Follower follower,
                                                    ShooterConstants config) {
-        DcMotorEx left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
-        DcMotorEx right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
-        Servo hoodServo = hardwareMap.get(Servo.class, config.hoodServoName);
+        DcMotorEx left = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.leftFlywheelName);
+        DcMotorEx right = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.rightFlywheelName);
+        Servo hoodServo = hardwareMap.get(Servo.class, ShooterHardwareConstants.hoodServoName);
         Servo feedServo = null;
         TurretAxis turret = null;
 
-        if (config.turretEnabled) {
-            DcMotorEx turretMotor = hardwareMap.get(DcMotorEx.class, config.turretMotorName);
+        if (ShooterHardwareConstants.turretEnabled) {
+            DcMotorEx turretMotor = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.turretMotorName);
             turret = new TurretAxis(turretMotor, config);
         }
 
         try {
-            feedServo = hardwareMap.get(Servo.class, config.feedServoName);
+            feedServo = hardwareMap.get(Servo.class, ShooterHardwareConstants.feedServoName);
         } catch (Exception ignored) {
         }
         VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
@@ -204,6 +209,10 @@ public final class PrecisionShooterSubsystem {
 
     public void setAutoAimEnabled(boolean autoAimEnabled) {
         this.autoAimEnabled = autoAimEnabled;
+    }
+
+    public void setReadyRequiresOnlyFlywheel(boolean readyRequiresOnlyFlywheel) {
+        this.readyRequiresOnlyFlywheel = readyRequiresOnlyFlywheel;
     }
 
     public void requestFire(boolean fireRequested) {
@@ -246,6 +255,15 @@ public final class PrecisionShooterSubsystem {
         return rpmTrim;
     }
 
+    public void setManualHoodAngleOverrideDegrees(double hoodAngleDeg) {
+        manualHoodOverrideEnabled = true;
+        manualHoodOverrideDeg = hoodAngleDeg;
+    }
+
+    public void clearManualHoodAngleOverride() {
+        manualHoodOverrideEnabled = false;
+    }
+
     public void start() {
         follower.startTeleopDrive();
         notifyPoseJump();
@@ -278,7 +296,7 @@ public final class PrecisionShooterSubsystem {
         }
 
         if (turret != null && !turret.isHomed()) {
-            hood.setAngleDegrees(config.hoodMaxAngleDeg);
+            hood.setAngleDegrees(ShooterHardwareConstants.hoodMaxAngleDeg);
             hood.update();
             flywheel.stop();
             closeFeed();
@@ -305,7 +323,7 @@ public final class PrecisionShooterSubsystem {
         TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
         lastTableDistanceInches = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());
         lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
-        lastNominal = ShooterConstants.currentTable().sample(lastTableDistanceInches);
+        lastNominal = LUTConstants.currentTable().sample(lastTableDistanceInches);
 
         double targetRpm = spinEnabled ? Math.max(0.0, lastNominal.targetRpm + rpmTrim) : 0.0;
         flywheel.setTargetRpm(targetRpm);
@@ -333,7 +351,7 @@ public final class PrecisionShooterSubsystem {
         updateFilteredAimTarget(aimSolution.valid || lastSolution.valid, desiredAimWorldYawRadians);
 
         if (autoAimEnabled) {
-            hood.setAngleDegrees(lastNominal.hoodAngleDeg);
+            hood.setAngleDegrees(manualHoodOverrideEnabled ? manualHoodOverrideDeg : lastNominal.hoodAngleDeg);
             if (turret != null && lastSolution.valid) {
                 turret.setTargetAngleRadians(
                         ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - releasePose.getHeading())
@@ -552,8 +570,8 @@ public final class PrecisionShooterSubsystem {
                 releaseTurret.vx,
                 releaseTurret.vy,
                 actualSpeed,
-                Math.toRadians(config.hoodMinAngleDeg),
-                Math.toRadians(config.hoodMaxAngleDeg),
+                Math.toRadians(ShooterHardwareConstants.hoodMinAngleDeg),
+                Math.toRadians(ShooterHardwareConstants.hoodMaxAngleDeg),
                 ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
         );
     }
@@ -594,6 +612,12 @@ public final class PrecisionShooterSubsystem {
     }
 
     private boolean isReadyToShoot() {
+        if (readyRequiresOnlyFlywheel) {
+            return flywheel.atSpeed(
+                    config.flywheelReadyToleranceRpm,
+                    config.flywheelReadyToleranceFraction
+            );
+        }
         return (turret == null || turret.isHomed())
                 && lastInShootingZone
                 && lastSolution.valid
@@ -630,10 +654,10 @@ public final class PrecisionShooterSubsystem {
         double cos = Math.cos(heading);
         double sin = Math.sin(heading);
 
-        double offsetWorldX = config.turretOffsetForwardInches * cos
-                - config.turretOffsetLeftInches * sin;
-        double offsetWorldY = config.turretOffsetForwardInches * sin
-                + config.turretOffsetLeftInches * cos;
+        double offsetWorldX = ShooterHardwareConstants.turretOffsetForwardInches * cos
+                - ShooterHardwareConstants.turretOffsetLeftInches * sin;
+        double offsetWorldY = ShooterHardwareConstants.turretOffsetForwardInches * sin
+                + ShooterHardwareConstants.turretOffsetLeftInches * cos;
 
         // Rigid-body velocity of the turret pivot = chassis translation + rotation-induced point velocity.
         double turretVx = robotVx - robotOmega * offsetWorldY;
@@ -680,14 +704,14 @@ public final class PrecisionShooterSubsystem {
         if (feedServo == null) {
             return;
         }
-        feedServo.setPosition(config.feedOpenPosition);
+        feedServo.setPosition(ShooterHardwareConstants.feedOpenPosition);
         feedTimer.reset();
         feedGateOpen = true;
     }
 
     private void closeFeed() {
         if (feedServo != null) {
-            feedServo.setPosition(config.feedClosedPosition);
+            feedServo.setPosition(ShooterHardwareConstants.feedClosedPosition);
         }
         feedGateOpen = false;
     }

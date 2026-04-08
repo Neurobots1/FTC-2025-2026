@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.teamcode.Constants.LUTConstants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
@@ -57,9 +59,9 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
         follower.setPose(TeleopConstants.DRIVER_START_POSE);
         follower.update();
 
-        DcMotorEx left = hardwareMap.get(DcMotorEx.class, config.leftFlywheelName);
-        DcMotorEx right = hardwareMap.get(DcMotorEx.class, config.rightFlywheelName);
-        Servo hoodServo = hardwareMap.get(Servo.class, config.hoodServoName);
+        DcMotorEx left = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.leftFlywheelName);
+        DcMotorEx right = hardwareMap.get(DcMotorEx.class, ShooterHardwareConstants.rightFlywheelName);
+        Servo hoodServo = hardwareMap.get(Servo.class, ShooterHardwareConstants.hoodServoName);
         VoltageSensor voltageSensor = hardwareMap.voltageSensor.iterator().next();
         Indexer_Base indexerBase = new Indexer_Base(hardwareMap);
         indexerBase.StartIndexPose();
@@ -110,7 +112,11 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
         }
 
         manualRpm = ShooterMath.clamp(manualRpm, 0.0, 5000.0);
-        manualHoodDeg = ShooterMath.clamp(manualHoodDeg, config.hoodMinAngleDeg, config.hoodMaxAngleDeg);
+        manualHoodDeg = ShooterMath.clamp(
+                manualHoodDeg,
+                ShooterHardwareConstants.hoodMinAngleDeg,
+                ShooterHardwareConstants.hoodMaxAngleDeg
+        );
 
         if (gamepad1.right_stick_button && !prevRightStickButton) {
             spinEnabled = !spinEnabled;
@@ -195,7 +201,7 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
 
     private String toPanelsAssignments(ArrayList<PrecisionShotTable.Entry> sorted) {
         StringBuilder builder = new StringBuilder();
-        builder.append("PrecisionShooterConfig Panels rows:\n");
+        builder.append("LUTConstants Panels rows:\n");
         for (int i = 0; i < EXPORTED_SHOT_ROWS; i++) {
             PrecisionShotTable.Entry entry = i < sorted.size()
                     ? sorted.get(i)
