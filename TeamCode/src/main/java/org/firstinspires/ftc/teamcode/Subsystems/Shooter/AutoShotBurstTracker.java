@@ -17,6 +17,7 @@ public final class AutoShotBurstTracker {
 
     private boolean active;
     private boolean filteredRpmInitialized;
+    private boolean burstWindowStarted;
     private int expectedShots;
     private int detectedShots;
     private double filteredRpm;
@@ -31,6 +32,7 @@ public final class AutoShotBurstTracker {
         this.expectedShots = Math.max(1, expectedShots);
         detectedShots = 0;
         filteredRpmInitialized = false;
+        burstWindowStarted = false;
         filteredRpm = 0.0;
         previousFilteredRpm = 0.0;
         deepestDropRpm = 0.0;
@@ -46,6 +48,7 @@ public final class AutoShotBurstTracker {
         expectedShots = 0;
         detectedShots = 0;
         filteredRpmInitialized = false;
+        burstWindowStarted = false;
         filteredRpm = 0.0;
         previousFilteredRpm = 0.0;
         deepestDropRpm = 0.0;
@@ -73,6 +76,11 @@ public final class AutoShotBurstTracker {
         previousFilteredRpm = filteredRpm;
         filteredRpm += (shooterSnapshot.actualRpm - filteredRpm)
                 * ShooterConstants.autoShotDetectFilterGain;
+
+        if (detectionEnabled && !burstWindowStarted) {
+            burstWindowStarted = true;
+            burstTimer.reset();
+        }
 
         double rpmDrop = Math.max(0.0, shooterSnapshot.targetRpm - filteredRpm);
         double rpmSlope = (filteredRpm - previousFilteredRpm) / dt;
@@ -127,7 +135,8 @@ public final class AutoShotBurstTracker {
 
     public boolean isComplete() {
         return active && (detectedShots >= expectedShots
-                || burstTimer.seconds() >= ShooterConstants.autoShotBurstTimeoutSeconds);
+                || (burstWindowStarted
+                && burstTimer.seconds() >= ShooterConstants.autoShotBurstTimeoutSeconds));
     }
 
     public int getDetectedShots() {
