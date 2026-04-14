@@ -60,11 +60,11 @@ public final class AutoPoseConstants {
     }
 
     public static Pose gatePose() {
-        return new Pose(11, 53, Math.toRadians(147));
+        return new Pose(11, 52, Math.toRadians(144));
     }
 
     public static Pose gateControlPose() {
-        return new Pose(27, 50);
+        return new Pose(27, 55);
     }
 
     public static Pose finalShotPose() {

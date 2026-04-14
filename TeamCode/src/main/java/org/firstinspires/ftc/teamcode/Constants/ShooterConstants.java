@@ -50,7 +50,7 @@ public class ShooterConstants {
     public static double autoShotDetectRecoveryRiseRpm = 6.0;
     public static double autoShotDetectRecoveryRiseFraction = 0.0022;
     public static double autoShotDetectFilterGain = 0.35;
-    public static double autoShotBurstTimeoutSeconds = 10.0;
+    public static double autoShotBurstTimeoutSeconds = 4;
     public static int autoShotBurstExpectedCount = 3;
 
 
