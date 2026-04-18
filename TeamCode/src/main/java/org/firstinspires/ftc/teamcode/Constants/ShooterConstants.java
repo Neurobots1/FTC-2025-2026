@@ -19,8 +19,10 @@ public class ShooterConstants {
     public static double flywheelIntegralLimit = 5000.0;
 
     // ===== Flywheel Ready =====
-    public static double flywheelReadyToleranceRpm = 70.0;
-    public static double flywheelReadyToleranceFraction = 0.025;
+    public static double flywheelReadyToleranceRpm = 90.0;
+    public static double flywheelReadyToleranceFraction = 0.030;
+    public static double flywheelSustainToleranceRpm = 150.0;
+    public static double flywheelSustainToleranceFraction = 0.050;
 
     // ===== Far Zone Feed =====
     public static double farZoneFeedPauseDistanceInches = 130.0;
@@ -50,10 +52,13 @@ public class ShooterConstants {
     public static double turretPositionKd = 1.5;
     public static double turretKf = 0.08;
     public static double turretControlToleranceDeg = 0.5;
-    public static double turretShotReadyToleranceDeg = 2.5;
+    public static double turretShotReadyToleranceDeg = 4.0;
+    public static double turretShotSustainToleranceDeg = 6.0;
     public static double turretLimitBufferDeg = 3.0;
     public static double turretLimitSlowZoneDeg = 18.0;
     public static double turretLimitMinScale = 0.18;
+    public static double turretDeadZoneNudgeTurnCommand = 0.5;
+    public static double turretDeadZoneNudgeDriverOverrideThreshold = 0.08;
 
     // ===== Chassis Aim PIDF =====
     public static double chassisAimKp = 0.6;
@@ -62,8 +67,11 @@ public class ShooterConstants {
     public static double chassisAimKf = 0.05;
 
     // ===== Shot Ready =====
-    public static double shotReadyHeadingToleranceDeg = 6.5;
-    public static double shotReadyMaxOmegaDegPerSecond = 22.0;
+    public static double shotReadyHeadingToleranceDeg = 8.0;
+    public static double shotReadyMaxOmegaDegPerSecond = 30.0;
+    public static double shotSustainHeadingToleranceDeg = 11.0;
+    public static double shotSustainMaxOmegaDegPerSecond = 40.0;
+    public static double feedReadyDropoutGraceSeconds = 0.18;
 
     // ===== Driver Trim =====
     public static double aimTrimStepDeg = 0.35;
@@ -74,12 +82,11 @@ public class ShooterConstants {
     public static double feedOpenSettlingSeconds = 0.30;
 
     // ===== SOTM =====
-    public static boolean shootOnMoveEnabled = false;
-    public static double shotReleaseLatencySeconds = 0.11;
-    public static double sotmScoreAngleDeg = -15.0;
+    public static boolean shootOnMoveEnabled = true;
+    public static double sotmScoreAngleDeg = -8.0;
     public static double sotmPassThroughRadiusInches = 5.0;
-    public static double sotmLaunchSpeedToRpmSlope = 13.2526;
-    public static double sotmLaunchSpeedToRpmIntercept = 198.55;
+    public static double sotmLaunchSpeedToRpmSlope = 13.55;
+    public static double sotmLaunchSpeedToRpmIntercept = 250.0;
 
     // ===== Ballistics =====
     public static double shooterHeightInches = 12.0;

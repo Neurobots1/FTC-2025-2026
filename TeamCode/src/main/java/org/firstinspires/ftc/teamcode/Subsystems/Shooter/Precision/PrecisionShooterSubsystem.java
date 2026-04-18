@@ -123,6 +123,7 @@ public final class PrecisionShooterSubsystem {
     private final ElapsedTime loopTimer = new ElapsedTime();
     private final ElapsedTime feedTimer = new ElapsedTime();
     private final ElapsedTime chassisAimTimer = new ElapsedTime();
+    private final ElapsedTime readyDropoutTimer = new ElapsedTime();
 
     private Alliance alliance = Alliance.BLUE;
     private boolean fireRequested;
@@ -183,6 +184,7 @@ public final class PrecisionShooterSubsystem {
         loopTimer.reset();
         feedTimer.reset();
         chassisAimTimer.reset();
+        readyDropoutTimer.reset();
     }
 
     public static PrecisionShooterSubsystem create(HardwareMap hardwareMap,
@@ -305,6 +307,7 @@ public final class PrecisionShooterSubsystem {
         resetChassisAimController();
         loopTimer.reset();
         chassisAimTimer.reset();
+        readyDropoutTimer.reset();
     }
 
     public void primeHeadingLock() {
@@ -452,11 +455,22 @@ public final class PrecisionShooterSubsystem {
             turret.updateTracking();
         }
 
-        boolean ready = isReadyToShoot();
-        if (!fireRequested || !ready) {
+        boolean readyToOpenFeed = isReadyToShoot();
+        boolean readyToContinueFeeding = isReadyToContinueFeeding();
+
+        if (readyToContinueFeeding) {
+            readyDropoutTimer.reset();
+        }
+
+        if (!fireRequested) {
             closeFeed();
         } else if (!feedGateOpen) {
-            openFeed();
+            if (readyToOpenFeed) {
+                openFeed();
+            }
+        } else if (!readyToContinueFeeding
+                && readyDropoutTimer.seconds() >= config.feedReadyDropoutGraceSeconds) {
+            closeFeed();
         }
     }
 
@@ -651,6 +665,26 @@ public final class PrecisionShooterSubsystem {
         return turret == null ? 1.0 : turret.getLastSoftLimitScale();
     }
 
+    public boolean shouldNudgeChassisForTurretDeadZone() {
+        return turret != null
+                && turret.isHomed()
+                && autoAimEnabled
+                && fireRequested
+                && !feedGateOpen
+                && lastInShootingZone
+                && lastSolution.valid
+                && turret.isRequestedAngleInForwardDeadZone();
+    }
+
+    public double getTurretDeadZoneNudgeTurnCommand() {
+        if (!shouldNudgeChassisForTurretDeadZone()) {
+            return 0.0;
+        }
+
+        return turret.getDeadZoneEscapeChassisTurnDirection()
+                * config.turretDeadZoneNudgeTurnCommand;
+    }
+
     public double getTurretCurrentAmps() {
         return turret == null ? 0.0 : turret.getMotorCurrentAmps();
     }
@@ -702,32 +736,49 @@ public final class PrecisionShooterSubsystem {
     }
 
     private boolean isReadyToShoot() {
+        return isReadyToShoot(false);
+    }
+
+    private boolean isReadyToContinueFeeding() {
+        return isReadyToShoot(true);
+    }
+
+    private boolean isReadyToShoot(boolean sustainShot) {
         if (!spinEnabled) {
             return false;
         }
+        double flywheelToleranceRpm = sustainShot
+                ? config.flywheelSustainToleranceRpm
+                : config.flywheelReadyToleranceRpm;
+        double flywheelToleranceFraction = sustainShot
+                ? config.flywheelSustainToleranceFraction
+                : config.flywheelReadyToleranceFraction;
         if (readyRequiresOnlyFlywheel) {
-            return flywheel.atSpeed(
-                    config.flywheelReadyToleranceRpm,
-                    config.flywheelReadyToleranceFraction
-            );
+            return flywheel.atSpeed(flywheelToleranceRpm, flywheelToleranceFraction);
         }
         return (turret == null || turret.isHomed())
                 && lastInShootingZone
                 && lastSolution.valid
-                && flywheel.atSpeed(
-                        config.flywheelReadyToleranceRpm,
-                        config.flywheelReadyToleranceFraction
-                )
+                && flywheel.atSpeed(flywheelToleranceRpm, flywheelToleranceFraction)
                 && hood.isSettled()
-                && isAimAligned();
+                && isAimAligned(sustainShot);
     }
 
-    private boolean isAimAligned() {
+    private boolean isAimAligned(boolean sustainShot) {
         if (turret != null) {
-            return turret.atTarget();
+            double toleranceDeg = sustainShot
+                    ? config.turretShotSustainToleranceDeg
+                    : config.turretShotReadyToleranceDeg;
+            return turret.atTarget(Math.toRadians(toleranceDeg));
         }
-        return Math.abs(getAdjustedChassisHeadingErrorRadians()) <= Math.toRadians(config.shotReadyHeadingToleranceDeg)
-                && Math.abs(robotOmega) <= Math.toRadians(config.shotReadyMaxOmegaDegPerSecond);
+        double headingToleranceDeg = sustainShot
+                ? config.shotSustainHeadingToleranceDeg
+                : config.shotReadyHeadingToleranceDeg;
+        double maxOmegaDegPerSecond = sustainShot
+                ? config.shotSustainMaxOmegaDegPerSecond
+                : config.shotReadyMaxOmegaDegPerSecond;
+        return Math.abs(getAdjustedChassisHeadingErrorRadians()) <= Math.toRadians(headingToleranceDeg)
+                && Math.abs(robotOmega) <= Math.toRadians(maxOmegaDegPerSecond);
     }
 
     public boolean isInShootingZone() {
@@ -879,6 +930,7 @@ public final class PrecisionShooterSubsystem {
         }
         feedServo.setPosition(ShooterHardwareConstants.feedOpenPosition);
         feedTimer.reset();
+        readyDropoutTimer.reset();
         feedGateOpen = true;
     }
 
@@ -886,6 +938,7 @@ public final class PrecisionShooterSubsystem {
         if (feedServo != null) {
             feedServo.setPosition(ShooterHardwareConstants.feedClosedPosition);
         }
+        readyDropoutTimer.reset();
         feedGateOpen = false;
     }
 

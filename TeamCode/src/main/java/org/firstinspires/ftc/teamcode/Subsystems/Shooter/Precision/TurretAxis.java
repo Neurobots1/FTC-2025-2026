@@ -28,6 +28,7 @@ final class TurretAxis {
     private int rightStopTicks;
     private double lastPositionTicks;
     private double lastVelocityTicksPerSecond;
+    private double lastRequestedAngleRadians;
     private double targetAngleRadians;
     private double lastAngleError;
     private double lastCommandPower;
@@ -103,6 +104,7 @@ final class TurretAxis {
     }
 
     void setTargetAngleRadians(double targetAngleRadians) {
+        lastRequestedAngleRadians = ShooterMath.normalizeRadians(targetAngleRadians);
         double requestedSweepRadians = commandAngleToSweepRadians(targetAngleRadians);
         this.targetAngleRadians = ShooterMath.clamp(
                 requestedSweepRadians,
@@ -137,8 +139,11 @@ final class TurretAxis {
     }
 
     boolean atTarget() {
-        return homed && Math.abs(targetAngleRadians - getCurrentSweepRadians())
-                <= Math.toRadians(config.turretShotReadyToleranceDeg);
+        return atTarget(Math.toRadians(config.turretShotReadyToleranceDeg));
+    }
+
+    boolean atTarget(double toleranceRadians) {
+        return homed && Math.abs(targetAngleRadians - getCurrentSweepRadians()) <= toleranceRadians;
     }
 
     double getCurrentAngleRadians() {
@@ -235,6 +240,47 @@ final class TurretAxis {
 
     double getMaximumCommandedAngleRadians() {
         return getMaximumCommandedSweepRadians();
+    }
+
+    boolean isRequestedAngleInForwardDeadZone() {
+        double halfForbiddenRadians = getHalfForbiddenRadians();
+        if (!homed || halfForbiddenRadians <= 1e-6) {
+            return false;
+        }
+
+        double localRequested = ShooterMath.normalizeRadians(
+                lastRequestedAngleRadians - getForwardDeadZoneCenterRadians()
+        );
+        return Math.abs(localRequested) < halfForbiddenRadians;
+    }
+
+    double getDeadZoneEscapeChassisTurnDirection() {
+        if (!isRequestedAngleInForwardDeadZone()) {
+            return 0.0;
+        }
+
+        double localRequested = ShooterMath.normalizeRadians(
+                lastRequestedAngleRadians - getForwardDeadZoneCenterRadians()
+        );
+        if (Math.abs(localRequested) > 1e-6) {
+            return -Math.signum(localRequested);
+        }
+
+        double localCurrent = ShooterMath.normalizeRadians(
+                getCurrentAngleRadians() - getForwardDeadZoneCenterRadians()
+        );
+        if (Math.abs(localCurrent) > 1e-6) {
+            return -Math.signum(localCurrent);
+        }
+
+        double localTarget = ShooterMath.normalizeRadians(
+                getTargetAngleRadians() - getForwardDeadZoneCenterRadians()
+        );
+        if (Math.abs(localTarget) > 1e-6) {
+            return -Math.signum(localTarget);
+        }
+
+        return 1.0;
     }
 
     private double applySoftLimits(double power, double currentSweepRadians) {

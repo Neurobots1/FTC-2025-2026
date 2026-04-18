@@ -32,7 +32,6 @@ import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ChassisHeadingLockController;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShotFeedCadenceController;
-import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShootingZones;
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 
@@ -143,6 +142,13 @@ public final class CompetitionTeleopRobot {
         double driveForward = -driverGamepad.left_stick_y;
         double driveStrafe = -driverGamepad.left_stick_x;
         double driverTurnCommand = -driverGamepad.right_stick_x;
+        double turnCommand = driverTurnCommand;
+        if (Math.abs(driverTurnCommand) < ShooterConstants.turretDeadZoneNudgeDriverOverrideThreshold) {
+            double turretDeadZoneNudge = shooter.getTurretDeadZoneNudgeTurnCommand();
+            if (turretDeadZoneNudge != 0.0) {
+                turnCommand = turretDeadZoneNudge;
+            }
+        }
         double fieldCentricOffset = AllianceSelector.Field.fieldCentricOffset(
                 alliance == Alliance.BLUE
                         ? AllianceSelector.Alliance.BLUE
@@ -153,15 +159,13 @@ public final class CompetitionTeleopRobot {
             follower.setTeleOpDrive(
                     driveForward,
                     driveStrafe,
-                    driverTurnCommand,
+                    turnCommand,
                     false,
                     fieldCentricOffset
             );
             follower.update();
-            stopShootingIfOutOfZone();
         }
 
-        stopShootingIfOutOfZone();
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         shooter.setYawTrimDegrees(yawTrimDegrees);
@@ -171,11 +175,7 @@ public final class CompetitionTeleopRobot {
         shooter.requestFire(shotFeedController.isArmed());
         shooter.update();
         PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
-        if (shotFeedController.isArmed() && !shooterSnapshot.inShootingZone) {
-            stopShootingSequence();
-        }
 
-        double turnCommand = driverTurnCommand;
         boolean chassisHeadingLockActive = false;
         if (TeleopConstants.ENABLE_HEADING_LOCK
                 && shotFeedController.isArmed()
@@ -195,7 +195,6 @@ public final class CompetitionTeleopRobot {
                     fieldCentricOffset
             );
             follower.update();
-            stopShootingIfOutOfZone();
         }
 
         shotFeedController.update(shooter.isFeedGateOpen(), shooterSnapshot);
@@ -277,17 +276,6 @@ public final class CompetitionTeleopRobot {
         shooter.requestFire(false);
         intake.stop();
         headingLockController.reset();
-    }
-
-    private void stopShootingIfOutOfZone() {
-        if (shotFeedController.isArmed() && !isRobotInShootingZone()) {
-            stopShootingSequence();
-        }
-    }
-
-    private boolean isRobotInShootingZone() {
-        Pose pose = follower.getPose();
-        return pose != null && ShootingZones.isInShootingZone(pose.getX(), pose.getY());
     }
 
     private void updateTrimAdjustments(Gamepad gamepad) {
