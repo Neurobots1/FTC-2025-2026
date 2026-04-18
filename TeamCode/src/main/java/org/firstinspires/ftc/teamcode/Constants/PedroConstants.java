@@ -9,6 +9,7 @@ import com.pedropathing.ftc.drivetrains.MecanumConstants;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -63,12 +64,19 @@ public class PedroConstants {
     public static PathConstraints pathConstraints = new PathConstraints(0.95, 50, 4, 1);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
+        enableAutoBulkCaching(hardwareMap);
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .pinpointLocalizer(localizerConstants)
                 .pathConstraints(pathConstraints)
                 .mecanumDrivetrain(driveConstants)
                 .build();
 
+    }
+
+    private static void enableAutoBulkCaching(HardwareMap hardwareMap) {
+        for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
+            module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
     }
 
 

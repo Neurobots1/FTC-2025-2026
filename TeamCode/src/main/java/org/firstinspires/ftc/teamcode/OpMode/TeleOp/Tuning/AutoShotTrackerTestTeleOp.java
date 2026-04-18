@@ -80,6 +80,14 @@ public class AutoShotTrackerTestTeleOp extends OpMode {
         handleButtons();
         updateRpmTrim();
 
+        follower.setTeleOpDrive(
+                -gamepad1.left_stick_y,
+                -gamepad1.left_stick_x,
+                -gamepad1.right_stick_x,
+                true
+        );
+        follower.update();
+
         shooter.setAlliance(PrecisionShooterSubsystem.Alliance.BLUE);
         shooter.setGoalPosition(goalX, goalY);
         shooter.setAimPosition(aimGoalX, aimGoalY);
@@ -95,14 +103,6 @@ public class AutoShotTrackerTestTeleOp extends OpMode {
         if (colorSensorLogger != null) {
             colorSensorLogger.logSample(snapshot, shotFeedController, shooter.isFeedGateOpen());
         }
-
-        follower.setTeleOpDrive(
-                -gamepad1.left_stick_y,
-                -gamepad1.left_stick_x,
-                -gamepad1.right_stick_x,
-                true
-        );
-        follower.update();
 
         updateIntake();
 

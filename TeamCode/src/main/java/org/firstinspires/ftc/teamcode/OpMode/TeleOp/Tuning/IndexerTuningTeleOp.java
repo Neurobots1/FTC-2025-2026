@@ -59,7 +59,6 @@ public class IndexerTuningTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        follower.update();
         follower.setTeleOpDrive(
                 -gamepad1.left_stick_y,
                 -gamepad1.left_stick_x,
@@ -67,6 +66,7 @@ public class IndexerTuningTeleOp extends OpMode {
                 false,
                 AllianceSelector.Field.fieldCentricOffset(alliance)
         );
+        follower.update();
 
         Pose pose = follower.getPose();
         double goalX = AllianceSelector.Field.goalX(alliance);

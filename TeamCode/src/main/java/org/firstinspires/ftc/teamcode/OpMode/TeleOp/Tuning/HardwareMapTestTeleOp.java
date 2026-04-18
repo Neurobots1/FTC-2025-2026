@@ -3,10 +3,12 @@ package org.firstinspires.ftc.teamcode.OpMode.TeleOp.Tuning;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 
 @TeleOp(name = "TEST_HARDWARE_MAP", group = "Tuning")
@@ -188,7 +190,7 @@ public class HardwareMapTestTeleOp extends OpMode {
     }
 
     private static final class MotorTest extends DeviceTest {
-        private DcMotor motor;
+        private DcMotorEx motor;
 
         MotorTest(String label, String mapName) {
             super(label, mapName, "Motor");
@@ -197,7 +199,7 @@ public class HardwareMapTestTeleOp extends OpMode {
         @Override
         void init(HardwareMap hardwareMap) {
             try {
-                motor = hardwareMap.get(DcMotor.class, mapName);
+                motor = hardwareMap.get(DcMotorEx.class, mapName);
                 motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 motor.setPower(0.0);
@@ -220,12 +222,29 @@ public class HardwareMapTestTeleOp extends OpMode {
                 return "Device not found in Robot Config";
             }
 
-            return String.format("power=%.2f encoder=%d", motor.getPower(), motor.getCurrentPosition());
+            return String.format(
+                    "power=%.2f encoder=%d current=%.2fA",
+                    motor.getPower(),
+                    motor.getCurrentPosition(),
+                    getCurrentAmps()
+            );
         }
 
         @Override
         void safeStop() {
             setPower(0.0);
+        }
+
+        private double getCurrentAmps() {
+            if (motor == null) {
+                return 0.0;
+            }
+
+            try {
+                return motor.getCurrent(CurrentUnit.AMPS);
+            } catch (Exception ignored) {
+                return 0.0;
+            }
         }
     }
 
