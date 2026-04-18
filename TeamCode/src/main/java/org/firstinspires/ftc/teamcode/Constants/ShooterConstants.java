@@ -40,33 +40,31 @@ public class ShooterConstants {
     public static double farZoneFeedResumeDropRpm = 130.0;
     public static double farZoneFeedResumeDropFraction = 0.031;
 
-    // ===== Auto Shot Detection =====
-    public static double autoShotDetectDropRpm = 15.0;
-    public static double autoShotDetectDropFraction = 0.0065;
-    public static double autoShotDetectResetDropRpm = 8.0;
-    public static double autoShotDetectResetDropFraction = 0.003;
-    public static double autoShotDetectFallSlopeRpmPerSecond = 180.0;
-    public static double autoShotDetectRecoverySlopeRpmPerSecond = 100.0;
-    public static double autoShotDetectRecoveryRiseRpm = 6.0;
-    public static double autoShotDetectRecoveryRiseFraction = 0.0022;
-    public static double autoShotDetectFilterGain = 0.35;
-    public static double autoShotBurstTimeoutSeconds = 10.0;
-    public static int autoShotBurstExpectedCount = 3;
+    // ===== Auto Feed Timing =====
+    public static double autoShotFeedDurationSeconds = 1.5;
+    public static double sortedShotFinishDelaySeconds = 0.30;
+
+    // ===== Feed Intake =====
+    public static double preFeedIntakePower = 0.6;
+    public static double mainFeedIntakePower = 1;
 
 
 
     // ===== Turret =====
-    public static double turretHomePower = 0.15;
+    public static double turretHomePower = 0.60;
     public static double turretBackoffPower = 0.20;
     public static double turretBackoffTicks = 80.0;
-    public static double turretHomeCurrentAmps = 4.2;
+    public static double turretHomeCurrentAmps = 4.0;
     public static double turretHomeVelocityTicksPerSecond = 12.0;
     public static double turretHomeHoldSeconds = 0.18;
-    public static double turretPositionKp = 2.3;
-    public static double turretPositionKd = 0.04;
-    public static double turretStatic = 0.05;
-    public static double turretAngleToleranceDeg = 0.8;
-    public static double turretMaxCommand = 0.65;
+    public static double turretPositionKp = 0.7;
+    public static double turretPositionKd = 1.5;
+    public static double turretKf = 0.08;
+    public static double turretControlToleranceDeg = 0.5;
+    public static double turretShotReadyToleranceDeg = 2.5;
+    public static double turretLimitBufferDeg = 3.0;
+    public static double turretLimitSlowZoneDeg = 18.0;
+    public static double turretLimitMinScale = 0.18;
 
     // ===== Chassis Aim PIDF =====
     public static double chassisAimKp = 0.6;
@@ -85,6 +83,7 @@ public class ShooterConstants {
 
     // ===== Timing =====
     public static double feedOpenSettlingSeconds = 0.30;
+    public static boolean shootOnMoveEnabled = false;
     public static double shotReleaseLatencySeconds = 0.11;
 
     // ===== Ballistics =====

@@ -96,6 +96,26 @@ public class AutoRobotFacade {
         }
     }
 
+    public void updateInitSystems() {
+        if (shooter == null) {
+            return;
+        }
+
+        shooter.setGoalPosition(goalSupplier.goalX(), goalSupplier.goalY());
+        shooter.setAimPosition(goalSupplier.aimGoalX(), goalSupplier.aimGoalY());
+        shooter.update();
+    }
+
+    public boolean isShooterTurretHomed() {
+        return shooter == null || shooter.isTurretHomed();
+    }
+
+    public void saveTurretHome(android.content.Context context) {
+        if (shooter != null) {
+            shooter.saveTurretHome(context);
+        }
+    }
+
     private boolean shouldApplyHeadingLock() {
         if (!shooter.shouldUseChassisHeadingLock()) {
             return false;

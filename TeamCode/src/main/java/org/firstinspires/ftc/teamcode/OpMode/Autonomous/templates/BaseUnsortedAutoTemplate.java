@@ -37,6 +37,7 @@ public abstract class BaseUnsortedAutoTemplate extends BaseAllianceAuto {
         shooter.setGoalPosition(goalX, goalY);
         shooter.setAimPosition(aimGoalX, aimGoalY);
         shooter.setAutoAimEnabled(true);
+        shooter.setReadyRequiresOnlyFlywheel(true);
 
         shooterController = new AutoShooterController(shooter, intake);
         shooterController.setFeedMode(AutoShooterController.FeedMode.AUTO);

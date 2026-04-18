@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.Constants.LUTConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
+import org.firstinspires.ftc.teamcode.Subsystems.TurretHomeHandoff;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShootingZones;
 
 public final class PrecisionShooterSubsystem {
@@ -126,6 +127,8 @@ public final class PrecisionShooterSubsystem {
     private double rpmTrim;
     private boolean manualHoodOverrideEnabled;
     private double manualHoodOverrideDeg;
+    private boolean manualTurretOverrideEnabled;
+    private double manualTurretOverrideRadians;
     private double customGoalX;
     private double customGoalY;
     private double customAimGoalX;
@@ -264,6 +267,15 @@ public final class PrecisionShooterSubsystem {
         manualHoodOverrideEnabled = false;
     }
 
+    public void setManualTurretAngleOverrideDegrees(double turretAngleDeg) {
+        manualTurretOverrideEnabled = true;
+        manualTurretOverrideRadians = Math.toRadians(turretAngleDeg);
+    }
+
+    public void clearManualTurretAngleOverride() {
+        manualTurretOverrideEnabled = false;
+    }
+
     public void start() {
         follower.startTeleopDrive();
         notifyPoseJump();
@@ -319,8 +331,12 @@ public final class PrecisionShooterSubsystem {
         lastAimGoalX = aimGoalX;
         lastAimGoalY = aimGoalY;
 
-        Pose releasePose = predictReleasePose(pose, config.shotReleaseLatencySeconds);
-        TurretKinematics releaseTurret = computeTurretKinematics(releasePose);
+        Pose releasePose = config.shootOnMoveEnabled
+                ? predictReleasePose(pose, config.shotReleaseLatencySeconds)
+                : pose;
+        TurretKinematics releaseTurret = config.shootOnMoveEnabled
+                ? computeTurretKinematics(releasePose, robotVx, robotVy, robotOmega)
+                : computeTurretKinematics(releasePose, 0.0, 0.0, 0.0);
         lastTableDistanceInches = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());
         lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
         lastNominal = LUTConstants.currentTable().sample(lastTableDistanceInches);
@@ -352,7 +368,11 @@ public final class PrecisionShooterSubsystem {
 
         if (autoAimEnabled) {
             hood.setAngleDegrees(manualHoodOverrideEnabled ? manualHoodOverrideDeg : lastNominal.hoodAngleDeg);
-            if (turret != null && lastSolution.valid) {
+        }
+        if (turret != null) {
+            if (manualTurretOverrideEnabled) {
+                turret.setTargetAngleRadians(manualTurretOverrideRadians);
+            } else if (autoAimEnabled && lastSolution.valid) {
                 turret.setTargetAngleRadians(
                         ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - releasePose.getHeading())
                 );
@@ -365,9 +385,9 @@ public final class PrecisionShooterSubsystem {
         }
 
         boolean ready = isReadyToShoot();
-        if (!fireRequested) {
+        if (!fireRequested || !ready) {
             closeFeed();
-        } else if (!feedGateOpen && ready) {
+        } else if (!feedGateOpen) {
             openFeed();
         }
     }
@@ -402,6 +422,10 @@ public final class PrecisionShooterSubsystem {
 
     public boolean isTurretEnabled() {
         return turret != null;
+    }
+
+    public boolean isTurretHomed() {
+        return turret == null || turret.isHomed();
     }
 
     public boolean isFeedGateOpen() {
@@ -539,6 +563,76 @@ public final class PrecisionShooterSubsystem {
         return flywheel.getMeasuredRpm();
     }
 
+    public double getTurretAngleDegrees() {
+        return Math.toDegrees(turret == null ? 0.0 : turret.getCurrentAngleRadians());
+    }
+
+    public double getTurretTargetDegrees() {
+        return Math.toDegrees(turret == null ? 0.0 : turret.getTargetAngleRadians());
+    }
+
+    public double getTurretErrorDegrees() {
+        return Math.toDegrees(turret == null ? 0.0 : turret.getLastAngleErrorRadians());
+    }
+
+    public double getTurretCommandPower() {
+        return turret == null ? 0.0 : turret.getLastCommandPower();
+    }
+
+    public double getTurretSoftLimitScale() {
+        return turret == null ? 1.0 : turret.getLastSoftLimitScale();
+    }
+
+    public double getTurretCurrentAmps() {
+        return turret == null ? 0.0 : turret.getMotorCurrentAmps();
+    }
+
+    public double getTurretVelocityTicksPerSecond() {
+        return turret == null ? 0.0 : turret.getLastVelocityTicksPerSecond();
+    }
+
+    public String getTurretHomeState() {
+        return turret == null ? "DISABLED" : turret.getHomeStateName();
+    }
+
+    public boolean restoreTurretHome(android.content.Context context) {
+        if (turret == null) {
+            return false;
+        }
+
+        TurretHomeHandoff.Calibration calibration = TurretHomeHandoff.consumeCalibration(context);
+        return calibration != null && turret.loadHomeCalibration(
+                calibration.leftStopTicks,
+                calibration.rightStopTicks
+        );
+    }
+
+    public void saveTurretHome(android.content.Context context) {
+        if (turret == null || !turret.isHomed()) {
+            return;
+        }
+
+        TurretHomeHandoff.saveCalibration(
+                context,
+                turret.getLeftStopTicks(),
+                turret.getRightStopTicks()
+        );
+    }
+
+    public void requestTurretRehome() {
+        if (turret != null) {
+            turret.restartHoming();
+        }
+    }
+
+    public double getTurretMinTargetDegrees() {
+        return Math.toDegrees(turret == null ? 0.0 : turret.getMinimumCommandedAngleRadians());
+    }
+
+    public double getTurretMaxTargetDegrees() {
+        return Math.toDegrees(turret == null ? 0.0 : turret.getMaximumCommandedAngleRadians());
+    }
+
     private BallisticAimSolver.Solution solveMovingShot(Pose releasePose,
                                                         TurretKinematics releaseTurret,
                                                         double goalX,
@@ -649,7 +743,10 @@ public final class PrecisionShooterSubsystem {
         );
     }
 
-    private TurretKinematics computeTurretKinematics(Pose pose) {
+    private TurretKinematics computeTurretKinematics(Pose pose,
+                                                     double chassisVx,
+                                                     double chassisVy,
+                                                     double chassisOmega) {
         double heading = pose.getHeading();
         double cos = Math.cos(heading);
         double sin = Math.sin(heading);
@@ -660,8 +757,8 @@ public final class PrecisionShooterSubsystem {
                 + ShooterHardwareConstants.turretOffsetLeftInches * cos;
 
         // Rigid-body velocity of the turret pivot = chassis translation + rotation-induced point velocity.
-        double turretVx = robotVx - robotOmega * offsetWorldY;
-        double turretVy = robotVy + robotOmega * offsetWorldX;
+        double turretVx = chassisVx - chassisOmega * offsetWorldY;
+        double turretVy = chassisVy + chassisOmega * offsetWorldX;
 
         return new TurretKinematics(
                 pose.getX() + offsetWorldX,

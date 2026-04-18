@@ -28,7 +28,7 @@ public final class AutoPoseConstants {
     }
 
     public static Pose line1FinishPose() {
-        return new Pose(23, 82, Math.toRadians(190));
+        return new Pose(20, 82, Math.toRadians(190));
     }
 
     public static Pose line2StartPose() {
@@ -44,7 +44,7 @@ public final class AutoPoseConstants {
     }
 
     public static Pose line2ControlPose() {
-        return new Pose(45, 55);
+        return new Pose(55, 50);
     }
     // TODO
     public static Pose line3StartPose() {
@@ -60,11 +60,15 @@ public final class AutoPoseConstants {
     }
 
     public static Pose gatePose() {
-        return new Pose(11, 53, Math.toRadians(147));
+        return new Pose(10, 49, Math.toRadians(144)); // 11,52,144
+    }
+
+    public static Pose gateShootControl() {
+        return new Pose(60,65);
     }
 
     public static Pose gateControlPose() {
-        return new Pose(27, 50);
+        return new Pose(50, 45);
     }
 
     public static Pose finalShotPose() {

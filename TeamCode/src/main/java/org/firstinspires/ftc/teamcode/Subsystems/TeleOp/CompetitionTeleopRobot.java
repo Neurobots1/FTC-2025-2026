@@ -32,6 +32,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ChassisHeadingLockController;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.Precision.PrecisionShooterSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShotFeedCadenceController;
+import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ShootingZones;
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 
@@ -61,6 +62,9 @@ public final class CompetitionTeleopRobot {
     private final ElapsedTime limelightFilterTimer = new ElapsedTime();
 
     private boolean fireToggleLast;
+    private boolean turretRehomeButtonLast;
+    private boolean tagResetButtonLast;
+    private boolean turretHomeRestoredFromAuto;
     private double yawTrimDegrees;
     private double rpmTrim;
     private double goalXInches;
@@ -94,6 +98,8 @@ public final class CompetitionTeleopRobot {
         initLimelight(hardwareMap);
 
         fireToggleLast = false;
+        turretRehomeButtonLast = false;
+        tagResetButtonLast = false;
         yawTrimDegrees = 0.0;
         rpmTrim = 0.0;
         headingLockController.reset();
@@ -111,6 +117,7 @@ public final class CompetitionTeleopRobot {
         }
         follower.setStartingPose(startingPose);
         shooter.start();
+        turretHomeRestoredFromAuto = shooter.restoreTurretHome(appContext);
         shotFeedController.setArmed(false);
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
@@ -131,7 +138,30 @@ public final class CompetitionTeleopRobot {
         updateTrimAdjustments(supportGamepad);
         handleTrimReset(supportGamepad);
         handleFireToggle(driverGamepad);
+        handleTurretRehome(supportGamepad);
 
+        double driveForward = -driverGamepad.left_stick_y;
+        double driveStrafe = -driverGamepad.left_stick_x;
+        double driverTurnCommand = -driverGamepad.right_stick_x;
+        double fieldCentricOffset = AllianceSelector.Field.fieldCentricOffset(
+                alliance == Alliance.BLUE
+                        ? AllianceSelector.Alliance.BLUE
+                        : AllianceSelector.Alliance.RED
+        );
+
+        if (shooter.isTurretEnabled()) {
+            follower.setTeleOpDrive(
+                    driveForward,
+                    driveStrafe,
+                    driverTurnCommand,
+                    false,
+                    fieldCentricOffset
+            );
+            follower.update();
+            stopShootingIfOutOfZone();
+        }
+
+        stopShootingIfOutOfZone();
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         shooter.setYawTrimDegrees(yawTrimDegrees);
@@ -141,8 +171,11 @@ public final class CompetitionTeleopRobot {
         shooter.requestFire(shotFeedController.isArmed());
         shooter.update();
         PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
+        if (shotFeedController.isArmed() && !shooterSnapshot.inShootingZone) {
+            stopShootingSequence();
+        }
 
-        double turnCommand = -driverGamepad.right_stick_x;
+        double turnCommand = driverTurnCommand;
         boolean chassisHeadingLockActive = false;
         if (TeleopConstants.ENABLE_HEADING_LOCK
                 && shotFeedController.isArmed()
@@ -153,26 +186,24 @@ public final class CompetitionTeleopRobot {
             headingLockController.reset();
         }
 
-        follower.setTeleOpDrive(
-                -driverGamepad.left_stick_y,
-                -driverGamepad.left_stick_x,
-                turnCommand,
-                false,
-                AllianceSelector.Field.fieldCentricOffset(
-                        alliance == Alliance.BLUE
-                                ? AllianceSelector.Alliance.BLUE
-                                : AllianceSelector.Alliance.RED
-                        )
-        );
-        follower.update();
+        if (!shooter.isTurretEnabled()) {
+            follower.setTeleOpDrive(
+                    driveForward,
+                    driveStrafe,
+                    turnCommand,
+                    false,
+                    fieldCentricOffset
+            );
+            follower.update();
+            stopShootingIfOutOfZone();
+        }
 
         shotFeedController.update(shooter.isFeedGateOpen(), shooterSnapshot);
-        boolean blockerSettledOpen = shotFeedController.isBlockerSettledOpen();
         boolean forceFeedIntake = shotFeedController.shouldForceFeedIntake();
 
         if (!indexerBase.isBusy()) {
             if (forceFeedIntake) {
-                intake.intake();
+                intake.slowIntake();
             } else if (driverGamepad.right_bumper) {
                 intake.intake();
             } else if (driverGamepad.left_bumper) {
@@ -196,51 +227,9 @@ public final class CompetitionTeleopRobot {
 
         indexerBase.OutTake();
         Pose pose = follower.getPose();
-
-        joinedTelemetry.addData("Alliance", alliance);
-        joinedTelemetry.addData("Shoot Armed", shotFeedController.isArmed());
-        joinedTelemetry.addData("Feed State", shotFeedController.getState());
-        joinedTelemetry.addData("Always Spin", TeleopConstants.ALWAYS_SPIN_FLYWHEEL);
-        joinedTelemetry.addData("Heading Lock Enabled", TeleopConstants.ENABLE_HEADING_LOCK);
-        joinedTelemetry.addData("Turret Enabled", shooter.isTurretEnabled());
-        joinedTelemetry.addData("Chassis Aim Lock", chassisHeadingLockActive);
-        joinedTelemetry.addData("Driver 1", "Drive / Intake / Shoot");
-        joinedTelemetry.addData("Driver 2", "Trim / Reset / Index Empty");
-        joinedTelemetry.addData("Shot Zone", shooterSnapshot.inShootingZone);
-        joinedTelemetry.addData("Ready", shooterSnapshot.ready);
-        joinedTelemetry.addData("Forced Feed Intake", forceFeedIntake);
-        joinedTelemetry.addData("Far Zone Feed Paused", shotFeedController.isFarZoneFeedPaused());
-        joinedTelemetry.addData("Blocker Open", shooter.isFeedGateOpen());
-        joinedTelemetry.addData("Blocker Settled Open", blockerSettledOpen);
-        joinedTelemetry.addData("Homed", shooterSnapshot.homed);
-        joinedTelemetry.addData("Target RPM", "%.1f", shooterSnapshot.targetRpm);
-        joinedTelemetry.addData("Actual RPM", "%.1f", shooterSnapshot.actualRpm);
-        joinedTelemetry.addData("Table Dist", "%.2f", shooterSnapshot.tableDistanceInches);
-        joinedTelemetry.addData("Hood", "%.2f / %.2f", shooterSnapshot.nominalHoodDeg, shooterSnapshot.compensatedHoodDeg);
-        joinedTelemetry.addData("Turret", "%.2f / %.2f", shooterSnapshot.turretAngleDeg, shooterSnapshot.turretTargetDeg);
-        joinedTelemetry.addData("Aim Error Deg", "%.2f", Math.toDegrees(shooter.getAdjustedChassisHeadingErrorRadians()));
-        joinedTelemetry.addData("Aim Turn Cmd", "%.3f", headingLockController.getLastTurnCommand());
-        joinedTelemetry.addData("Aim PIDF", "P %.3f I %.3f D %.3f F %.3f",
-                headingLockController.getLastProportionalTerm(),
-                headingLockController.getLastIntegralTerm(),
-                headingLockController.getLastDerivativeTerm(),
-                headingLockController.getLastFeedforwardTerm());
-        joinedTelemetry.addData("Robot Omega Deg/S", "%.2f", Math.toDegrees(shooter.getRobotOmegaRadiansPerSecond()));
         joinedTelemetry.addData("Yaw Trim Deg", "%.2f", yawTrimDegrees);
         joinedTelemetry.addData("RPM Trim", "%.1f", rpmTrim);
-        joinedTelemetry.addData("Goal", "(%.1f, %.1f)", goalXInches, goalYInches);
-        joinedTelemetry.addData("Aim Goal", "(%.1f, %.1f)", aimGoalXInches, aimGoalYInches);
-        joinedTelemetry.addData("X", pose.getX());
-        joinedTelemetry.addData("Y", pose.getY());
-        joinedTelemetry.addData("Heading", Math.toDegrees(pose.getHeading()));
-        joinedTelemetry.addData("Indexer Busy", indexerBase.isBusy());
-        joinedTelemetry.addData("LL Enabled", CameraConstants.LIMELIGHT_ENABLED);
-        joinedTelemetry.addData("LL Result", limelightState.result == null ? "null" : "non-null");
-        joinedTelemetry.addData("LL Valid", limelightState.valid);
-        joinedTelemetry.addData("LL Pose Cached", lastLimelightPose != null);
-        joinedTelemetry.addData("Controls", "D1 Y=arm/cancel shoot, RB/LB=intake | D2 DpadL/R=aim trim, DpadU/D=RPM trim, Y=zero trim");
-        joinedTelemetry.addData("Resets", "D1/D2 B=tag reset, options=alliance reset, share=driver start | D2 X=indexer empty");
-        joinedTelemetry.addData("Shooter Status", shooterSnapshot.status);
+        joinedTelemetry.addData("Pose", "(%.2f, %.2f, %.1f)", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
         joinedTelemetry.update();
         telemetryManager.update();
     }
@@ -259,12 +248,46 @@ public final class CompetitionTeleopRobot {
     private void handleFireToggle(Gamepad gamepad) {
         if (gamepad.y && !fireToggleLast) {
             boolean armingShooter = !shotFeedController.isArmed();
-            shotFeedController.setArmed(armingShooter);
             if (armingShooter) {
-                headingLockController.reset();
+                armShootingSequence();
+            } else {
+                stopShootingSequence();
             }
         }
         fireToggleLast = gamepad.y;
+    }
+
+    private void handleTurretRehome(Gamepad gamepad) {
+        boolean rehomePressed = gamepad.a;
+        if (rehomePressed && !turretRehomeButtonLast) {
+            stopShootingSequence();
+            shooter.requestTurretRehome();
+            turretHomeRestoredFromAuto = false;
+        }
+        turretRehomeButtonLast = rehomePressed;
+    }
+
+    private void armShootingSequence() {
+        shotFeedController.setArmed(true);
+        headingLockController.reset();
+    }
+
+    private void stopShootingSequence() {
+        shotFeedController.setArmed(false);
+        shooter.requestFire(false);
+        intake.stop();
+        headingLockController.reset();
+    }
+
+    private void stopShootingIfOutOfZone() {
+        if (shotFeedController.isArmed() && !isRobotInShootingZone()) {
+            stopShootingSequence();
+        }
+    }
+
+    private boolean isRobotInShootingZone() {
+        Pose pose = follower.getPose();
+        return pose != null && ShootingZones.isInShootingZone(pose.getX(), pose.getY());
     }
 
     private void updateTrimAdjustments(Gamepad gamepad) {
@@ -318,22 +341,27 @@ public final class CompetitionTeleopRobot {
 
         LLResult result = null;
         boolean valid = false;
+        boolean tagResetPressed = driverGamepad.b || supportGamepad.b;
+        boolean tagResetRisingEdge = tagResetPressed && !tagResetButtonLast;
+        tagResetButtonLast = tagResetPressed;
 
-        try {
-            result = limelight.getLatestResult();
-            valid = result != null && result.isValid();
+        if (tagResetRisingEdge && tagResetTimer.seconds() >= tagCooldown) {
+            try {
+                result = limelight.getLatestResult();
+                valid = result != null && result.isValid();
 
-            if (valid) {
-                Pose limelightPose = convertLimelightResultToPedroPose(result);
-                if (limelightPose != null) {
-                    lastLimelightPose = limelightPose;
+                if (valid) {
+                    Pose limelightPose = convertLimelightResultToPedroPose(result);
+                    if (limelightPose != null) {
+                        lastLimelightPose = limelightPose;
+                    }
                 }
+            } catch (Exception ignored) {
+                valid = false;
             }
-        } catch (Exception ignored) {
-            valid = false;
         }
 
-        if ((driverGamepad.b || supportGamepad.b)
+        if (tagResetRisingEdge
                 && tagResetTimer.seconds() >= tagCooldown
                 && lastLimelightPose != null) {
             resetPose(lastLimelightPose);

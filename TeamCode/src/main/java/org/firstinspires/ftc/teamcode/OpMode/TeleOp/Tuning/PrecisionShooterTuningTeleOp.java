@@ -80,8 +80,6 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
 
     @Override
     public void loop() {
-        follower.update();
-
         handleFireToggle();
         if (gamepad1.x && !prevX) {
             if (feedingEnabled) {
@@ -131,14 +129,6 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         prevX = gamepad1.x;
         prevY = gamepad1.y;
 
-        shooter.setAlliance(alliance);
-        shooter.setGoalPosition(goalX, goalY);
-        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || feedingEnabled);
-        shooter.setAutoAimEnabled(true);
-        shooter.requestFire(feedingEnabled);
-        shooter.update();
-
-        PrecisionShooterSubsystem.TelemetrySnapshot snapshot = shooter.snapshot();
         follower.setTeleOpDrive(
                 -gamepad1.left_stick_y,
                 -gamepad1.left_stick_x,
@@ -150,6 +140,16 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
                                 : AllianceSelector.Alliance.RED
                 )
         );
+        follower.update();
+
+        shooter.setAlliance(alliance);
+        shooter.setGoalPosition(goalX, goalY);
+        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || feedingEnabled);
+        shooter.setAutoAimEnabled(true);
+        shooter.requestFire(feedingEnabled);
+        shooter.update();
+
+        PrecisionShooterSubsystem.TelemetrySnapshot snapshot = shooter.snapshot();
 
         updateShootFeedState(shooter.isFeedGateOpen());
         updateFarZoneFeedPause(snapshot);
@@ -178,6 +178,7 @@ public class PrecisionShooterTuningTeleOp extends OpMode {
         telemetry.addData("Shoot Armed", feedingEnabled);
         telemetry.addData("Feed State", shootFeedState);
         telemetry.addData("Always Spin", TeleopConstants.ALWAYS_SPIN_FLYWHEEL);
+        telemetry.addData("Shoot On Move", ShooterConstants.shootOnMoveEnabled);
         telemetry.addData("Auto Aim", true);
         telemetry.addData("Homed", snapshot.homed);
         telemetry.addData("Shot Zone", snapshot.inShootingZone);

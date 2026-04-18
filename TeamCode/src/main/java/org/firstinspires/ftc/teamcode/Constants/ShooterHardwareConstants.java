@@ -21,14 +21,14 @@ public final class ShooterHardwareConstants {
     public static String feedServoName = HardwareMapConstants.FEED_SERVO;
 
     // ===== Hardware Toggles =====
-    public static boolean turretEnabled = false;
+    public static boolean turretEnabled = true;
 
     // ===== Motor Direction =====
     public static boolean leftFlywheelReversed = true;
     public static boolean rightFlywheelReversed = false;
     public static FlywheelFeedbackMotor flywheelFeedbackMotor = FlywheelFeedbackMotor.RIGHT;
     public static boolean flywheelFeedbackEncoderReversed = true;
-    public static boolean turretMotorReversed = false;
+    public static boolean turretMotorReversed = true;
 
     // ===== Hood Geometry =====
     public static double hoodMinAngleDeg = 30.0;
@@ -38,10 +38,12 @@ public final class ShooterHardwareConstants {
     public static double hoodCommandDeadbandDeg = 0.20;
 
     // ===== Turret Geometry =====
-    public static double turretMechanicalRangeDeg = 359.0;
+    public static double turretMechanicalRangeDeg = 355.0;
     public static double turretCenterOffsetDeg = 0.0;
-    public static double turretOffsetForwardInches = 0.0;
+    public static double turretOffsetForwardInches = -1.0;
     public static double turretOffsetLeftInches = 0.0;
+    public static double turretForbiddenCenterDeg = 0.0;
+    public static double turretForbiddenWidthDeg = 5.0;
 
     // ===== Feed Servo =====
     public static double feedClosedPosition = 0.5;

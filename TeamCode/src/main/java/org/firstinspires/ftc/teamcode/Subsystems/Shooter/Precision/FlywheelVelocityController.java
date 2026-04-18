@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 
 final class FlywheelVelocityController {
+    private static final double VOLTAGE_SAMPLE_PERIOD_SECONDS = 0.25;
 
     static final class Gains {
         final double kP;
@@ -31,6 +32,7 @@ final class FlywheelVelocityController {
     private final VoltageSensor voltageSensor;
     private final ShooterConstants config;
     private final ElapsedTime timer = new ElapsedTime();
+    private final ElapsedTime voltageSampleTimer = new ElapsedTime();
 
     private Gains gainsOverride;
     private double targetRpm;
@@ -60,6 +62,7 @@ final class FlywheelVelocityController {
         right.setDirection(ShooterHardwareConstants.rightFlywheelReversed ? DcMotor.Direction.REVERSE : DcMotor.Direction.FORWARD);
         lastBatteryVoltage = voltageSensor.getVoltage();
         timer.reset();
+        voltageSampleTimer.reset();
     }
 
     void setGains(Gains gains) {
@@ -123,7 +126,7 @@ final class FlywheelVelocityController {
         lastError = error;
 
         Gains gains = currentGains();
-        lastBatteryVoltage = voltageSensor.getVoltage();
+        updateCachedBatteryVoltage();
         double voltageScale = nominalVoltage / Math.max(1e-6, lastBatteryVoltage);
         double feedforward = gains.kV * targetRpm + gains.kS;
         double feedback = gains.kP * error + gains.kI * integral + gains.kD * derivative;
@@ -180,6 +183,15 @@ final class FlywheelVelocityController {
                 ? config.flywheelCompensationDropFilterGain
                 : config.flywheelCompensationRecoveryFilterGain;
         filteredMeasuredRpm += (measuredRpm - filteredMeasuredRpm) * gain;
+    }
+
+    private void updateCachedBatteryVoltage() {
+        if (voltageSampleTimer.seconds() < VOLTAGE_SAMPLE_PERIOD_SECONDS) {
+            return;
+        }
+
+        lastBatteryVoltage = voltageSensor.getVoltage();
+        voltageSampleTimer.reset();
     }
 
     private double calculateRecoveryBoost(double error, double filteredError) {

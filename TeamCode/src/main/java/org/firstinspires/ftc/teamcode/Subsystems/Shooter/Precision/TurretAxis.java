@@ -30,6 +30,8 @@ final class TurretAxis {
     private double lastVelocityTicksPerSecond;
     private double targetAngleRadians;
     private double lastAngleError;
+    private double lastCommandPower;
+    private double lastSoftLimitScale = 1.0;
     private boolean homed;
 
     TurretAxis(DcMotorEx motor, ShooterConstants config) {
@@ -86,7 +88,10 @@ final class TurretAxis {
                 if (Math.abs(motor.getCurrentPosition() - rightStopTicks) >= config.turretBackoffTicks) {
                     homed = true;
                     homeState = HomeState.DONE;
-                    targetAngleRadians = getCurrentAngleRadians();
+                    targetAngleRadians = getCurrentSweepRadians();
+                    lastAngleError = 0.0;
+                    lastCommandPower = 0.0;
+                    lastSoftLimitScale = 1.0;
                     motor.setPower(0.0);
                 }
                 break;
@@ -98,25 +103,32 @@ final class TurretAxis {
     }
 
     void setTargetAngleRadians(double targetAngleRadians) {
-        double halfRange = Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg) * 0.5;
-        double offset = Math.toRadians(ShooterHardwareConstants.turretCenterOffsetDeg);
-        this.targetAngleRadians = ShooterMath.clamp(targetAngleRadians, -halfRange + offset, halfRange + offset);
+        double requestedSweepRadians = commandAngleToSweepRadians(targetAngleRadians);
+        this.targetAngleRadians = ShooterMath.clamp(
+                requestedSweepRadians,
+                getMinimumCommandedSweepRadians(),
+                getMaximumCommandedSweepRadians()
+        );
     }
 
     void updateTracking() {
         if (!homed) {
+            lastCommandPower = 0.0;
+            lastSoftLimitScale = 1.0;
             return;
         }
-        double angleError = ShooterMath.normalizeRadians(targetAngleRadians - getCurrentAngleRadians());
+        double currentSweepRadians = getCurrentSweepRadians();
+        double angleError = currentSweepRadians - targetAngleRadians;
         double derivative = angleError - lastAngleError;
         lastAngleError = angleError;
         double power = config.turretPositionKp * angleError
                 + config.turretPositionKd * derivative
-                + Math.signum(angleError) * config.turretStatic;
-        power = ShooterMath.clamp(power, -config.turretMaxCommand, config.turretMaxCommand);
-        if (Math.abs(angleError) < Math.toRadians(config.turretAngleToleranceDeg)) {
+                + Math.signum(angleError) * config.turretKf;
+        if (Math.abs(angleError) < Math.toRadians(config.turretControlToleranceDeg)) {
             power = 0.0;
         }
+        power = applySoftLimits(power, currentSweepRadians);
+        lastCommandPower = power;
         motor.setPower(power);
     }
 
@@ -125,23 +137,197 @@ final class TurretAxis {
     }
 
     boolean atTarget() {
-        return homed && Math.abs(ShooterMath.normalizeRadians(targetAngleRadians - getCurrentAngleRadians()))
-                <= Math.toRadians(config.turretAngleToleranceDeg);
+        return homed && Math.abs(targetAngleRadians - getCurrentSweepRadians())
+                <= Math.toRadians(config.turretShotReadyToleranceDeg);
     }
 
     double getCurrentAngleRadians() {
         if (!homed && rightStopTicks == leftStopTicks) {
             return 0.0;
         }
-        double centerTicks = 0.5 * (leftStopTicks + rightStopTicks);
-        double sweepTicks = Math.max(1.0, rightStopTicks - leftStopTicks);
-        double normalized = (motor.getCurrentPosition() - centerTicks) / sweepTicks;
-        return normalized * Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg)
-                + Math.toRadians(ShooterHardwareConstants.turretCenterOffsetDeg);
+        return ShooterMath.normalizeRadians(getCurrentSweepRadians());
     }
 
     double getTargetAngleRadians() {
-        return targetAngleRadians;
+        return ShooterMath.normalizeRadians(targetAngleRadians);
+    }
+
+    double getLastAngleErrorRadians() {
+        return lastAngleError;
+    }
+
+    double getLastCommandPower() {
+        return lastCommandPower;
+    }
+
+    double getLastSoftLimitScale() {
+        return lastSoftLimitScale;
+    }
+
+    double getMotorCurrentAmps() {
+        try {
+            return motor.getCurrent(CurrentUnit.AMPS);
+        } catch (Exception ignored) {
+            return 0.0;
+        }
+    }
+
+    double getLastVelocityTicksPerSecond() {
+        return lastVelocityTicksPerSecond;
+    }
+
+    String getHomeStateName() {
+        return homeState.name();
+    }
+
+    int getLeftStopTicks() {
+        return leftStopTicks;
+    }
+
+    int getRightStopTicks() {
+        return rightStopTicks;
+    }
+
+    boolean loadHomeCalibration(int leftStopTicks, int rightStopTicks) {
+        if (rightStopTicks <= leftStopTicks) {
+            return false;
+        }
+
+        this.leftStopTicks = leftStopTicks;
+        this.rightStopTicks = rightStopTicks;
+        homeState = HomeState.DONE;
+        homed = true;
+        lastPositionTicks = motor.getCurrentPosition();
+        lastVelocityTicksPerSecond = 0.0;
+        lastAngleError = 0.0;
+        lastCommandPower = 0.0;
+        lastSoftLimitScale = 1.0;
+        targetAngleRadians = ShooterMath.clamp(
+                getCurrentSweepRadians(),
+                getMinimumCommandedSweepRadians(),
+                getMaximumCommandedSweepRadians()
+        );
+        loopTimer.reset();
+        homeTimer.reset();
+        motor.setPower(0.0);
+        return true;
+    }
+
+    void restartHoming() {
+        homed = false;
+        homeState = HomeState.SEEK_LEFT;
+        leftStopTicks = 0;
+        rightStopTicks = 0;
+        targetAngleRadians = 0.0;
+        lastAngleError = 0.0;
+        lastCommandPower = 0.0;
+        lastSoftLimitScale = 1.0;
+        lastPositionTicks = motor.getCurrentPosition();
+        lastVelocityTicksPerSecond = 0.0;
+        loopTimer.reset();
+        homeTimer.reset();
+        motor.setPower(0.0);
+    }
+
+    double getMinimumCommandedAngleRadians() {
+        return getMinimumCommandedSweepRadians();
+    }
+
+    double getMaximumCommandedAngleRadians() {
+        return getMaximumCommandedSweepRadians();
+    }
+
+    private double applySoftLimits(double power, double currentSweepRadians) {
+        if (!homed || power == 0.0) {
+            lastSoftLimitScale = 1.0;
+            return power;
+        }
+
+        double slowZoneRadians = Math.toRadians(Math.max(0.0, config.turretLimitSlowZoneDeg));
+        double minScale = ShooterMath.clamp(config.turretLimitMinScale, 0.0, 1.0);
+        double scale = 1.0;
+
+        if (power < 0.0) {
+            double distanceToLimit = getMaximumCommandedSweepRadians() - currentSweepRadians;
+            if (distanceToLimit <= 0.0) {
+                lastSoftLimitScale = 0.0;
+                return 0.0;
+            }
+            if (slowZoneRadians > 1e-6 && distanceToLimit < slowZoneRadians) {
+                scale = minScale + (1.0 - minScale) * (distanceToLimit / slowZoneRadians);
+            }
+        } else {
+            double distanceToLimit = currentSweepRadians - getMinimumCommandedSweepRadians();
+            if (distanceToLimit <= 0.0) {
+                lastSoftLimitScale = 0.0;
+                return 0.0;
+            }
+            if (slowZoneRadians > 1e-6 && distanceToLimit < slowZoneRadians) {
+                scale = minScale + (1.0 - minScale) * (distanceToLimit / slowZoneRadians);
+            }
+        }
+
+        lastSoftLimitScale = ShooterMath.clamp(scale, 0.0, 1.0);
+        return power * lastSoftLimitScale;
+    }
+
+    private double getCurrentSweepRadians() {
+        double sweepTicks = Math.max(1.0, rightStopTicks - leftStopTicks);
+        double travelFraction = (motor.getCurrentPosition() - leftStopTicks) / sweepTicks;
+        travelFraction = ShooterMath.clamp(travelFraction, 0.0, 1.0);
+        return getLeftStopSweepRadians() - travelFraction * getMechanicalTravelRadians();
+    }
+
+    private double commandAngleToSweepRadians(double desiredAngleRadians) {
+        double localDesired = ShooterMath.normalizeRadians(desiredAngleRadians - getForwardDeadZoneCenterRadians());
+        double halfForbiddenRadians = getHalfForbiddenRadians();
+
+        if (localDesired <= -halfForbiddenRadians) {
+            return getForwardDeadZoneCenterRadians() + localDesired;
+        }
+        if (localDesired >= halfForbiddenRadians) {
+            return getForwardDeadZoneCenterRadians() + localDesired - 2.0 * Math.PI;
+        }
+
+        double currentSweepRadians = homed
+                ? getCurrentSweepRadians()
+                : getLeftStopSweepRadians();
+        double leftEdgeRadians = getLeftStopSweepRadians();
+        double rightEdgeRadians = getRightStopSweepRadians();
+        return Math.abs(currentSweepRadians - leftEdgeRadians) <= Math.abs(currentSweepRadians - rightEdgeRadians)
+                ? leftEdgeRadians
+                : rightEdgeRadians;
+    }
+
+    private double getMechanicalTravelRadians() {
+        return Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg);
+    }
+
+    private double getHalfForbiddenRadians() {
+        return 0.5 * Math.toRadians(Math.max(0.0, ShooterHardwareConstants.turretForbiddenWidthDeg));
+    }
+
+    private double getForwardDeadZoneCenterRadians() {
+        return Math.toRadians(
+                ShooterHardwareConstants.turretCenterOffsetDeg
+                        + ShooterHardwareConstants.turretForbiddenCenterDeg
+        );
+    }
+
+    private double getLeftStopSweepRadians() {
+        return getForwardDeadZoneCenterRadians() - getHalfForbiddenRadians();
+    }
+
+    private double getRightStopSweepRadians() {
+        return getLeftStopSweepRadians() - getMechanicalTravelRadians();
+    }
+
+    private double getMinimumCommandedSweepRadians() {
+        return getRightStopSweepRadians() + Math.toRadians(config.turretLimitBufferDeg);
+    }
+
+    private double getMaximumCommandedSweepRadians() {
+        return getLeftStopSweepRadians() - Math.toRadians(config.turretLimitBufferDeg);
     }
 
     private boolean stallDetected() {

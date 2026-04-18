@@ -27,6 +27,7 @@ public abstract class BaseAllianceAuto extends OpMode {
     private double goalY;
     private double aimGoalX;
     private double aimGoalY;
+    private boolean turretHomeSavedDuringInit;
 
     protected abstract AutoAlliance alliance();
 
@@ -80,9 +81,30 @@ public abstract class BaseAllianceAuto extends OpMode {
         );
 
         robot = createRobot(follower, shooterConfig, alliance, goalX, goalY, aimGoalX, aimGoalY);
+        turretHomeSavedDuringInit = false;
         onPostRobotInit();
         buildPaths();
         buildRoutine();
+    }
+
+    @Override
+    public void init_loop() {
+        if (robot == null) {
+            return;
+        }
+
+        follower.update();
+        robot.updateInitSystems();
+        if (!turretHomeSavedDuringInit && robot.isShooterTurretHomed()) {
+            robot.saveTurretHome(hardwareMap.appContext);
+            turretHomeSavedDuringInit = true;
+        }
+
+        telemetry.addData("Alliance", alliance());
+        telemetry.addData("Turret Homed", robot.isShooterTurretHomed());
+        telemetry.addLine("Auto init is pre-homing the turret.");
+        addTelemetry();
+        telemetry.update();
     }
 
     @Override
@@ -105,6 +127,9 @@ public abstract class BaseAllianceAuto extends OpMode {
     public void stop() {
         if (follower != null) {
             AutoPoseHandoff.savePose(hardwareMap.appContext, follower.getPose());
+        }
+        if (robot != null && robot.isShooterTurretHomed()) {
+            robot.saveTurretHome(hardwareMap.appContext);
         }
         onAutoStop();
     }
