@@ -22,17 +22,6 @@ public class ShooterConstants {
     public static double flywheelReadyToleranceRpm = 70.0;
     public static double flywheelReadyToleranceFraction = 0.025;
 
-    // ===== Flywheel Recovery =====
-    public static double flywheelRecoveryDeadbandRpm = 35.0;
-    public static double flywheelRecoveryGain = 0.0012;
-    public static double flywheelRecoveryMaxBoost = 0.18;
-    public static double flywheelOutputRiseRatePerSecond = 12.0;
-    public static double flywheelOutputFallRatePerSecond = 3.5;
-
-    // ===== Flywheel Compensation =====
-    public static double flywheelCompensationDropFilterGain = 0.65;
-    public static double flywheelCompensationRecoveryFilterGain = 0.06;
-
     // ===== Far Zone Feed =====
     public static double farZoneFeedPauseDistanceInches = 130.0;
     public static double farZoneFeedPauseDropRpm = 140.0;
@@ -45,7 +34,7 @@ public class ShooterConstants {
     public static double sortedShotFinishDelaySeconds = 0.30;
 
     // ===== Feed Intake =====
-    public static double preFeedIntakePower = 0.6;
+    public static double preFeedIntakePower = 0.8;
     public static double mainFeedIntakePower = 1;
 
 
@@ -83,8 +72,14 @@ public class ShooterConstants {
 
     // ===== Timing =====
     public static double feedOpenSettlingSeconds = 0.30;
+
+    // ===== SOTM =====
     public static boolean shootOnMoveEnabled = false;
     public static double shotReleaseLatencySeconds = 0.11;
+    public static double sotmScoreAngleDeg = -15.0;
+    public static double sotmPassThroughRadiusInches = 5.0;
+    public static double sotmLaunchSpeedToRpmSlope = 13.2526;
+    public static double sotmLaunchSpeedToRpmIntercept = 198.55;
 
     // ===== Ballistics =====
     public static double shooterHeightInches = 12.0;

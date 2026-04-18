@@ -102,6 +102,18 @@ public final class PrecisionShooterSubsystem {
         }
     }
 
+    private static final class ScorePoint {
+        final double x;
+        final double y;
+        final double distanceInches;
+
+        ScorePoint(double x, double y, double distanceInches) {
+            this.x = x;
+            this.y = y;
+            this.distanceInches = distanceInches;
+        }
+    }
+
     private final ShooterConstants config;
     private final Follower follower;
     private final FlywheelVelocityController flywheel;
@@ -136,11 +148,11 @@ public final class PrecisionShooterSubsystem {
     private double lastAimGoalX;
     private double lastAimGoalY;
     private boolean lastInShootingZone;
-    private BallisticAimSolver.Solution lastSolution = BallisticAimSolver.Solution.invalid("startup");
+    private ShootOnMoveCalculator.Solution lastSolution = ShootOnMoveCalculator.Solution.invalid("startup");
     private PrecisionShotTable.Entry lastNominal = new PrecisionShotTable.Entry(0.0, 0.0, 40.0);
     private double lastTableDistanceInches;
     private double lastCompensatedHoodDeg = 40.0;
-    private double lastCompensatedRpmDrop;
+    private double lastGoalForwardOffsetInches;
     private boolean filteredAimInitialized;
     private double filteredWorldYawRadians;
     private double lastChassisAimTurnCommand;
@@ -312,7 +324,7 @@ public final class PrecisionShooterSubsystem {
             hood.update();
             flywheel.stop();
             closeFeed();
-            lastSolution = BallisticAimSolver.Solution.invalid("turret homing");
+            lastSolution = ShootOnMoveCalculator.Solution.invalid("turret homing");
             return;
         }
 
@@ -331,50 +343,106 @@ public final class PrecisionShooterSubsystem {
         lastAimGoalX = aimGoalX;
         lastAimGoalY = aimGoalY;
 
-        Pose releasePose = config.shootOnMoveEnabled
-                ? predictReleasePose(pose, config.shotReleaseLatencySeconds)
-                : pose;
         TurretKinematics releaseTurret = config.shootOnMoveEnabled
-                ? computeTurretKinematics(releasePose, robotVx, robotVy, robotOmega)
-                : computeTurretKinematics(releasePose, 0.0, 0.0, 0.0);
-        lastTableDistanceInches = Math.hypot(goalX - releasePose.getX(), goalY - releasePose.getY());
-        lastInShootingZone = ShootingZones.isInShootingZone(releasePose.getX(), releasePose.getY());
-        lastNominal = LUTConstants.currentTable().sample(lastTableDistanceInches);
+                ? computeTurretKinematics(pose, robotVx, robotVy, robotOmega)
+                : computeTurretKinematics(pose, 0.0, 0.0, 0.0);
+        ScorePoint scorePoint = config.shootOnMoveEnabled
+                ? computeScorePoint(releaseTurret, goalX, goalY, config.sotmPassThroughRadiusInches)
+                : new ScorePoint(goalX, goalY, Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y));
+        ScorePoint aimScorePoint = config.shootOnMoveEnabled
+                ? computeScorePoint(releaseTurret, aimGoalX, aimGoalY, config.sotmPassThroughRadiusInches)
+                : new ScorePoint(aimGoalX, aimGoalY, Math.hypot(aimGoalX - releaseTurret.x, aimGoalY - releaseTurret.y));
+        lastTableDistanceInches = scorePoint.distanceInches;
+        lastGoalForwardOffsetInches = config.shootOnMoveEnabled ? config.sotmPassThroughRadiusInches : 0.0;
+        lastInShootingZone = ShootingZones.isInShootingZone(pose.getX(), pose.getY());
+        double targetHeightDeltaInches = config.targetHeightInches - config.shooterHeightInches;
 
-        double targetRpm = spinEnabled ? Math.max(0.0, lastNominal.targetRpm + rpmTrim) : 0.0;
+        ShootOnMoveCalculator.Solution aimSolution;
+        if (config.shootOnMoveEnabled) {
+            double scoreAngleRad = Math.toRadians(config.sotmScoreAngleDeg);
+            double minLaunchAngleRad = Math.min(
+                    hoodCommandToLaunchAngleRadians(ShooterHardwareConstants.hoodMinAngleDeg),
+                    hoodCommandToLaunchAngleRadians(ShooterHardwareConstants.hoodMaxAngleDeg)
+            );
+            double maxLaunchAngleRad = Math.max(
+                    hoodCommandToLaunchAngleRadians(ShooterHardwareConstants.hoodMinAngleDeg),
+                    hoodCommandToLaunchAngleRadians(ShooterHardwareConstants.hoodMaxAngleDeg)
+            );
+            ShootOnMoveCalculator.Solution nominalSolution = ShootOnMoveCalculator.solveStationary(
+                    releaseTurret.x,
+                    releaseTurret.y,
+                    scorePoint.x,
+                    scorePoint.y,
+                    targetHeightDeltaInches,
+                    scoreAngleRad,
+                    ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
+            );
+            lastNominal = nominalSolution.valid
+                    ? new PrecisionShotTable.Entry(
+                    lastTableDistanceInches,
+                    launchSpeedToRpm(nominalSolution.launchSpeedIps),
+                    launchAngleToHoodCommandDegrees(nominalSolution.hoodAngleRad)
+            )
+                    : new PrecisionShotTable.Entry(lastTableDistanceInches, 0.0, ShooterHardwareConstants.hoodMaxAngleDeg);
+
+            lastSolution = ShootOnMoveCalculator.solveCompensated(
+                    releaseTurret.x,
+                    releaseTurret.y,
+                    scorePoint.x,
+                    scorePoint.y,
+                    targetHeightDeltaInches,
+                    releaseTurret.vx,
+                    releaseTurret.vy,
+                    scoreAngleRad,
+                    minLaunchAngleRad,
+                    maxLaunchAngleRad,
+                    ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
+            );
+            aimSolution = ShootOnMoveCalculator.solveCompensated(
+                    releaseTurret.x,
+                    releaseTurret.y,
+                    aimScorePoint.x,
+                    aimScorePoint.y,
+                    targetHeightDeltaInches,
+                    releaseTurret.vx,
+                    releaseTurret.vy,
+                    scoreAngleRad,
+                    minLaunchAngleRad,
+                    maxLaunchAngleRad,
+                    ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
+            );
+            lastCompensatedHoodDeg = lastSolution.valid
+                    ? launchAngleToHoodCommandDegrees(lastSolution.hoodAngleRad)
+                    : lastNominal.hoodAngleDeg;
+        } else {
+            lastNominal = LUTConstants.currentTable().sample(lastTableDistanceInches);
+            lastSolution = buildLookupSolution(releaseTurret, goalX, goalY, lastNominal, "lookup table");
+            aimSolution = buildLookupSolution(releaseTurret, aimGoalX, aimGoalY, lastNominal, "lookup table");
+            lastCompensatedHoodDeg = lastNominal.hoodAngleDeg;
+        }
+
+        double targetRpm = 0.0;
+        if (spinEnabled) {
+            double baseRpm = config.shootOnMoveEnabled && lastSolution.valid
+                    ? launchSpeedToRpm(lastSolution.launchSpeedIps)
+                    : lastNominal.targetRpm;
+            targetRpm = Math.max(0.0, baseRpm + rpmTrim);
+        }
         flywheel.setTargetRpm(targetRpm);
-        flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
-        BallisticAimSolver.Solution nominalBallisticSolution = solveMovingShotWithFixedHood(
-                releasePose,
-                releaseTurret,
-                goalX,
-                goalY,
-                targetRpm,
-                lastNominal
-        );
-        lastSolution = nominalBallisticSolution;
-        BallisticAimSolver.Solution aimSolution = solveMovingShotWithFixedHood(
-                releasePose,
-                releaseTurret,
-                aimGoalX,
-                aimGoalY,
-                targetRpm,
-                lastNominal
-        );
-        lastCompensatedRpmDrop = 0.0;
-        lastCompensatedHoodDeg = lastNominal.hoodAngleDeg;
+        flywheel.update(config.flywheelIntegralLimit);
+
         double desiredAimWorldYawRadians = aimSolution.valid ? aimSolution.worldYawRad : lastSolution.worldYawRad;
         updateFilteredAimTarget(aimSolution.valid || lastSolution.valid, desiredAimWorldYawRadians);
 
         if (autoAimEnabled) {
-            hood.setAngleDegrees(manualHoodOverrideEnabled ? manualHoodOverrideDeg : lastNominal.hoodAngleDeg);
+            hood.setAngleDegrees(manualHoodOverrideEnabled ? manualHoodOverrideDeg : lastCompensatedHoodDeg);
         }
         if (turret != null) {
             if (manualTurretOverrideEnabled) {
                 turret.setTargetAngleRadians(manualTurretOverrideRadians);
             } else if (autoAimEnabled && lastSolution.valid) {
                 turret.setTargetAngleRadians(
-                        ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - releasePose.getHeading())
+                        ShooterMath.normalizeRadians(getFilteredWorldYawRadians() + yawTrimRadians - pose.getHeading())
                 );
             }
         }
@@ -405,7 +473,7 @@ public final class PrecisionShooterSubsystem {
                 lastCompensatedHoodDeg,
                 lastAimGoalX,
                 lastAimGoalY,
-                0.0,
+                lastGoalForwardOffsetInches,
                 Math.toDegrees(turret == null ? 0.0 : turret.getCurrentAngleRadians()),
                 Math.toDegrees(turret == null ? 0.0 : turret.getTargetAngleRadians()),
                 lastSolution.rangeInches,
@@ -633,79 +701,10 @@ public final class PrecisionShooterSubsystem {
         return Math.toDegrees(turret == null ? 0.0 : turret.getMaximumCommandedAngleRadians());
     }
 
-    private BallisticAimSolver.Solution solveMovingShot(Pose releasePose,
-                                                        TurretKinematics releaseTurret,
-                                                        double goalX,
-                                                        double goalY,
-                                                        double targetRpm,
-                                                        double actualRpm,
-                                                        PrecisionShotTable.Entry nominal) {
-        if (targetRpm <= 1.0) {
-            return BallisticAimSolver.Solution.invalid("spin disabled");
-        }
-
-        double nominalSpeed = ShooterMath.solveLaunchSpeed(
-                nominal.distanceInches,
-                config.targetHeightInches - config.shooterHeightInches,
-                Math.toRadians(nominal.hoodAngleDeg),
-                ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
-        );
-        if (Double.isNaN(nominalSpeed)) {
-            return BallisticAimSolver.Solution.invalid("nominal speed invalid");
-        }
-
-        double actualSpeed = nominalSpeed * (actualRpm / targetRpm);
-        return BallisticAimSolver.solve(
-                releaseTurret.x,
-                releaseTurret.y,
-                goalX,
-                goalY,
-                config.targetHeightInches - config.shooterHeightInches,
-                releaseTurret.vx,
-                releaseTurret.vy,
-                actualSpeed,
-                Math.toRadians(ShooterHardwareConstants.hoodMinAngleDeg),
-                Math.toRadians(ShooterHardwareConstants.hoodMaxAngleDeg),
-                ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
-        );
-    }
-
-    private BallisticAimSolver.Solution solveMovingShotWithFixedHood(Pose releasePose,
-                                                                     TurretKinematics releaseTurret,
-                                                                     double goalX,
-                                                                     double goalY,
-                                                                     double targetRpm,
-                                                                     PrecisionShotTable.Entry nominal) {
-        if (targetRpm <= 1.0) {
-            return BallisticAimSolver.Solution.invalid("spin disabled");
-        }
-
-        double fixedHoodRad = Math.toRadians(nominal.hoodAngleDeg);
-        double nominalSpeed = ShooterMath.solveLaunchSpeed(
-                nominal.distanceInches,
-                config.targetHeightInches - config.shooterHeightInches,
-                fixedHoodRad,
-                ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
-        );
-        if (Double.isNaN(nominalSpeed)) {
-            return BallisticAimSolver.Solution.invalid("nominal speed invalid");
-        }
-
-        return BallisticAimSolver.solveWithFixedHood(
-                releaseTurret.x,
-                releaseTurret.y,
-                goalX,
-                goalY,
-                config.targetHeightInches - config.shooterHeightInches,
-                releaseTurret.vx,
-                releaseTurret.vy,
-                nominalSpeed,
-                fixedHoodRad,
-                ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
-        );
-    }
-
     private boolean isReadyToShoot() {
+        if (!spinEnabled) {
+            return false;
+        }
         if (readyRequiresOnlyFlywheel) {
             return flywheel.atSpeed(
                     config.flywheelReadyToleranceRpm,
@@ -735,14 +734,6 @@ public final class PrecisionShooterSubsystem {
         return lastInShootingZone;
     }
 
-    private Pose predictReleasePose(Pose pose, double lookaheadSeconds) {
-        return new Pose(
-                pose.getX() + robotVx * lookaheadSeconds,
-                pose.getY() + robotVy * lookaheadSeconds,
-                pose.getHeading() + robotOmega * lookaheadSeconds
-        );
-    }
-
     private TurretKinematics computeTurretKinematics(Pose pose,
                                                      double chassisVx,
                                                      double chassisVy,
@@ -765,6 +756,91 @@ public final class PrecisionShooterSubsystem {
                 pose.getY() + offsetWorldY,
                 turretVx,
                 turretVy
+        );
+    }
+
+    private ShootOnMoveCalculator.Solution buildLookupSolution(TurretKinematics turretKinematics,
+                                                               double targetX,
+                                                               double targetY,
+                                                               PrecisionShotTable.Entry tableEntry,
+                                                               String reason) {
+        double dx = targetX - turretKinematics.x;
+        double dy = targetY - turretKinematics.y;
+        double range = Math.hypot(dx, dy);
+        if (range <= 1e-6) {
+            return ShootOnMoveCalculator.Solution.invalid("target unreachable");
+        }
+
+        double hoodAngleRad = hoodCommandToLaunchAngleRadians(tableEntry.hoodAngleDeg);
+        double launchSpeedIps = ShooterMath.solveLaunchSpeed(
+                range,
+                config.targetHeightInches - config.shooterHeightInches,
+                hoodAngleRad,
+                ShooterConstants.GRAVITY_INCHES_PER_SECOND_SQUARED
+        );
+        if (Double.isNaN(launchSpeedIps) || launchSpeedIps <= 1e-6) {
+            launchSpeedIps = 0.0;
+        }
+
+        double horizontalVelocity = launchSpeedIps * Math.cos(hoodAngleRad);
+        double flightTimeSeconds = horizontalVelocity > 1e-6 ? range / horizontalVelocity : 0.0;
+
+        return new ShootOnMoveCalculator.Solution(
+                true,
+                hoodAngleRad,
+                Math.atan2(dy, dx),
+                flightTimeSeconds,
+                launchSpeedIps,
+                range,
+                hoodAngleRad,
+                launchSpeedIps,
+                reason
+        );
+    }
+
+    private ScorePoint computeScorePoint(TurretKinematics turretKinematics,
+                                         double goalX,
+                                         double goalY,
+                                         double forwardOffsetInches) {
+        double dx = goalX - turretKinematics.x;
+        double dy = goalY - turretKinematics.y;
+        double goalDistance = Math.hypot(dx, dy);
+        if (goalDistance <= 1e-6) {
+            return new ScorePoint(goalX, goalY, 0.0);
+        }
+
+        double scoreDistance = Math.max(0.0, goalDistance - forwardOffsetInches);
+        double unitX = dx / goalDistance;
+        double unitY = dy / goalDistance;
+        return new ScorePoint(
+                turretKinematics.x + unitX * scoreDistance,
+                turretKinematics.y + unitY * scoreDistance,
+                scoreDistance
+        );
+    }
+
+    private double hoodCommandToLaunchAngleRadians(double hoodCommandDeg) {
+        return Math.toRadians(
+                ShooterHardwareConstants.hoodMinAngleDeg
+                        + ShooterHardwareConstants.hoodMaxAngleDeg
+                        - hoodCommandDeg
+        );
+    }
+
+    private double launchAngleToHoodCommandDegrees(double launchAngleRad) {
+        return ShooterMath.clamp(
+                ShooterHardwareConstants.hoodMinAngleDeg
+                        + ShooterHardwareConstants.hoodMaxAngleDeg
+                        - Math.toDegrees(launchAngleRad),
+                ShooterHardwareConstants.hoodMinAngleDeg,
+                ShooterHardwareConstants.hoodMaxAngleDeg
+        );
+    }
+
+    private double launchSpeedToRpm(double launchSpeedIps) {
+        return Math.max(
+                0.0,
+                config.sotmLaunchSpeedToRpmSlope * launchSpeedIps + config.sotmLaunchSpeedToRpmIntercept
         );
     }
 

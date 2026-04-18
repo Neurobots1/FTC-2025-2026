@@ -136,7 +136,7 @@ public class PrecisionShooterTrainingOpMode extends OpMode {
         hood.setAngleDegrees(manualHoodDeg);
         hood.update();
         flywheel.setTargetRpm(spinEnabled ? manualRpm : 0.0);
-        flywheel.update(5000.0, config.nominalBatteryVoltage, config.flywheelIntegralLimit);
+        flywheel.update(config.flywheelIntegralLimit);
         updateIntake();
 
         Pose pose = follower.getPose();

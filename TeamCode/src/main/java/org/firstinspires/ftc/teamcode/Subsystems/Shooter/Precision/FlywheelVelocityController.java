@@ -39,8 +39,6 @@ final class FlywheelVelocityController {
     private double integral;
     private double lastError;
     private double measuredRpm;
-    private double filteredMeasuredRpm;
-    private boolean filteredMeasuredRpmInitialized;
     private double lastErrorRpm;
     private double lastOutputPower;
     private double lastBatteryVoltage;
@@ -86,14 +84,6 @@ final class FlywheelVelocityController {
         return measuredRpm;
     }
 
-    double getFilteredMeasuredRpm() {
-        if (!filteredMeasuredRpmInitialized) {
-            filteredMeasuredRpm = getMeasuredRpm();
-            filteredMeasuredRpmInitialized = true;
-        }
-        return filteredMeasuredRpmInitialized ? filteredMeasuredRpm : measuredRpm;
-    }
-
     void stop() {
         targetRpm = 0.0;
         integral = 0.0;
@@ -101,12 +91,11 @@ final class FlywheelVelocityController {
         lastErrorRpm = 0.0;
         lastOutputPower = 0.0;
         measuredRpm = readMeasuredRpm();
-        filteredMeasuredRpmInitialized = false;
         left.setPower(0.0);
         right.setPower(0.0);
     }
 
-    void update(double maxRpm, double nominalVoltage, double integralLimit) {
+    void update(double integralLimit) {
         double dt = Math.max(1e-3, timer.seconds());
         timer.reset();
 
@@ -116,9 +105,7 @@ final class FlywheelVelocityController {
         }
 
         measuredRpm = getMeasuredRpm();
-        updateFilteredMeasuredRpm();
         double error = targetRpm - measuredRpm;
-        double filteredError = targetRpm - filteredMeasuredRpm;
         lastErrorRpm = error;
         integral += error * dt;
         integral = ShooterMath.clamp(integral, -integralLimit, integralLimit);
@@ -127,12 +114,9 @@ final class FlywheelVelocityController {
 
         Gains gains = currentGains();
         updateCachedBatteryVoltage();
-        double voltageScale = nominalVoltage / Math.max(1e-6, lastBatteryVoltage);
         double feedforward = gains.kV * targetRpm + gains.kS;
         double feedback = gains.kP * error + gains.kI * integral + gains.kD * derivative;
-        double recoveryBoost = calculateRecoveryBoost(error, filteredError);
-        double rawOutput = ShooterMath.clamp((feedforward + feedback) * voltageScale + recoveryBoost, 0.0, 1.0);
-        double output = applyOutputSlew(rawOutput, dt);
+        double output = ShooterMath.clamp(feedforward + feedback, 0.0, 1.0);
         lastOutputPower = output;
 
         left.setPower(output);
@@ -172,19 +156,6 @@ final class FlywheelVelocityController {
         return ShooterHardwareConstants.flywheelFeedbackEncoderReversed ? -rawMeasuredRpm : rawMeasuredRpm;
     }
 
-    private void updateFilteredMeasuredRpm() {
-        if (!filteredMeasuredRpmInitialized) {
-            filteredMeasuredRpm = measuredRpm;
-            filteredMeasuredRpmInitialized = true;
-            return;
-        }
-
-        double gain = measuredRpm < filteredMeasuredRpm
-                ? config.flywheelCompensationDropFilterGain
-                : config.flywheelCompensationRecoveryFilterGain;
-        filteredMeasuredRpm += (measuredRpm - filteredMeasuredRpm) * gain;
-    }
-
     private void updateCachedBatteryVoltage() {
         if (voltageSampleTimer.seconds() < VOLTAGE_SAMPLE_PERIOD_SECONDS) {
             return;
@@ -192,31 +163,6 @@ final class FlywheelVelocityController {
 
         lastBatteryVoltage = voltageSensor.getVoltage();
         voltageSampleTimer.reset();
-    }
-
-    private double calculateRecoveryBoost(double error, double filteredError) {
-        double underspeedError = Math.min(error, filteredError);
-        if (underspeedError <= config.flywheelRecoveryDeadbandRpm) {
-            return 0.0;
-        }
-
-        double extraError = underspeedError - config.flywheelRecoveryDeadbandRpm;
-        double boost = extraError * config.flywheelRecoveryGain;
-        return ShooterMath.clamp(boost, 0.0, config.flywheelRecoveryMaxBoost);
-    }
-
-    private double applyOutputSlew(double requestedOutput, double dt) {
-        double maxRise = Math.max(0.0, config.flywheelOutputRiseRatePerSecond) * dt;
-        double maxFall = Math.max(0.0, config.flywheelOutputFallRatePerSecond) * dt;
-        double delta = requestedOutput - lastOutputPower;
-
-        if (delta > maxRise) {
-            return lastOutputPower + maxRise;
-        }
-        if (delta < -maxFall) {
-            return lastOutputPower - maxFall;
-        }
-        return requestedOutput;
     }
 
     private Gains currentGains() {
