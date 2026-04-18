@@ -15,7 +15,6 @@ public final class ShotFeedCadenceController {
     }
 
     private final ElapsedTime gateOpenTimer = new ElapsedTime();
-
     private boolean armed;
     private boolean farZoneFeedPaused;
     private State state = State.IDLE;
@@ -76,6 +75,10 @@ public final class ShotFeedCadenceController {
 
     public boolean isBlockerSettledOpen() {
         return state == State.FEEDING;
+    }
+
+    public boolean shouldPreFeedIntake() {
+        return armed && (state == State.ARMED_WAITING_READY || state == State.GATE_OPENING);
     }
 
     public boolean shouldForceFeedIntake() {

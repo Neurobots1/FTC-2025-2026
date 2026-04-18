@@ -40,18 +40,13 @@ public class ShooterConstants {
     public static double farZoneFeedResumeDropRpm = 130.0;
     public static double farZoneFeedResumeDropFraction = 0.031;
 
-    // ===== Auto Shot Detection =====
-    public static double autoShotDetectDropRpm = 15.0;
-    public static double autoShotDetectDropFraction = 0.0065;
-    public static double autoShotDetectResetDropRpm = 8.0;
-    public static double autoShotDetectResetDropFraction = 0.003;
-    public static double autoShotDetectFallSlopeRpmPerSecond = 180.0;
-    public static double autoShotDetectRecoverySlopeRpmPerSecond = 100.0;
-    public static double autoShotDetectRecoveryRiseRpm = 6.0;
-    public static double autoShotDetectRecoveryRiseFraction = 0.0022;
-    public static double autoShotDetectFilterGain = 0.35;
-    public static double autoShotBurstTimeoutSeconds = 4;
-    public static int autoShotBurstExpectedCount = 3;
+    // ===== Auto Feed Timing =====
+    public static double autoShotFeedDurationSeconds = 1.5;
+    public static double sortedShotFinishDelaySeconds = 0.30;
+
+    // ===== Feed Intake =====
+    public static double preFeedIntakePower = 0.6;
+    public static double mainFeedIntakePower = 1;
 
 
 

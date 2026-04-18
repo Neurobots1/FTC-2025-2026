@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 
 public class IntakeMotor {
     private DcMotorEx intakeMotor;
@@ -19,8 +20,12 @@ public class IntakeMotor {
         intakeMotor.setPower(1);
     }
 
+    public void preFeedIntake() {
+        intakeMotor.setPower(ShooterConstants.preFeedIntakePower);
+    }
+
     public void slowIntake() {
-        intakeMotor.setPower(0.9);
+        intakeMotor.setPower(ShooterConstants.mainFeedIntakePower);
     }
 
     public void outtake() {

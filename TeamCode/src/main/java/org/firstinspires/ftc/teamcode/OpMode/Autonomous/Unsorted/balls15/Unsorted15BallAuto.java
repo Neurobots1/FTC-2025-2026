@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.ModularAutoB
 
 public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
     public static double GATE_INTAKE_SECONDS = 1.5;
-    public static double LINE_INTAKE_SPEED = 1.0;
+    public static double LINE_INTAKE_SPEED = 0.5;
 
     private PathChain toPreloadShot;
     private PathChain toLine2Start;
@@ -42,15 +42,16 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
         Pose line1Start = AutoPoseConstants.line1StartPose();
         Pose line1Finish = AutoPoseConstants.line1FinishPose();
         Pose finalShot = AutoPoseConstants.finalShotPose();
+        Pose gateShootControl = AutoPoseConstants.gateShootControl();
 
         toPreloadShot = paths().shotLine(startPose, preloadShot);
-        toLine2Start = paths().line(preloadShot, line2Start);
+        toLine2Start = paths().curve(preloadShot,line2Control ,line2Start);
         toLine2Finish = paths().line(line2Start, line2Finish);
-        line2ToShot = paths().shotCurve(line2Finish, line2Control, preloadShot);
+        line2ToShot = paths().shotCurve(line2Finish, gateShootControl, preloadShot);
         shotToGate = paths().curve(preloadShot, gateControl, gatePose);
-        gateToShot = paths().shotCurve(gatePose, line2Control, preloadShot);
+        gateToShot = paths().shotCurve(gatePose, gateShootControl, preloadShot);
         shotToGateAgain = paths().curve(preloadShot, gateControl, gatePose);
-        gateToFinalShot = paths().shotCurve(gatePose, line2Control, finalShot);
+        gateToFinalShot = paths().shotCurve(gatePose, gateShootControl, preloadShot);
         shotToLine1Start = paths().line(finalShot, line1Start);
         line1StartToFinish = paths().line(line1Start, line1Finish);
         line1ToFinalShot = paths().shotLine(line1Finish, finalShot);
@@ -62,6 +63,7 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
         builder
                 .enableUnsortedShooter(true)
                 .followAsync(toPreloadShot, 1.0, true)
+                .doAction(startTimedIntake())
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
@@ -71,9 +73,8 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 .waitForFollowerIdle()
                 .followAsync(toLine2Finish, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(0.9))
-                .doAction(stopIntake())
                 .followAsync(line2ToShot, 1.0, true)
+                .doAction(stopIntake())
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
@@ -103,7 +104,6 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 .waitForFollowerIdle()
                 .followAsync(line1StartToFinish, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(0.9))
                 .doAction(stopIntake())
                 .followAsync(line1ToFinalShot, 1.0, true)
                 .waitForUnsortedReadyToShoot()

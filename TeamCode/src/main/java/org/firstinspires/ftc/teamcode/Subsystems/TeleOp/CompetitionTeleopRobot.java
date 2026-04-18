@@ -172,7 +172,7 @@ public final class CompetitionTeleopRobot {
 
         if (!indexerBase.isBusy()) {
             if (forceFeedIntake) {
-                intake.intake();
+                intake.slowIntake();
             } else if (driverGamepad.right_bumper) {
                 intake.intake();
             } else if (driverGamepad.left_bumper) {
