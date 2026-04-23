@@ -82,7 +82,7 @@ public class ShooterConstants {
     public static double feedOpenSettlingSeconds = 0.30;
 
     // ===== SOTM =====
-    public static boolean shootOnMoveEnabled = true;
+    public static boolean shootOnMoveEnabled = false;
     public static double sotmScoreAngleDeg = -8.0;
     public static double sotmPassThroughRadiusInches = 5.0;
     public static double sotmLaunchSpeedToRpmSlope = 13.55;

@@ -4,6 +4,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.Constants.AutoPoseConstants;
+import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseUnsortedAutoTemplate;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
@@ -44,8 +45,91 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
         Pose finalShot = AutoPoseConstants.finalShotPose();
         Pose gateShootControl = AutoPoseConstants.gateShootControl();
 
+        if (ShooterHardwareConstants.turretEnabled) {
+            buildTurretEnabledNormalPaths(
+                    startPose,
+                    preloadShot,
+                    line2Start,
+                    line2Finish,
+                    line2Control,
+                    gatePose,
+                    gateControl,
+                    line1Start,
+                    line1Finish,
+                    finalShot,
+                    gateShootControl
+            );
+            return;
+        }
+
+        buildNormalPaths(
+                startPose,
+                preloadShot,
+                line2Start,
+                line2Finish,
+                line2Control,
+                gatePose,
+                gateControl,
+                line1Start,
+                line1Finish,
+                finalShot,
+                gateShootControl
+        );
+    }
+
+    private void buildTurretEnabledNormalPaths(Pose startPose,
+                                               Pose preloadShot,
+                                               Pose line2Start,
+                                               Pose line2Finish,
+                                               Pose line2Control,
+                                               Pose gatePose,
+                                               Pose gateControl,
+                                               Pose line1Start,
+                                               Pose line1Finish,
+                                               Pose finalShot,
+                                               Pose gateShootControl) {
+        Pose preloadShotToLine2Heading = new Pose(
+                preloadShot.getX(),
+                preloadShot.getY(),
+                line2Start.getHeading()
+        );
+        Pose preloadShotToGateHeading = new Pose(
+                preloadShot.getX(),
+                preloadShot.getY(),
+                gatePose.getHeading()
+        );
+        Pose finalShotToLine1Heading = new Pose(
+                finalShot.getX(),
+                finalShot.getY(),
+                line1Start.getHeading()
+        );
+
+        toPreloadShot = paths().shotLine(startPose, preloadShotToLine2Heading);
+        toLine2Start = paths().curve(preloadShotToLine2Heading, line2Control, line2Start);
+        toLine2Finish = paths().line(line2Start, line2Finish);
+        line2ToShot = paths().curve(line2Finish, gateShootControl, preloadShotToGateHeading);
+        shotToGate = paths().curve(preloadShotToGateHeading, gateControl, gatePose);
+        gateToShot = paths().curve(gatePose, gateShootControl, preloadShotToGateHeading);
+        shotToGateAgain = paths().curve(preloadShotToGateHeading, gateControl, gatePose);
+        gateToFinalShot = paths().curve(gatePose, gateShootControl, finalShotToLine1Heading);
+        shotToLine1Start = paths().line(finalShotToLine1Heading, line1Start);
+        line1StartToFinish = paths().line(line1Start, line1Finish);
+        line1ToFinalShot = paths().shotLine(line1Finish, finalShot);
+    }
+
+    private void buildNormalPaths(Pose startPose,
+                                  Pose preloadShot,
+                                  Pose line2Start,
+                                  Pose line2Finish,
+                                  Pose line2Control,
+                                  Pose gatePose,
+                                  Pose gateControl,
+                                  Pose line1Start,
+                                  Pose line1Finish,
+                                  Pose finalShot,
+                                  Pose gateShootControl) {
         toPreloadShot = paths().shotLine(startPose, preloadShot);
-        toLine2Start = paths().curve(preloadShot,line2Control ,line2Start);
+        toLine2Start = paths().curve(preloadShot, line2Control, line2Start);
         toLine2Finish = paths().line(line2Start, line2Finish);
         line2ToShot = paths().shotCurve(line2Finish, gateShootControl, preloadShot);
         shotToGate = paths().curve(preloadShot, gateControl, gatePose);

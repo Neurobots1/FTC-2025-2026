@@ -55,12 +55,12 @@ public final class AutoPoseConstants {
     public static Pose line3ControlPose() {return new Pose(45, 26);}
 
     // TODO
-    public static Pose line3FinishPose() {
-        return new Pose(15, 26, Math.toRadians(180));
+    public static Pose line3FinishPose() {return new Pose(15, 26, Math.toRadians(180));
     }
 
     public static Pose gatePose() {
-        return new Pose(10, 49, Math.toRadians(144)); // 11,52,144
+        return new Pose(10, 50
+                , Math.toRadians(144)); // 11,52,144
     }
 
     public static Pose gateShootControl() {

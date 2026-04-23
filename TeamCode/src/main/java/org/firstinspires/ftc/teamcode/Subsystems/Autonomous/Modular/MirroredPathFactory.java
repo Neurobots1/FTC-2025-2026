@@ -61,6 +61,25 @@ public class MirroredPathFactory {
                 .build();
     }
 
+    public PathChain tangentLine(Pose blueStart, Pose blueEnd) {
+        Pose start = pose(blueStart);
+        Pose end = pose(blueEnd);
+        return follower.pathBuilder()
+                .addPath(new BezierLine(start, end))
+                .setTangentHeadingInterpolation()
+                .build();
+    }
+
+    public PathChain tangentCurve(Pose blueStart, Pose blueControl, Pose blueEnd) {
+        Pose start = pose(blueStart);
+        Pose control = pose(blueControl);
+        Pose end = pose(blueEnd);
+        return follower.pathBuilder()
+                .addPath(new BezierCurve(start, control, end))
+                .setTangentHeadingInterpolation()
+                .build();
+    }
+
     public PathChain shotLine(Pose blueStart, Pose blueEnd) {
         Pose start = pose(blueStart);
         Pose end = pose(blueEnd);
