@@ -42,7 +42,7 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
         Pose line2ReturnControl = new Pose(40.500, 50.668);
         Pose gateApproachControl = new Pose(40.000, 30.000);
         Pose gateReturnControl = new Pose(40.000, 30.000);
-        Pose gatePose = new Pose(12.000, 47.000, Math.toRadians(143));
+        Pose gatePose = new Pose(12.000, 48.000, Math.toRadians(142));
         Pose line1IntakeControl = new Pose(40.344, 85.189);
         Pose line1IntakePose = new Pose(14.000, 86.000);
         Pose finalShotPose = new Pose(60.000, 98.000);
