@@ -6,7 +6,6 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 
-import org.firstinspires.ftc.teamcode.Constants.AutoPoseConstants;
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseUnsortedAutoTemplate;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
@@ -37,15 +36,16 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
         Pose startPose = new Pose(20.000, 119.000, Math.toRadians(139));
         Pose preloadShotPose = new Pose(62.000, 76.000, Math.toRadians(231));
         Pose cycleShotPose = new Pose(58.000, 76.000, Math.toRadians(231));
-        Pose line2IntakeControl = new Pose(43.811, 50.800);
+        Pose line2IntakeControl = new Pose(44.222, 49.977);
         Pose line2IntakePose = new Pose(8.000, 50.664);
-        Pose line2ReturnControl = new Pose(40.500, 50.668);
+        Pose line2ReturnControl = new Pose(40.706, 51.491);
         Pose gateApproachControl = new Pose(40.000, 30.000);
-        Pose gateReturnControl = new Pose(40.000, 30.000);
-        Pose gatePose = new Pose(12.000, 47.000, Math.toRadians(143));
+        Pose gateReturnControl = new Pose(49.049, 25.681);
+        Pose gateReturnFinalControl = new Pose(49.049, 25.887);
+        Pose gatePose = new Pose(12.000, 56.000, Math.toRadians(143));
         Pose line1IntakeControl = new Pose(40.344, 85.189);
-        Pose line1IntakePose = new Pose(14.000, 86.000);
-        Pose finalShotPose = new Pose(60.000, 98.000);
+        Pose line1IntakePose = new Pose(16.000, 86.000);
+        Pose finalShotPose = new Pose(60.207, 100.689);
 
         toPreloadShot = line(startPose, preloadShotPose, false);
         toLine2Intake = tangentCurve(preloadShotPose, line2IntakeControl, line2IntakePose, false);
@@ -53,7 +53,7 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
         shotToGate = curve(cycleShotPose, gateApproachControl, gatePose, false);
         gateToShot = curve(gatePose, gateReturnControl, cycleShotPose, false);
         shotToGateAgain = curve(cycleShotPose, gateApproachControl, gatePose, false);
-        gateToFinalShot = curve(gatePose, gateReturnControl, cycleShotPose, false);
+        gateToFinalShot = curve(gatePose, gateReturnFinalControl, cycleShotPose, false);
         shotToLine1Intake = tangentCurve(cycleShotPose, line1IntakeControl, line1IntakePose, false);
         line1ToFinalShot = tangentLine(line1IntakePose, finalShotPose, true);
     }
