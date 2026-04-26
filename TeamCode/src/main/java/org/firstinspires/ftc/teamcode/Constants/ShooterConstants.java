@@ -25,6 +25,7 @@ public class ShooterConstants {
     public static double flywheelSustainToleranceFraction = 0.050;
 
     // ===== Far Zone Feed =====
+    public static boolean farZoneFeedPauseEnabled = false;
     public static double farZoneFeedPauseDistanceInches = 130.0;
     public static double farZoneFeedPauseDropRpm = 140.0;
     public static double farZoneFeedPauseDropFraction = 0.035;
@@ -36,8 +37,8 @@ public class ShooterConstants {
     public static double sortedShotFinishDelaySeconds = 0.30;
 
     // ===== Feed Intake =====
-    public static double preFeedIntakePower = 0.8;
-    public static double mainFeedIntakePower = 1;
+    public static double preFeedIntakePower = -0.8;
+    public static double mainFeedIntakePower = -1;
 
 
 

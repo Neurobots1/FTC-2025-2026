@@ -469,6 +469,7 @@ public final class PrecisionShooterSubsystem {
                 openFeed();
             }
         } else if (!readyToContinueFeeding
+                && !shouldHoldFeedGateOpenDuringFarZoneSpeedDip()
                 && readyDropoutTimer.seconds() >= config.feedReadyDropoutGraceSeconds) {
             closeFeed();
         }
@@ -741,6 +742,17 @@ public final class PrecisionShooterSubsystem {
 
     private boolean isReadyToContinueFeeding() {
         return isReadyToShoot(true);
+    }
+
+    private boolean shouldHoldFeedGateOpenDuringFarZoneSpeedDip() {
+        return fireRequested
+                && spinEnabled
+                && feedGateOpen
+                && lastInShootingZone
+                && lastSolution.valid
+                && lastTableDistanceInches >= ShooterConstants.farZoneFeedPauseDistanceInches
+                && hood.isSettled()
+                && isAimAligned(true);
     }
 
     private boolean isReadyToShoot(boolean sustainShot) {

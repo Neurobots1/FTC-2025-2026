@@ -37,11 +37,11 @@ public final class LUTConstants {
     public static double shot6HoodAngleDeg = 49.75;
 
     public static double shot7DistanceInches = 139.67;
-    public static double shot7TargetRpm = 4250.0;
+    public static double shot7TargetRpm = 4325;
     public static double shot7HoodAngleDeg = 55.00;
 
     public static double shot8DistanceInches = 154.7216;
-    public static double shot8TargetRpm = 4375.0;
+    public static double shot8TargetRpm = 4450;
     public static double shot8HoodAngleDeg = 55.0;
 
     public static double shot9DistanceInches = 0.0;

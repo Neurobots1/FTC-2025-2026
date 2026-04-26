@@ -109,7 +109,8 @@ public final class ShotFeedCadenceController {
     }
 
     private boolean shouldManageFarZoneFeed(PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot) {
-        return shooterSnapshot != null
+        return ShooterConstants.farZoneFeedPauseEnabled
+                && shooterSnapshot != null
                 && shooterSnapshot.inShootingZone
                 && shooterSnapshot.targetRpm > 1.0
                 && shooterSnapshot.tableDistanceInches >= ShooterConstants.farZoneFeedPauseDistanceInches;
