@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.ModularAutoBuilder;
 
-public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
+public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
     public static double GATE_INTAKE_SECONDS = 1.5;
     public static double GATE_TURN_SETTLE_SECONDS = 0.35;
     public static double LINE_INTAKE_SPEED = 1.0;
@@ -19,10 +19,12 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
     private PathChain toPreloadShot;
     private PathChain toLine2Intake;
     private PathChain line2ToShot;
-    private PathChain shotToGate;
-    private PathChain gateToShot;
-    private PathChain shotToGateAgain;
-    private PathChain gateToFinalShot;
+    private PathChain shotToGateApproach;
+    private PathChain gateApproachToCollect;
+    private PathChain gateCollectToShot;
+    private PathChain shotToGateApproachAgain;
+    private PathChain gateApproachToCollectAgain;
+    private PathChain gateCollectToFinalShot;
     private PathChain shotToLine1Intake;
     private PathChain line1ToFinalShot;
 
@@ -34,27 +36,27 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
     @Override
     protected void buildPaths() {
         Pose startPose = new Pose(20.000, 119.000, Math.toRadians(139));
-        Pose preloadShotPose = new Pose(62.000, 76.000, Math.toRadians(231));
-        Pose cycleShotPose = new Pose(58.000, 76.000, Math.toRadians(231));
+        Pose preloadShotPose = new Pose(46.781, 82.993, Math.toRadians(231));
+        Pose cycleShotPose = new Pose(55.000, 77.000, Math.toRadians(231));
         Pose line2IntakeControl = new Pose(44.222, 49.977);
-        Pose line2IntakePose = new Pose(8.000, 50.664);
-        Pose line2ReturnControl = new Pose(40.706, 51.491);
-        Pose gateApproachControl = new Pose(40.000, 30.000);
-        Pose gateReturnControl = new Pose(49.049, 25.681);
-        Pose gateReturnFinalControl = new Pose(49.049, 25.887);
-        Pose gatePose = new Pose(11.750, 49.000, Math.toRadians(140));
-        Pose line1IntakeControl = new Pose(40.344, 85.189);
-        Pose line1IntakePose = new Pose(14.000, 86.000);
+        Pose line2IntakePose = new Pose(8.000, 52.000);
+        Pose line2ReturnControl = new Pose(44.075, 50.183);
+        Pose gateApproachControl = new Pose(41.000, 56.000);
+        Pose gateApproachPose = new Pose(11.750, 56.000, Math.toRadians(180));
+        Pose gateCollectPose = new Pose(10.000, 47.000, Math.toRadians(140));
+        Pose line1IntakePose = new Pose(14.000, 83.000);
         Pose finalShotPose = new Pose(60.207, 100.689);
 
         toPreloadShot = line(startPose, preloadShotPose, false);
         toLine2Intake = tangentCurve(preloadShotPose, line2IntakeControl, line2IntakePose, false);
         line2ToShot = tangentCurve(line2IntakePose, line2ReturnControl, cycleShotPose, true);
-        shotToGate = curve(cycleShotPose, gateApproachControl, gatePose, false);
-        gateToShot = curve(gatePose, gateReturnControl, cycleShotPose, false);
-        shotToGateAgain = curve(cycleShotPose, gateApproachControl, gatePose, false);
-        gateToFinalShot = curve(gatePose, gateReturnFinalControl, cycleShotPose, false);
-        shotToLine1Intake = tangentCurve(cycleShotPose, line1IntakeControl, line1IntakePose, false);
+        shotToGateApproach = tangentCurve(cycleShotPose, gateApproachControl, gateApproachPose, false);
+        gateApproachToCollect = line(gateApproachPose, gateCollectPose, false);
+        gateCollectToShot = tangentLine(gateCollectPose, cycleShotPose, true);
+        shotToGateApproachAgain = tangentCurve(cycleShotPose, gateApproachControl, gateApproachPose, false);
+        gateApproachToCollectAgain = line(gateApproachPose, gateCollectPose, false);
+        gateCollectToFinalShot = tangentLine(gateCollectPose, cycleShotPose, true);
+        shotToLine1Intake = tangentLine(cycleShotPose, line1IntakePose, false);
         line1ToFinalShot = tangentLine(line1IntakePose, finalShotPose, true);
     }
 
@@ -137,23 +139,27 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
                 .waitForUnsortedShotDone()
                 .waitForFollowerIdle()
                 .doAction(startTimedIntake())
-                .followAsync(shotToGate, 1.0, true)
+                .followAsync(shotToGateApproach, 1.0, true)
+                .waitForFollowerIdle()
+                .followAsync(gateApproachToCollect, 1.0, false)
                 .waitForFollowerIdle()
                 .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
                 .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
                 .doAction(stopIntake())
-                .followAsync(gateToShot, 1.0, true)
+                .followAsync(gateCollectToShot, 1.0, true)
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
                 .waitForFollowerIdle()
                 .doAction(startTimedIntake())
-                .followAsync(shotToGateAgain, 1.0, true)
+                .followAsync(shotToGateApproachAgain, 1.0, true)
+                .waitForFollowerIdle()
+                .followAsync(gateApproachToCollectAgain, 1.0, false)
                 .waitForFollowerIdle()
                 .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
                 .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
                 .doAction(stopIntake())
-                .followAsync(gateToFinalShot, 1.0, true)
+                .followAsync(gateCollectToFinalShot, 1.0, true)
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
@@ -180,14 +186,14 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
         return Actions.instant(() -> intake().stop());
     }
 
-    public static class Blue extends Unsorted15BallAuto20 {
+    public static class Blue extends Unsorted15BallAuto30 {
         @Override
         protected AutoAlliance alliance() {
             return AutoAlliance.BLUE;
         }
     }
 
-    public static class Red extends Unsorted15BallAuto20 {
+    public static class Red extends Unsorted15BallAuto30 {
         @Override
         protected AutoAlliance alliance() {
             return AutoAlliance.RED;
