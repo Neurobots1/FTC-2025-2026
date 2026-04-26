@@ -104,7 +104,7 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 line1Start.getHeading()
         );
 
-        toPreloadShot = paths().shotLine(startPose, preloadShotToLine2Heading);
+        toPreloadShot = paths().line(startPose, preloadShotToLine2Heading);
         toLine2Start = paths().curve(preloadShotToLine2Heading, line2Control, line2Start);
         toLine2Finish = paths().line(line2Start, line2Finish);
         line2ToShot = paths().curve(line2Finish, gateShootControl, preloadShotToGateHeading);
@@ -114,7 +114,7 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
         gateToFinalShot = paths().curve(gatePose, gateShootControl, finalShotToLine1Heading);
         shotToLine1Start = paths().line(finalShotToLine1Heading, line1Start);
         line1StartToFinish = paths().line(line1Start, line1Finish);
-        line1ToFinalShot = paths().shotLine(line1Finish, finalShot);
+        line1ToFinalShot = paths().line(line1Finish, finalShot);
     }
 
     private void buildNormalPaths(Pose startPose,
