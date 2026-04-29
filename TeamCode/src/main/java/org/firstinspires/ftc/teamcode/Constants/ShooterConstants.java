@@ -33,7 +33,7 @@ public class ShooterConstants {
     public static double farZoneFeedResumeDropFraction = 0.031;
 
     // ===== Auto Feed Timing =====
-    public static double autoShotFeedDurationSeconds = 1.5;
+    public static double autoShotFeedDurationSeconds = 1;
     public static double sortedShotFinishDelaySeconds = 0.30;
 
     // ===== Feed Intake =====
@@ -49,17 +49,17 @@ public class ShooterConstants {
     public static double turretHomeCurrentAmps = 4.0;
     public static double turretHomeVelocityTicksPerSecond = 12.0;
     public static double turretHomeHoldSeconds = 0.18;
-    public static double turretPositionKp = 0.7;
-    public static double turretPositionKd = 1.5;
-    public static double turretKf = 0.08;
+    public static double turretPositionKp = 1.05;
+    public static double turretPositionKd = 2.0;
+    public static double turretKf = 0.10;
     public static double turretControlToleranceDeg = 0.5;
     public static double turretShotReadyToleranceDeg = 4.0;
     public static double turretShotSustainToleranceDeg = 6.0;
-    public static double turretLimitBufferDeg = 3.0;
+    public static double turretLimitBufferDeg = 0.0;
     public static double turretLimitSlowZoneDeg = 18.0;
     public static double turretLimitMinScale = 0.18;
-    public static double turretDeadZoneNudgeTurnCommand = 0.5;
-    public static double turretDeadZoneNudgeDriverOverrideThreshold = 0.08;
+    public static double turretDeadZoneNudgeTurnCommand = 1.0;
+    public static double turretDeadZoneNudgeDriverOverrideThreshold = 0.12;
 
     // ===== Chassis Aim PIDF =====
     public static double chassisAimKp = 0.6;
@@ -95,10 +95,10 @@ public class ShooterConstants {
 
     // ===== Field Targets =====
     public static double blueGoalXInches = 0.0;
-    public static double blueGoalYInches = 144.0;
+    public static double blueGoalYInches = 142.0;
     public static double redGoalXInches = 144.0;
-    public static double redGoalYInches = 144.0;
-    public static double blueHeadingAimXInches = 12.0;
+    public static double redGoalYInches = 142.0;
+    public static double blueHeadingAimXInches = 4.0; //modifier
     public static double blueHeadingAimYInches = 132.0;
     public static double redHeadingAimXInches = 132.0;
     public static double redHeadingAimYInches = 132.0;

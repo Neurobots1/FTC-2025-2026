@@ -13,8 +13,6 @@ final class TurretAxis {
     private enum HomeState {
         SEEK_LEFT,
         BACKOFF_LEFT,
-        SEEK_RIGHT,
-        BACKOFF_RIGHT,
         DONE
     }
 
@@ -62,6 +60,7 @@ final class TurretAxis {
                 motor.setPower(-Math.abs(config.turretHomePower));
                 if (stallDetected()) {
                     leftStopTicks = motor.getCurrentPosition();
+                    rightStopTicks = leftStopTicks + getMechanicalTravelTicks();
                     homeState = HomeState.BACKOFF_LEFT;
                     homeTimer.reset();
                 }
@@ -70,30 +69,7 @@ final class TurretAxis {
             case BACKOFF_LEFT:
                 motor.setPower(Math.abs(config.turretBackoffPower));
                 if (Math.abs(motor.getCurrentPosition() - leftStopTicks) >= config.turretBackoffTicks) {
-                    homeState = HomeState.SEEK_RIGHT;
-                    homeTimer.reset();
-                }
-                break;
-
-            case SEEK_RIGHT:
-                motor.setPower(Math.abs(config.turretHomePower));
-                if (stallDetected()) {
-                    rightStopTicks = motor.getCurrentPosition();
-                    homeState = HomeState.BACKOFF_RIGHT;
-                    homeTimer.reset();
-                }
-                break;
-
-            case BACKOFF_RIGHT:
-                motor.setPower(-Math.abs(config.turretBackoffPower));
-                if (Math.abs(motor.getCurrentPosition() - rightStopTicks) >= config.turretBackoffTicks) {
-                    homed = true;
-                    homeState = HomeState.DONE;
-                    targetAngleRadians = getCurrentSweepRadians();
-                    lastAngleError = 0.0;
-                    lastCommandPower = 0.0;
-                    lastSoftLimitScale = 1.0;
-                    motor.setPower(0.0);
+                    finishHoming();
                 }
                 break;
 
@@ -349,6 +325,10 @@ final class TurretAxis {
         return Math.toRadians(ShooterHardwareConstants.turretMechanicalRangeDeg);
     }
 
+    private int getMechanicalTravelTicks() {
+        return Math.max(1, (int) Math.round(Math.abs(ShooterHardwareConstants.turretMechanicalRangeTicks)));
+    }
+
     private double getHalfForbiddenRadians() {
         return 0.5 * Math.toRadians(Math.max(0.0, ShooterHardwareConstants.turretForbiddenWidthDeg));
     }
@@ -393,5 +373,15 @@ final class TurretAxis {
             homeTimer.reset();
         }
         return false;
+    }
+
+    private void finishHoming() {
+        homed = true;
+        homeState = HomeState.DONE;
+        targetAngleRadians = getCurrentSweepRadians();
+        lastAngleError = 0.0;
+        lastCommandPower = 0.0;
+        lastSoftLimitScale = 1.0;
+        motor.setPower(0.0);
     }
 }

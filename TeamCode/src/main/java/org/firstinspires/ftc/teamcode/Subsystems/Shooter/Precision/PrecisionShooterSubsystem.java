@@ -671,9 +671,14 @@ public final class PrecisionShooterSubsystem {
                 && turret.isHomed()
                 && autoAimEnabled
                 && fireRequested
-                && !feedGateOpen
                 && lastInShootingZone
                 && lastSolution.valid
+                && turret.isRequestedAngleInForwardDeadZone();
+    }
+
+    public boolean isTurretRequestedAngleInForwardDeadZone() {
+        return turret != null
+                && turret.isHomed()
                 && turret.isRequestedAngleInForwardDeadZone();
     }
 
@@ -692,6 +697,14 @@ public final class PrecisionShooterSubsystem {
 
     public double getTurretVelocityTicksPerSecond() {
         return turret == null ? 0.0 : turret.getLastVelocityTicksPerSecond();
+    }
+
+    public int getTurretLeftStopTicks() {
+        return turret == null ? 0 : turret.getLeftStopTicks();
+    }
+
+    public int getTurretRightStopTicks() {
+        return turret == null ? 0 : turret.getRightStopTicks();
     }
 
     public String getTurretHomeState() {

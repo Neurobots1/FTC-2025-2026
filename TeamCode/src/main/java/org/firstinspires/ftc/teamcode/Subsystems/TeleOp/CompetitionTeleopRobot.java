@@ -142,29 +142,11 @@ public final class CompetitionTeleopRobot {
         double driveForward = -driverGamepad.left_stick_y;
         double driveStrafe = -driverGamepad.left_stick_x;
         double driverTurnCommand = -driverGamepad.right_stick_x;
-        double turnCommand = driverTurnCommand;
-        if (Math.abs(driverTurnCommand) < ShooterConstants.turretDeadZoneNudgeDriverOverrideThreshold) {
-            double turretDeadZoneNudge = shooter.getTurretDeadZoneNudgeTurnCommand();
-            if (turretDeadZoneNudge != 0.0) {
-                turnCommand = turretDeadZoneNudge;
-            }
-        }
         double fieldCentricOffset = AllianceSelector.Field.fieldCentricOffset(
                 alliance == Alliance.BLUE
                         ? AllianceSelector.Alliance.BLUE
                         : AllianceSelector.Alliance.RED
         );
-
-        if (shooter.isTurretEnabled()) {
-            follower.setTeleOpDrive(
-                    driveForward,
-                    driveStrafe,
-                    turnCommand,
-                    false,
-                    fieldCentricOffset
-            );
-            follower.update();
-        }
 
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
@@ -176,6 +158,14 @@ public final class CompetitionTeleopRobot {
         shooter.update();
         PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
 
+        double turretDeadZoneNudge = shooter.getTurretDeadZoneNudgeTurnCommand();
+        boolean nudgeDriverOverride = Math.abs(driverTurnCommand)
+                >= ShooterConstants.turretDeadZoneNudgeDriverOverrideThreshold;
+        double turnCommand = driverTurnCommand;
+        if (!nudgeDriverOverride && turretDeadZoneNudge != 0.0) {
+            turnCommand = turretDeadZoneNudge;
+        }
+
         boolean chassisHeadingLockActive = false;
         if (TeleopConstants.ENABLE_HEADING_LOCK
                 && shotFeedController.isArmed()
@@ -186,16 +176,14 @@ public final class CompetitionTeleopRobot {
             headingLockController.reset();
         }
 
-        if (!shooter.isTurretEnabled()) {
-            follower.setTeleOpDrive(
-                    driveForward,
-                    driveStrafe,
-                    turnCommand,
-                    false,
-                    fieldCentricOffset
-            );
-            follower.update();
-        }
+        follower.setTeleOpDrive(
+                driveForward,
+                driveStrafe,
+                turnCommand,
+                false,
+                fieldCentricOffset
+        );
+        follower.update();
 
         shotFeedController.update(shooter.isFeedGateOpen(), shooterSnapshot);
         boolean forceFeedIntake = shotFeedController.shouldForceFeedIntake();
@@ -228,6 +216,9 @@ public final class CompetitionTeleopRobot {
         Pose pose = follower.getPose();
         joinedTelemetry.addData("Yaw Trim Deg", "%.2f", yawTrimDegrees);
         joinedTelemetry.addData("RPM Trim", "%.1f", rpmTrim);
+        joinedTelemetry.addData("Turret Deadzone Target", shooter.isTurretRequestedAngleInForwardDeadZone());
+        joinedTelemetry.addData("Turret Nudge Active", !nudgeDriverOverride && turretDeadZoneNudge != 0.0);
+        joinedTelemetry.addData("Turret Nudge Cmd", "%.2f", turretDeadZoneNudge);
         joinedTelemetry.addData("Pose", "(%.2f, %.2f, %.1f)", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
         joinedTelemetry.update();
         telemetryManager.update();
