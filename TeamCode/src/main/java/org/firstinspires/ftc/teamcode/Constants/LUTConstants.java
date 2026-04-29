@@ -13,35 +13,35 @@ public final class LUTConstants {
     // Panels can tune primitive fields live, so the shot table is exposed as rows instead
     // of a single complex object.
     public static double shot1DistanceInches = 34.2417;
-    public static double shot1TargetRpm = 2450.0;
+    public static double shot1TargetRpm = 2525.0;
     public static double shot1HoodAngleDeg = 30.00;
 
     public static double shot2DistanceInches = 58.9609;
-    public static double shot2TargetRpm = 2725.0;
+    public static double shot2TargetRpm = 2800.0;
     public static double shot2HoodAngleDeg = 38.00;
 
     public static double shot3DistanceInches = 75.9841;
-    public static double shot3TargetRpm = 2950.00;
+    public static double shot3TargetRpm = 3025.00;
     public static double shot3HoodAngleDeg = 40.25;
 
     public static double shot4DistanceInches = 91.4179;
-    public static double shot4TargetRpm = 3150.0;
+    public static double shot4TargetRpm = 3225.0;
     public static double shot4HoodAngleDeg = 43.25;
 
     public static double shot5DistanceInches = 107.1952;
-    public static double shot5TargetRpm = 3400.0;
+    public static double shot5TargetRpm = 3475.0;
     public static double shot5HoodAngleDeg = 46.5;
 
     public static double shot6DistanceInches = 121.2883;
-    public static double shot6TargetRpm = 3625.0;
+    public static double shot6TargetRpm = 3700.0;
     public static double shot6HoodAngleDeg = 49.75;
 
     public static double shot7DistanceInches = 139.67;
-    public static double shot7TargetRpm = 4175.0;
+    public static double shot7TargetRpm = 4300;
     public static double shot7HoodAngleDeg = 55.00;
 
     public static double shot8DistanceInches = 154.7216;
-    public static double shot8TargetRpm = 4300.0;
+    public static double shot8TargetRpm = 4400;
     public static double shot8HoodAngleDeg = 55.0;
 
     public static double shot9DistanceInches = 0.0;

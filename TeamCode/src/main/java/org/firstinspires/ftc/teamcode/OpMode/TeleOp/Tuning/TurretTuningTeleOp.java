@@ -114,6 +114,9 @@ public class TurretTuningTeleOp extends OpMode {
         telemetry.addData("Soft Limit Scale", "%.2f", shooter.getTurretSoftLimitScale());
         telemetry.addData("Turret Current A", "%.2f", shooter.getTurretCurrentAmps());
         telemetry.addData("Turret Vel Ticks/S", "%.2f", shooter.getTurretVelocityTicksPerSecond());
+        telemetry.addData("Left Stop Ticks", shooter.getTurretLeftStopTicks());
+        telemetry.addData("Right Stop Ticks", shooter.getTurretRightStopTicks());
+        telemetry.addData("Range Ticks", "%.0f", ShooterHardwareConstants.turretMechanicalRangeTicks);
         telemetry.addData("Safe Range", "%.2f to %.2f", shooter.getTurretMinTargetDegrees(), shooter.getTurretMaxTargetDegrees());
         telemetry.addData("Kp", "%.3f", ShooterConstants.turretPositionKp);
         telemetry.addData("Kd", "%.3f", ShooterConstants.turretPositionKd);

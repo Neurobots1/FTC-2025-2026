@@ -17,7 +17,7 @@ public class IntakeMotor {
     }
 
     public void intake() {
-        intakeMotor.setPower(1);
+        intakeMotor.setPower(-1);
     }
 
     public void preFeedIntake() {
@@ -29,12 +29,12 @@ public class IntakeMotor {
     }
 
     public void outtake() {
-        intakeMotor.setPower(-0.7);  // Run motor at 3/4 speed in reverse for outtake
+        intakeMotor.setPower(0.7);  // Run motor at 3/4 speed in reverse for outtake
     }
 
     // Method to run the motor at half speed to keep intaked pieces inside
     public void slowOuttake() {
-        intakeMotor.setPower(-0.3);  // Run motor at half speed to keep pieces inside
+        intakeMotor.setPower(0.3);  // Run motor at half speed to keep pieces inside
     }
 
     // Method to stop the intake motor

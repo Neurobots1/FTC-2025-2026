@@ -11,10 +11,12 @@ import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.ModularAutoBuilder;
 
 public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
-    public static double GATE_INTAKE_SECONDS = 1.5;
-    public static double LINE_INTAKE_SPEED = 0.5;
+    public static double GATE_INTAKE_SECONDS = 2;
+    public static double LINE_INTAKE_SPEED = 1;
 
     private PathChain toPreloadShot;
+    private PathChain toLine2Control;
+    private PathChain line2ControlToStart;
     private PathChain toLine2Start;
     private PathChain toLine2Finish;
     private PathChain line2ToShot;
@@ -38,7 +40,9 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
         Pose line2Start = AutoPoseConstants.line2StartPose();
         Pose line2Finish = AutoPoseConstants.line2FinishPoseUnsorted();
         Pose line2Control = AutoPoseConstants.line2ControlPose();
+        Pose line2ReturnControl = AutoPoseConstants.line2ReturnControlPose();
         Pose gatePose = AutoPoseConstants.gatePose();
+        Pose firstGatePose = AutoPoseConstants.firstGatePose();
         Pose gateControl = AutoPoseConstants.gateControlPose();
         Pose line1Start = AutoPoseConstants.line1StartPose();
         Pose line1Finish = AutoPoseConstants.line1FinishPose();
@@ -52,7 +56,9 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                     line2Start,
                     line2Finish,
                     line2Control,
+                    line2ReturnControl,
                     gatePose,
+                    firstGatePose,
                     gateControl,
                     line1Start,
                     line1Finish,
@@ -68,7 +74,9 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 line2Start,
                 line2Finish,
                 line2Control,
+                line2ReturnControl,
                 gatePose,
+                firstGatePose,
                 gateControl,
                 line1Start,
                 line1Finish,
@@ -82,39 +90,37 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                                                Pose line2Start,
                                                Pose line2Finish,
                                                Pose line2Control,
+                                               Pose line2ReturnControl,
                                                Pose gatePose,
+                                               Pose firstGatePose,
                                                Pose gateControl,
                                                Pose line1Start,
                                                Pose line1Finish,
                                                Pose finalShot,
                                                Pose gateShootControl) {
-        Pose preloadShotToLine2Heading = new Pose(
+        Pose preloadShotHeading = new Pose(
                 preloadShot.getX(),
                 preloadShot.getY(),
-                line2Start.getHeading()
+                Math.toRadians(180)
         );
-        Pose preloadShotToGateHeading = new Pose(
-                preloadShot.getX(),
-                preloadShot.getY(),
-                gatePose.getHeading()
-        );
-        Pose finalShotToLine1Heading = new Pose(
+        Pose finalShotHeading = new Pose(
                 finalShot.getX(),
                 finalShot.getY(),
-                line1Start.getHeading()
+                Math.toRadians(180)
         );
 
-        toPreloadShot = paths().shotLine(startPose, preloadShotToLine2Heading);
-        toLine2Start = paths().curve(preloadShotToLine2Heading, line2Control, line2Start);
+        toPreloadShot = paths().line(startPose, preloadShotHeading);
+        toLine2Control = paths().tangentLine(preloadShotHeading, line2Control);
+        line2ControlToStart = paths().tangentLine(line2Control, line2Start);
         toLine2Finish = paths().line(line2Start, line2Finish);
-        line2ToShot = paths().curve(line2Finish, gateShootControl, preloadShotToGateHeading);
-        shotToGate = paths().curve(preloadShotToGateHeading, gateControl, gatePose);
-        gateToShot = paths().curve(gatePose, gateShootControl, preloadShotToGateHeading);
-        shotToGateAgain = paths().curve(preloadShotToGateHeading, gateControl, gatePose);
-        gateToFinalShot = paths().curve(gatePose, gateShootControl, finalShotToLine1Heading);
-        shotToLine1Start = paths().line(finalShotToLine1Heading, line1Start);
+        line2ToShot = paths().curve(line2Finish, line2ReturnControl, preloadShotHeading);
+        shotToGate = paths().curve(preloadShotHeading, gateControl, firstGatePose);
+        gateToShot = paths().curve(firstGatePose, gateShootControl, preloadShotHeading);
+        shotToGateAgain = paths().curve(preloadShotHeading, gateControl, gatePose);
+        gateToFinalShot = paths().curve(gatePose, gateShootControl, finalShotHeading);
+        shotToLine1Start = paths().line(finalShotHeading, line1Start);
         line1StartToFinish = paths().line(line1Start, line1Finish);
-        line1ToFinalShot = paths().shotLine(line1Finish, finalShot);
+        line1ToFinalShot = paths().line(line1Finish, finalShot);
     }
 
     private void buildNormalPaths(Pose startPose,
@@ -122,18 +128,21 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                                   Pose line2Start,
                                   Pose line2Finish,
                                   Pose line2Control,
+                                  Pose line2ReturnControl,
                                   Pose gatePose,
+                                  Pose firstGatePose,
                                   Pose gateControl,
                                   Pose line1Start,
                                   Pose line1Finish,
                                   Pose finalShot,
                                   Pose gateShootControl) {
         toPreloadShot = paths().shotLine(startPose, preloadShot);
-        toLine2Start = paths().curve(preloadShot, line2Control, line2Start);
+        toLine2Control = paths().tangentLine(preloadShot, line2Control);
+        line2ControlToStart = paths().tangentLine(line2Control, line2Start);
         toLine2Finish = paths().line(line2Start, line2Finish);
-        line2ToShot = paths().shotCurve(line2Finish, gateShootControl, preloadShot);
-        shotToGate = paths().curve(preloadShot, gateControl, gatePose);
-        gateToShot = paths().shotCurve(gatePose, gateShootControl, preloadShot);
+        line2ToShot = paths().shotCurve(line2Finish, line2ReturnControl, preloadShot);
+        shotToGate = paths().curve(preloadShot, gateControl, firstGatePose);
+        gateToShot = paths().shotCurve(firstGatePose, gateShootControl, preloadShot);
         shotToGateAgain = paths().curve(preloadShot, gateControl, gatePose);
         gateToFinalShot = paths().shotCurve(gatePose, gateShootControl, preloadShot);
         shotToLine1Start = paths().line(finalShot, line1Start);
@@ -153,7 +162,7 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 .waitForUnsortedShotDone()
                 .waitForFollowerIdle()
                 .doAction(startTimedIntake())
-                .followAsync(toLine2Start, 1.0, false)
+                .followAsync(line2ControlToStart, 1.0, false)
                 .waitForFollowerIdle()
                 .followAsync(toLine2Finish, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()

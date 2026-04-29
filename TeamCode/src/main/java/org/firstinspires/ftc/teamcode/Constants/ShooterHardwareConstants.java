@@ -39,11 +39,12 @@ public final class ShooterHardwareConstants {
 
     // ===== Turret Geometry =====
     public static double turretMechanicalRangeDeg = 355.0;
+    public static double turretMechanicalRangeTicks = 1370;
     public static double turretCenterOffsetDeg = 0.0;
     public static double turretOffsetForwardInches = -1.0;
     public static double turretOffsetLeftInches = 0.0;
     public static double turretForbiddenCenterDeg = 0.0;
-    public static double turretForbiddenWidthDeg = 5.0;
+    public static double turretForbiddenWidthDeg = 0.0;
 
     // ===== Feed Servo =====
     public static double feedClosedPosition = 0.5;

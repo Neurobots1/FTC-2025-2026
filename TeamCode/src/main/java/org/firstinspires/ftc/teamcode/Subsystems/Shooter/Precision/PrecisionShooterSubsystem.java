@@ -469,6 +469,7 @@ public final class PrecisionShooterSubsystem {
                 openFeed();
             }
         } else if (!readyToContinueFeeding
+                && !shouldHoldFeedGateOpenDuringFarZoneSpeedDip()
                 && readyDropoutTimer.seconds() >= config.feedReadyDropoutGraceSeconds) {
             closeFeed();
         }
@@ -670,9 +671,14 @@ public final class PrecisionShooterSubsystem {
                 && turret.isHomed()
                 && autoAimEnabled
                 && fireRequested
-                && !feedGateOpen
                 && lastInShootingZone
                 && lastSolution.valid
+                && turret.isRequestedAngleInForwardDeadZone();
+    }
+
+    public boolean isTurretRequestedAngleInForwardDeadZone() {
+        return turret != null
+                && turret.isHomed()
                 && turret.isRequestedAngleInForwardDeadZone();
     }
 
@@ -691,6 +697,14 @@ public final class PrecisionShooterSubsystem {
 
     public double getTurretVelocityTicksPerSecond() {
         return turret == null ? 0.0 : turret.getLastVelocityTicksPerSecond();
+    }
+
+    public int getTurretLeftStopTicks() {
+        return turret == null ? 0 : turret.getLeftStopTicks();
+    }
+
+    public int getTurretRightStopTicks() {
+        return turret == null ? 0 : turret.getRightStopTicks();
     }
 
     public String getTurretHomeState() {
@@ -741,6 +755,17 @@ public final class PrecisionShooterSubsystem {
 
     private boolean isReadyToContinueFeeding() {
         return isReadyToShoot(true);
+    }
+
+    private boolean shouldHoldFeedGateOpenDuringFarZoneSpeedDip() {
+        return fireRequested
+                && spinEnabled
+                && feedGateOpen
+                && lastInShootingZone
+                && lastSolution.valid
+                && lastTableDistanceInches >= ShooterConstants.farZoneFeedPauseDistanceInches
+                && hood.isSettled()
+                && isAimAligned(true);
     }
 
     private boolean isReadyToShoot(boolean sustainShot) {
