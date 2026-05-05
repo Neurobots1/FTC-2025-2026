@@ -7,57 +7,73 @@ import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseUnsortedAutoTemplate;
-import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
+import org.firstinspires.ftc.teamcode.Subsystems.AutoPoseHandoff;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
-import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.ModularAutoBuilder;
 
 public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
-    public static double GATE_INTAKE_SECONDS = 1.5;
-    public static double GATE_TURN_SETTLE_SECONDS = 0.35;
-    public static double LINE_INTAKE_SPEED = 1.0;
-
-    private PathChain toPreloadShot;
-    private PathChain toLine2Intake;
-    private PathChain line2ToShot;
-    private PathChain shotToGateApproach;
-    private PathChain gateApproachToCollect;
-    private PathChain gateCollectToShot;
-    private PathChain shotToGateApproachAgain;
-    private PathChain gateApproachToCollectAgain;
-    private PathChain gateCollectToFinalShot;
-    private PathChain shotToLine1Intake;
-    private PathChain line1ToFinalShot;
+    private PathChain path1;
+    private PathChain path2;
+    private PathChain path3;
+    private PathChain path4;
+    private PathChain path5;
+    private PathChain path6;
+    private PathChain path7;
+    private PathChain path8;
+    private PathChain path9;
+    private PathChain path10;
+    private PathChain path11;
+    private PathChain path12;
+    private PathChain[] manualPaths;
+    private int nextPathIndex;
+    private boolean shooterEnabled;
+    private boolean autoShotRequested;
+    private boolean previousNextPathButton;
+    private boolean previousShooterButton;
 
     @Override
     protected Pose startPose() {
-        return paths().pose(new Pose(20.000, 119.000, Math.toRadians(139)));
+        return paths().pose(new Pose(34.000, 135.000, Math.toRadians(270)));
     }
 
     @Override
     protected void buildPaths() {
-        Pose startPose = new Pose(20.000, 119.000, Math.toRadians(139));
-        Pose preloadShotPose = new Pose(46.781, 82.993, Math.toRadians(231));
-        Pose cycleShotPose = new Pose(55.000, 77.000, Math.toRadians(231));
-        Pose line2IntakeControl = new Pose(44.222, 49.977);
-        Pose line2IntakePose = new Pose(8.000, 52.000);
-        Pose line2ReturnControl = new Pose(44.075, 50.183);
-        Pose gateApproachControl = new Pose(41.000, 56.000);
-        Pose gateApproachPose = new Pose(11.750, 56.000, Math.toRadians(180));
-        Pose gateCollectPose = new Pose(10.000, 47.000, Math.toRadians(140));
-        Pose line1IntakePose = new Pose(14.000, 83.000);
-        Pose finalShotPose = new Pose(60.207, 100.689);
+        Pose startPose = new Pose(34.609, 137.659, Math.toRadians(270));
+        Pose firstShotPose = new Pose(54.260, 93.945, Math.toRadians(270));
+        Pose line1IntakePose = new Pose(20.993, 85.071);
+        Pose shotPose = new Pose(54.260, 93.945);
+        Pose line2ControlPose = new Pose(27.000, 53.000);
+        Pose line2IntakePose = new Pose(7.305, 56.900);
+        Pose line3ControlPose = new Pose(38.000, 60.034);
+        Pose line3IntakePose = new Pose(15.359, 64.034, Math.toRadians(180));
+        Pose gatePose = new Pose(10.870, 59.579, Math.toRadians(152.58));
+        Pose finalPose = new Pose(61.000, 107.000);
 
-        toPreloadShot = line(startPose, preloadShotPose, false);
-        toLine2Intake = tangentCurve(preloadShotPose, line2IntakeControl, line2IntakePose, false);
-        line2ToShot = tangentCurve(line2IntakePose, line2ReturnControl, cycleShotPose, true);
-        shotToGateApproach = tangentCurve(cycleShotPose, gateApproachControl, gateApproachPose, false);
-        gateApproachToCollect = line(gateApproachPose, gateCollectPose, false);
-        gateCollectToShot = tangentLine(gateCollectPose, cycleShotPose, true);
-        shotToGateApproachAgain = tangentCurve(cycleShotPose, gateApproachControl, gateApproachPose, false);
-        gateApproachToCollectAgain = line(gateApproachPose, gateCollectPose, false);
-        gateCollectToFinalShot = tangentLine(gateCollectPose, cycleShotPose, true);
-        shotToLine1Intake = tangentLine(cycleShotPose, line1IntakePose, false);
-        line1ToFinalShot = tangentLine(line1IntakePose, finalShotPose, true);
+        path1 = line(startPose, firstShotPose, false);
+        path2 = tangentLine(firstShotPose, line1IntakePose, false);
+        path3 = tangentLine(line1IntakePose, shotPose, true);
+        path4 = tangentCurve(shotPose, line2ControlPose, line2IntakePose, false);
+        path5 = tangentCurve(line2IntakePose, line2ControlPose, shotPose, true);
+        path6 = tangentCurve(shotPose, line3ControlPose, line3IntakePose, false);
+        path7 = line(line3IntakePose, gatePose, false);
+        path8 = tangentLine(gatePose, shotPose, true);
+        path9 = tangentCurve(shotPose, line3ControlPose, line3IntakePose, false);
+        path10 = line(line3IntakePose, gatePose, false);
+        path11 = tangentLine(gatePose, shotPose, true);
+        path12 = constantLine(shotPose, finalPose, Math.toRadians(225), false);
+        manualPaths = new PathChain[] {
+                path1,
+                path2,
+                path3,
+                path4,
+                path5,
+                path6,
+                path7,
+                path8,
+                path9,
+                path10,
+                path11,
+                path12
+        };
     }
 
     private PathChain line(Pose blueStart, Pose blueEnd, boolean reversed) {
@@ -103,13 +119,12 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
         return builder.build();
     }
 
-    private PathChain curve(Pose blueStart, Pose blueControl, Pose blueEnd, boolean reversed) {
+    private PathChain constantLine(Pose blueStart, Pose blueEnd, double heading, boolean reversed) {
         Pose start = paths().pose(blueStart);
-        Pose control = paths().pose(blueControl);
         Pose end = paths().pose(blueEnd);
         PathBuilder builder = follower().pathBuilder()
-                .addPath(new BezierCurve(start, control, end))
-                .setLinearHeadingInterpolation(start.getHeading(), end.getHeading());
+                .addPath(new BezierLine(start, end))
+                .setConstantHeadingInterpolation(heading);
 
         if (reversed) {
             builder = builder.setReversed();
@@ -120,70 +135,95 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
 
     @Override
     protected void buildRoutine() {
-        ModularAutoBuilder builder = new ModularAutoBuilder(robot());
-        builder
-                .enableUnsortedShooter(true)
-                .followAsync(toPreloadShot, 1.0, true)
-                .doAction(startTimedIntake())
-                .waitForUnsortedReadyToShoot()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .doAction(startTimedIntake())
-                .followAsync(toLine2Intake, LINE_INTAKE_SPEED, false)
-                .waitForFollowerIdle()
-                .followAsync(line2ToShot, 1.0, true)
-                .doAction(stopIntake())
-                .waitForUnsortedReadyToShoot()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .doAction(startTimedIntake())
-                .followAsync(shotToGateApproach, 1.0, true)
-                .waitForFollowerIdle()
-                .followAsync(gateApproachToCollect, 1.0, false)
-                .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
-                .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
-                .doAction(stopIntake())
-                .followAsync(gateCollectToShot, 1.0, true)
-                .waitForUnsortedReadyToShoot()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .doAction(startTimedIntake())
-                .followAsync(shotToGateApproachAgain, 1.0, true)
-                .waitForFollowerIdle()
-                .followAsync(gateApproachToCollectAgain, 1.0, false)
-                .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
-                .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
-                .doAction(stopIntake())
-                .followAsync(gateCollectToFinalShot, 1.0, true)
-                .waitForUnsortedReadyToShoot()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .doAction(startTimedIntake())
-                .followAsync(shotToLine1Intake, LINE_INTAKE_SPEED, false)
-                .waitForFollowerIdle()
-                .doAction(stopIntake())
-                .followAsync(line1ToFinalShot, 1.0, true)
-                .waitForUnsortedReadyToShoot()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .stopUnsortedShooter();
-
-        scheduler().setAction(builder.build());
+        nextPathIndex = 0;
+        shooterEnabled = false;
+        autoShotRequested = false;
+        previousNextPathButton = false;
+        previousShooterButton = false;
     }
 
-    private org.firstinspires.ftc.teamcode.Subsystems.Autonomous.AutoAction startTimedIntake() {
-        return Actions.instant(() -> intake().intake());
+    @Override
+    public void loop() {
+        robot().updateDriveControl();
+        follower().update();
+        AutoPoseHandoff.savePose(hardwareMap.appContext, follower().getPose());
+        robot().updateSystems();
+        updateManualControls();
+        scheduler().update();
+
+        telemetry.addData("Alliance", alliance());
+        telemetry.addData("Pose", follower().getPose());
+        telemetry.addData("FollowerBusy", follower().isBusy());
+        telemetry.addData("RoutineIdle", scheduler().isIdle());
+        addTelemetry();
+        telemetry.update();
     }
 
-    private org.firstinspires.ftc.teamcode.Subsystems.Autonomous.AutoAction stopIntake() {
-        return Actions.instant(() -> intake().stop());
+    private void updateManualControls() {
+        boolean nextPathButton = gamepad1.a;
+        boolean shooterButton = gamepad1.y;
+
+        if (nextPathButton && !previousNextPathButton && !follower().isBusy()) {
+            followNextPath();
+        }
+
+        if (autoShotRequested && !shooterController().isBusy()) {
+            autoShotRequested = false;
+        }
+
+        if (shooterButton && !previousShooterButton) {
+            if (autoShotRequested || shooterController().isBusy()) {
+                stopAutoShot();
+            } else {
+                startAutoShot();
+            }
+        }
+
+        if (gamepad1.right_bumper) {
+            intake().intake();
+        } else if (gamepad1.left_bumper) {
+            intake().outtake();
+        } else if (!shooterEnabled && !shooterController().isBusy()) {
+            intake().stop();
+        }
+
+        previousNextPathButton = nextPathButton;
+        previousShooterButton = shooterButton;
+    }
+
+    private void startAutoShot() {
+        shooterEnabled = true;
+        autoShotRequested = true;
+        shooterController().setEnabled(true);
+        shooterController().requestAutoFeed(true);
+    }
+
+    private void stopAutoShot() {
+        shooterEnabled = false;
+        autoShotRequested = false;
+        shooterController().requestAutoFeed(false);
+        shooterController().setEnabled(false);
+        intake().stop();
+    }
+
+    private void followNextPath() {
+        if (manualPaths == null || nextPathIndex >= manualPaths.length) {
+            return;
+        }
+
+        follower().followPath(manualPaths[nextPathIndex], 1.0, true);
+        nextPathIndex++;
+    }
+
+    @Override
+    protected void addTelemetry() {
+        super.addTelemetry();
+        int pathCount = manualPaths == null ? 0 : manualPaths.length;
+        int displayPath = Math.min(nextPathIndex + 1, pathCount);
+        telemetry.addData("Controls", "A next path, RB intake, LB outtake, Y shoot");
+        telemetry.addData("NextPath", "%d/%d", displayPath, pathCount);
+        telemetry.addData("ShooterEnabled", shooterEnabled);
+        telemetry.addData("AutoShotRequested", autoShotRequested);
     }
 
     public static class Blue extends Unsorted15BallAuto30 {
