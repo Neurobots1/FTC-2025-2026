@@ -99,11 +99,11 @@ public class ShooterConstants {
 
     // ===== Field Targets =====
     public static double blueGoalXInches = 0.0;
-    public static double blueGoalYInches = 142.0;
-    public static double redGoalXInches = 141.5;
-    public static double redGoalYInches = 142.0;
+    public static double blueGoalYInches = 138.0;
+    public static double redGoalXInches = 144.0;
+    public static double redGoalYInches =138.0;
     public static double blueHeadingAimXInches = 4.0; //modifier
-    public static double blueHeadingAimYInches = 132.0;
-    public static double redHeadingAimXInches = 137.5;
-    public static double redHeadingAimYInches = 132.0;
+    public static double blueHeadingAimYInches = 144.0;
+    public static double redHeadingAimXInches = 140.0;
+    public static double redHeadingAimYInches = 144.0;
 }

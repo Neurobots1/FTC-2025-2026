@@ -39,9 +39,13 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
         return paths().pose(new Pose(34.000, 135.000, Math.toRadians(270)));
     }
 
+    protected Pose pathStartPose() {
+        return paths().pose(new Pose(34.609, 137.659, Math.toRadians(270)));
+    }
+
     @Override
     protected void buildPaths() {
-        Pose startPose = new Pose(34.609, 137.659, Math.toRadians(270));
+        Pose startPose = pathStartPose();
         Pose firstShotPose = new Pose(54.260, 93.945, Math.toRadians(270));
         Pose line1IntakePose = new Pose(17.993, 85.071, Math.toRadians(175));
         Pose shotPose = new Pose(59.19, 78.04);
@@ -53,7 +57,7 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
         Pose finalPose = new Pose(55.000, 108.000);
         Pose line3IntakePose = new Pose(18, 64.034, Math.toRadians(180));
 
-        path1 = line(startPose, firstShotPose, false);
+        path1 = lineFromFieldPose(startPose, firstShotPose, false);
         path2 = tangentLine(firstShotPose, line1IntakePose, false);
         path3 = tangentLine(line1IntakePose, shotPose, true);
         path4 = tangentCurve(shotPose, line2ControlPose, line2IntakePose, false);
@@ -70,6 +74,19 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
 
     private PathChain line(Pose blueStart, Pose blueEnd, boolean reversed) {
         Pose start = paths().pose(blueStart);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierLine(start, end))
+                .setLinearHeadingInterpolation(start.getHeading(), end.getHeading());
+
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
+    }
+
+    private PathChain lineFromFieldPose(Pose start, Pose blueEnd, boolean reversed) {
         Pose end = paths().pose(blueEnd);
         PathBuilder builder = follower().pathBuilder()
                 .addPath(new BezierLine(start, end))
@@ -169,7 +186,6 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
                 .waitForUnsortedShotZone()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
                 .waitSeconds(SHOOT_POSE_DEPART_DELAY_SECONDS)
                 .doAction(startIntake())
                 .followAsync(path10, 1.0, false)
@@ -182,7 +198,6 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
                 .waitSeconds(0.3)
                 .doAction(stopIntake())
                 .follow(path13, 1.0, true)
-                .doAction(stopDrive())
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
@@ -218,6 +233,16 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
         @Override
         protected AutoAlliance alliance() {
             return AutoAlliance.RED;
+        }
+
+        @Override
+        protected Pose startPose() {
+            return new Pose(109.000, 135.000, Math.toRadians(270));
+        }
+
+        @Override
+        protected Pose pathStartPose() {
+            return startPose();
         }
     }
 }
