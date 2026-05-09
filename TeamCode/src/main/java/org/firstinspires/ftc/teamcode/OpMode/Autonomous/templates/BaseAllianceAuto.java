@@ -65,8 +65,12 @@ public abstract class BaseAllianceAuto extends OpMode {
         shooterConfig = new ShooterConstants();
 
         AutoAlliance alliance = alliance();
-        Pose goalPose = AllianceMirroring.forAlliance(TeleopConstants.BLUE_GOAL_POSE, alliance);
-        Pose aimGoalPose = AllianceMirroring.forAlliance(TeleopConstants.BLUE_HEADING_AIM_POSE, alliance);
+        Pose goalPose = alliance == AutoAlliance.RED
+                ? new Pose(shooterConfig.redGoalXInches, shooterConfig.redGoalYInches, 0.0)
+                : AllianceMirroring.forAlliance(TeleopConstants.BLUE_GOAL_POSE, alliance);
+        Pose aimGoalPose = alliance == AutoAlliance.RED
+                ? new Pose(shooterConfig.redHeadingAimXInches, shooterConfig.redHeadingAimYInches, 0.0)
+                : AllianceMirroring.forAlliance(TeleopConstants.BLUE_HEADING_AIM_POSE, alliance);
         goalX = goalPose.getX();
         goalY = goalPose.getY();
         aimGoalX = aimGoalPose.getX();
