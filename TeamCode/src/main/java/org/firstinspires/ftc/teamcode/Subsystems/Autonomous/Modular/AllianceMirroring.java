@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular;
 import com.pedropathing.geometry.Pose;
 
 public final class AllianceMirroring {
+    public static double FIELD_WIDTH_INCHES = 141.5;
 
     private AllianceMirroring() {}
 
@@ -10,11 +11,15 @@ public final class AllianceMirroring {
         if (alliance == AutoAlliance.BLUE) {
             return bluePose;
         }
-        return bluePose.mirror();
+        return mirrorXHeading(bluePose);
     }
 
     public static Pose mirrorXHeading(Pose pose) {
-        return pose.mirror();
+        return new Pose(
+                FIELD_WIDTH_INCHES - pose.getX(),
+                pose.getY(),
+                normalizeRadians(Math.PI - pose.getHeading())
+        );
     }
 
     public static double normalizeRadians(double angle) {
