@@ -108,6 +108,7 @@ public class TurretTuningTeleOp extends OpMode {
         telemetry.addData("Auto Sweep", autoSweepEnabled);
         telemetry.addData("Home State", shooter.getTurretHomeState());
         telemetry.addData("Target Deg", "%.2f", manualTargetDeg);
+        telemetry.addData("Mapped Target Deg", "%.2f", shooter.getTurretTargetDegrees());
         telemetry.addData("Current Deg", "%.2f", shooter.getTurretAngleDegrees());
         telemetry.addData("Error Deg", "%.2f", shooter.getTurretErrorDegrees());
         telemetry.addData("Command", "%.3f", shooter.getTurretCommandPower());

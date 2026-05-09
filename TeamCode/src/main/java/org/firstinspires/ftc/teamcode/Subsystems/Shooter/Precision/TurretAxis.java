@@ -105,7 +105,8 @@ final class TurretAxis {
         if (Math.abs(angleError) < Math.toRadians(config.turretControlToleranceDeg)) {
             power = 0.0;
         }
-        power = applySoftLimits(power, currentSweepRadians);
+        power = applySoftLimits(power, currentSweepRadians, targetAngleRadians);
+        power = applyEndStopEscapePower(power, currentSweepRadians, targetAngleRadians);
         lastCommandPower = power;
         motor.setPower(power);
     }
@@ -259,7 +260,7 @@ final class TurretAxis {
         return 1.0;
     }
 
-    private double applySoftLimits(double power, double currentSweepRadians) {
+    private double applySoftLimits(double power, double currentSweepRadians, double targetSweepRadians) {
         if (!homed || power == 0.0) {
             lastSoftLimitScale = 1.0;
             return power;
@@ -269,7 +270,13 @@ final class TurretAxis {
         double minScale = ShooterMath.clamp(config.turretLimitMinScale, 0.0, 1.0);
         double scale = 1.0;
 
-        if (power < 0.0) {
+        double targetDeltaRadians = targetSweepRadians - currentSweepRadians;
+        if (Math.abs(targetDeltaRadians) <= Math.toRadians(config.turretControlToleranceDeg)) {
+            lastSoftLimitScale = 1.0;
+            return power;
+        }
+
+        if (targetDeltaRadians > 0.0) {
             double distanceToLimit = getMaximumCommandedSweepRadians() - currentSweepRadians;
             if (distanceToLimit <= 0.0) {
                 lastSoftLimitScale = 0.0;
@@ -293,6 +300,24 @@ final class TurretAxis {
         return power * lastSoftLimitScale;
     }
 
+    private double applyEndStopEscapePower(double power, double currentSweepRadians, double targetSweepRadians) {
+        if (!homed || power == 0.0) {
+            return power;
+        }
+
+        double toleranceRadians = Math.toRadians(Math.max(0.5, config.turretControlToleranceDeg));
+        double minimumEscapePower = Math.abs(config.turretKf);
+        if (currentSweepRadians >= getMaximumCommandedSweepRadians() - toleranceRadians
+                && targetSweepRadians < currentSweepRadians - toleranceRadians) {
+            return Math.max(power, minimumEscapePower);
+        }
+        if (currentSweepRadians <= getMinimumCommandedSweepRadians() + toleranceRadians
+                && targetSweepRadians > currentSweepRadians + toleranceRadians) {
+            return Math.min(power, -minimumEscapePower);
+        }
+        return power;
+    }
+
     private double getCurrentSweepRadians() {
         double sweepTicks = Math.max(1.0, rightStopTicks - leftStopTicks);
         double travelFraction = (motor.getCurrentPosition() - leftStopTicks) / sweepTicks;
@@ -314,8 +339,15 @@ final class TurretAxis {
         double currentSweepRadians = homed
                 ? getCurrentSweepRadians()
                 : getLeftStopSweepRadians();
-        double leftEdgeRadians = getLeftStopSweepRadians();
-        double rightEdgeRadians = getRightStopSweepRadians();
+        double leftEdgeRadians = getMaximumCommandedSweepRadians();
+        double rightEdgeRadians = getMinimumCommandedSweepRadians();
+        double escapeZoneRadians = getEndStopEscapeZoneRadians();
+        if (Math.abs(currentSweepRadians - leftEdgeRadians) <= escapeZoneRadians) {
+            return rightEdgeRadians;
+        }
+        if (Math.abs(currentSweepRadians - rightEdgeRadians) <= escapeZoneRadians) {
+            return leftEdgeRadians;
+        }
         return Math.abs(currentSweepRadians - leftEdgeRadians) <= Math.abs(currentSweepRadians - rightEdgeRadians)
                 ? leftEdgeRadians
                 : rightEdgeRadians;
@@ -327,6 +359,16 @@ final class TurretAxis {
 
     private int getMechanicalTravelTicks() {
         return Math.max(1, (int) Math.round(Math.abs(ShooterHardwareConstants.turretMechanicalRangeTicks)));
+    }
+
+    private double getEndStopEscapeZoneRadians() {
+        double backoffRadians = (Math.abs(config.turretBackoffTicks) / getMechanicalTravelTicks())
+                * getMechanicalTravelRadians();
+        double configuredRadians = Math.toRadians(Math.max(
+                Math.max(0.5, config.turretControlToleranceDeg),
+                Math.max(config.turretLimitBufferDeg, config.turretLimitSlowZoneDeg)
+        ));
+        return Math.max(configuredRadians, backoffRadians + Math.toRadians(2.0));
     }
 
     private double getHalfForbiddenRadians() {

@@ -35,6 +35,7 @@ public abstract class BaseSortedAutoTemplate extends BaseAllianceAuto {
         shooter.setGoalPosition(goalX, goalY);
         shooter.setAimPosition(aimGoalX, aimGoalY);
         shooter.setAutoAimEnabled(true);
+        shooter.setUseAutoShootingZoneRadius(true);
 
         sortedController = new SortedAutoController(hardwareMap, shooter);
         tagReader = new LimelightTagReader(hardwareMap);

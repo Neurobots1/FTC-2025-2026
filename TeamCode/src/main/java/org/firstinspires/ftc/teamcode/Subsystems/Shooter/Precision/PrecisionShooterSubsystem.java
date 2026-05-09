@@ -129,6 +129,7 @@ public final class PrecisionShooterSubsystem {
     private boolean fireRequested;
     private boolean spinEnabled;
     private boolean autoAimEnabled = true;
+    private boolean useAutoShootingZoneRadius;
     private boolean readyRequiresOnlyFlywheel;
     private boolean customGoalEnabled;
     private boolean customAimGoalEnabled;
@@ -226,6 +227,10 @@ public final class PrecisionShooterSubsystem {
 
     public void setAutoAimEnabled(boolean autoAimEnabled) {
         this.autoAimEnabled = autoAimEnabled;
+    }
+
+    public void setUseAutoShootingZoneRadius(boolean useAutoShootingZoneRadius) {
+        this.useAutoShootingZoneRadius = useAutoShootingZoneRadius;
     }
 
     public void setReadyRequiresOnlyFlywheel(boolean readyRequiresOnlyFlywheel) {
@@ -346,9 +351,7 @@ public final class PrecisionShooterSubsystem {
         lastAimGoalX = aimGoalX;
         lastAimGoalY = aimGoalY;
 
-        TurretKinematics releaseTurret = config.shootOnMoveEnabled
-                ? computeTurretKinematics(pose, robotVx, robotVy, robotOmega)
-                : computeTurretKinematics(pose, 0.0, 0.0, 0.0);
+        TurretKinematics releaseTurret = computeTurretKinematics(pose, robotVx, robotVy, robotOmega);
         ScorePoint scorePoint = config.shootOnMoveEnabled
                 ? computeScorePoint(releaseTurret, goalX, goalY, config.sotmPassThroughRadiusInches)
                 : new ScorePoint(goalX, goalY, Math.hypot(goalX - releaseTurret.x, goalY - releaseTurret.y));
@@ -357,7 +360,10 @@ public final class PrecisionShooterSubsystem {
                 : new ScorePoint(aimGoalX, aimGoalY, Math.hypot(aimGoalX - releaseTurret.x, aimGoalY - releaseTurret.y));
         lastTableDistanceInches = scorePoint.distanceInches;
         lastGoalForwardOffsetInches = config.shootOnMoveEnabled ? config.sotmPassThroughRadiusInches : 0.0;
-        lastInShootingZone = ShootingZones.isInShootingZone(pose.getX(), pose.getY());
+        double shootingZoneRadius = useAutoShootingZoneRadius
+                ? ShootingZones.autoRadiusInches
+                : ShootingZones.radiusInches;
+        lastInShootingZone = ShootingZones.isInShootingZone(pose.getX(), pose.getY(), shootingZoneRadius);
         double targetHeightDeltaInches = config.targetHeightInches - config.shooterHeightInches;
 
         ShootOnMoveCalculator.Solution aimSolution;
@@ -419,8 +425,8 @@ public final class PrecisionShooterSubsystem {
                     : lastNominal.hoodAngleDeg;
         } else {
             lastNominal = LUTConstants.currentTable().sample(lastTableDistanceInches);
-            lastSolution = buildLookupSolution(releaseTurret, goalX, goalY, lastNominal, "lookup table");
-            aimSolution = buildLookupSolution(releaseTurret, aimGoalX, aimGoalY, lastNominal, "lookup table");
+            lastSolution = buildLookupSolution(releaseTurret, goalX, goalY, lastNominal, true, "lookup table aim lead");
+            aimSolution = buildLookupSolution(releaseTurret, aimGoalX, aimGoalY, lastNominal, true, "lookup table aim lead");
             lastCompensatedHoodDeg = lastNominal.hoodAngleDeg;
         }
 
@@ -839,6 +845,7 @@ public final class PrecisionShooterSubsystem {
                                                                double targetX,
                                                                double targetY,
                                                                PrecisionShotTable.Entry tableEntry,
+                                                               boolean leadAimWithRobotVelocity,
                                                                String reason) {
         double dx = targetX - turretKinematics.x;
         double dy = targetY - turretKinematics.y;
@@ -858,19 +865,36 @@ public final class PrecisionShooterSubsystem {
             launchSpeedIps = 0.0;
         }
 
-        double horizontalVelocity = launchSpeedIps * Math.cos(hoodAngleRad);
-        double flightTimeSeconds = horizontalVelocity > 1e-6 ? range / horizontalVelocity : 0.0;
+        double aimFlightTimeSeconds = estimateLookupAimFlightTimeSeconds(range);
+        double worldYawRad = Math.atan2(dy, dx);
+        if (leadAimWithRobotVelocity && aimFlightTimeSeconds > 1e-6) {
+            double aimVx = dx / aimFlightTimeSeconds - turretKinematics.vx;
+            double aimVy = dy / aimFlightTimeSeconds - turretKinematics.vy;
+            if (Math.hypot(aimVx, aimVy) > 1e-6) {
+                worldYawRad = Math.atan2(aimVy, aimVx);
+            }
+        }
 
         return new ShootOnMoveCalculator.Solution(
                 true,
                 hoodAngleRad,
-                Math.atan2(dy, dx),
-                flightTimeSeconds,
+                worldYawRad,
+                aimFlightTimeSeconds,
                 launchSpeedIps,
                 range,
                 hoodAngleRad,
                 launchSpeedIps,
                 reason
+        );
+    }
+
+    private double estimateLookupAimFlightTimeSeconds(double rangeInches) {
+        double estimatedSeconds = config.lookupAimFlightTimeInterceptSeconds
+                + rangeInches * config.lookupAimFlightTimeSecondsPerInch;
+        return ShooterMath.clamp(
+                estimatedSeconds,
+                config.lookupAimFlightTimeMinSeconds,
+                config.lookupAimFlightTimeMaxSeconds
         );
     }
 

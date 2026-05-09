@@ -51,11 +51,11 @@ public class ShooterConstants {
     public static double turretHomeHoldSeconds = 0.18;
     public static double turretPositionKp = 1.05;
     public static double turretPositionKd = 2.0;
-    public static double turretKf = 0.10;
+    public static double turretKf = 0.15;
     public static double turretControlToleranceDeg = 0.5;
     public static double turretShotReadyToleranceDeg = 4.0;
     public static double turretShotSustainToleranceDeg = 6.0;
-    public static double turretLimitBufferDeg = 0.0;
+    public static double turretLimitBufferDeg = 4.0;
     public static double turretLimitSlowZoneDeg = 18.0;
     public static double turretLimitMinScale = 0.18;
     public static double turretDeadZoneNudgeTurnCommand = 1.0;
@@ -83,11 +83,15 @@ public class ShooterConstants {
     public static double feedOpenSettlingSeconds = 0.30;
 
     // ===== SOTM =====
-    public static boolean shootOnMoveEnabled = false;
+    public static boolean shootOnMoveEnabled = true;
     public static double sotmScoreAngleDeg = -8.0;
     public static double sotmPassThroughRadiusInches = 5.0;
     public static double sotmLaunchSpeedToRpmSlope = 13.55;
     public static double sotmLaunchSpeedToRpmIntercept = 250.0;
+    public static double lookupAimFlightTimeInterceptSeconds = 0.20;
+    public static double lookupAimFlightTimeSecondsPerInch = 0.0030;
+    public static double lookupAimFlightTimeMinSeconds = 0.20;
+    public static double lookupAimFlightTimeMaxSeconds = 1.00;
 
     // ===== Ballistics =====
     public static double shooterHeightInches = 12.0;
