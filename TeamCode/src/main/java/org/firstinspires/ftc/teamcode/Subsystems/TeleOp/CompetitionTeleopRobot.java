@@ -25,8 +25,6 @@ import org.firstinspires.ftc.teamcode.Constants.HardwareMapConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AllianceSelector;
 import org.firstinspires.ftc.teamcode.Subsystems.AutoPoseHandoff;
-import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AllianceMirroring;
-import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Indexer.Indexer_Base;
 import org.firstinspires.ftc.teamcode.Subsystems.IntakeMotor;
 import org.firstinspires.ftc.teamcode.Subsystems.Shooter.ChassisHeadingLockController;
@@ -385,18 +383,18 @@ public final class CompetitionTeleopRobot {
     }
 
     private void applyAllianceGoal() {
-        Pose goalPose = AllianceMirroring.forAlliance(
-                TeleopConstants.BLUE_GOAL_POSE,
-                alliance == Alliance.BLUE ? AutoAlliance.BLUE : AutoAlliance.RED
-        );
-        Pose aimGoalPose = AllianceMirroring.forAlliance(
-                TeleopConstants.BLUE_HEADING_AIM_POSE,
-                alliance == Alliance.BLUE ? AutoAlliance.BLUE : AutoAlliance.RED
-        );
-        goalXInches = goalPose.getX();
-        goalYInches = goalPose.getY();
-        aimGoalXInches = aimGoalPose.getX();
-        aimGoalYInches = aimGoalPose.getY();
+        goalXInches = alliance == Alliance.BLUE
+                ? ShooterConstants.blueGoalXInches
+                : ShooterConstants.redGoalXInches;
+        goalYInches = alliance == Alliance.BLUE
+                ? ShooterConstants.blueGoalYInches
+                : ShooterConstants.redGoalYInches;
+        aimGoalXInches = alliance == Alliance.BLUE
+                ? ShooterConstants.blueHeadingAimXInches
+                : ShooterConstants.redHeadingAimXInches;
+        aimGoalYInches = alliance == Alliance.BLUE
+                ? ShooterConstants.blueHeadingAimYInches
+                : ShooterConstants.redHeadingAimYInches;
 
         if (shooter != null) {
             shooter.setAlliance(

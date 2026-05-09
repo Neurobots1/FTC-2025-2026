@@ -59,17 +59,17 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
 
         path1 = lineFromFieldPose(startPose, firstShotPose, false);
         path2 = tangentLine(firstShotPose, line1IntakePose, false);
-        path3 = tangentLine(line1IntakePose, shotPose, true);
+        path3 = tangentLine(line1IntakePose, shotPose, true, true);
         path4 = tangentCurve(shotPose, line2ControlPose, line2IntakePose, false);
-        path5 = tangentLine(line2IntakePose, shotPose, true);
+        path5 = tangentLine(line2IntakePose, shotPose, true, true);
         path6 = constantLine(shotPose, line3IntakePose,Math.toRadians(180),false);
         path7 = line(line3IntakePose, gatePose, false);
         path8 = line(gatePose, gatePose2, false);
-        path9 = tangentLine(gatePose2, shotPose, true);
+        path9 = tangentLine(gatePose2, shotPose, true, true);
         path10 = constantLine(shotPose, line3IntakePose, Math.toRadians(180), false);
         path11 = line(line3IntakePose, gatePose, false);
         path12 = line(gatePose, gatePose2, false);
-        path13 = tangentLine(gatePose2, finalPose, true);
+        path13 = tangentLine(gatePose2, finalPose, true, true);
     }
 
     private PathChain line(Pose blueStart, Pose blueEnd, boolean reversed) {
@@ -100,13 +100,20 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
     }
 
     private PathChain tangentLine(Pose blueStart, Pose blueEnd, boolean reversed) {
+        return tangentLine(blueStart, blueEnd, reversed, false);
+    }
+
+    private PathChain tangentLine(Pose blueStart,
+                                  Pose blueEnd,
+                                  boolean reversed,
+                                  boolean flipReverseOnRed) {
         Pose start = paths().pose(blueStart);
         Pose end = paths().pose(blueEnd);
         PathBuilder builder = follower().pathBuilder()
                 .addPath(new BezierLine(start, end))
                 .setTangentHeadingInterpolation();
 
-        if (reversed) {
+        if (shouldReverse(reversed, flipReverseOnRed)) {
             builder = builder.setReversed();
         }
 
@@ -126,6 +133,10 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
         }
 
         return builder.build();
+    }
+
+    private boolean shouldReverse(boolean reversed, boolean flipReverseOnRed) {
+        return alliance() == AutoAlliance.RED && flipReverseOnRed ? !reversed : reversed;
     }
 
     private PathChain constantLine(Pose blueStart, Pose blueEnd, double heading, boolean reversed) {

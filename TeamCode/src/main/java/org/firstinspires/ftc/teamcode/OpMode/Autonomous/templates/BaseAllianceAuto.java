@@ -1,18 +1,15 @@
 package org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.Constants.PedroConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.Constants.ShooterConstants;
-import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
 import org.firstinspires.ftc.teamcode.Subsystems.AutoPoseHandoff;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.ActionScheduler;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoRobotFacade;
-import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AllianceMirroring;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.MirroredPathFactory;
 
 public abstract class BaseAllianceAuto extends OpMode {
@@ -65,12 +62,18 @@ public abstract class BaseAllianceAuto extends OpMode {
         shooterConfig = new ShooterConstants();
 
         AutoAlliance alliance = alliance();
-        Pose goalPose = AllianceMirroring.forAlliance(TeleopConstants.BLUE_GOAL_POSE, alliance);
-        Pose aimGoalPose = AllianceMirroring.forAlliance(TeleopConstants.BLUE_HEADING_AIM_POSE, alliance);
-        goalX = goalPose.getX();
-        goalY = goalPose.getY();
-        aimGoalX = aimGoalPose.getX();
-        aimGoalY = aimGoalPose.getY();
+        goalX = alliance == AutoAlliance.BLUE
+                ? ShooterConstants.blueGoalXInches
+                : ShooterConstants.redGoalXInches;
+        goalY = alliance == AutoAlliance.BLUE
+                ? ShooterConstants.blueGoalYInches
+                : ShooterConstants.redGoalYInches;
+        aimGoalX = alliance == AutoAlliance.BLUE
+                ? ShooterConstants.blueHeadingAimXInches
+                : ShooterConstants.redHeadingAimXInches;
+        aimGoalY = alliance == AutoAlliance.BLUE
+                ? ShooterConstants.blueHeadingAimYInches
+                : ShooterConstants.redHeadingAimYInches;
 
         paths = new MirroredPathFactory(
                 follower,
