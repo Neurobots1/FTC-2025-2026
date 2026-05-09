@@ -59,6 +59,8 @@ public final class CompetitionTeleopRobot {
     private final ElapsedTime limelightFilterTimer = new ElapsedTime();
 
     private boolean fireToggleLast;
+    private boolean shootArmed;
+    private boolean shootGateOpenedSinceArmed;
     private boolean turretRehomeButtonLast;
     private boolean tagResetButtonLast;
     private boolean turretHomeRestoredFromAuto;
@@ -95,6 +97,8 @@ public final class CompetitionTeleopRobot {
         initLimelight(hardwareMap);
 
         fireToggleLast = false;
+        shootArmed = false;
+        shootGateOpenedSinceArmed = false;
         turretRehomeButtonLast = false;
         tagResetButtonLast = false;
         yawTrimDegrees = 0.0;
@@ -115,7 +119,9 @@ public final class CompetitionTeleopRobot {
         follower.setStartingPose(startingPose);
         shooter.start();
         turretHomeRestoredFromAuto = shooter.restoreTurretHome(appContext);
-        shotFeedController.setArmed(false);
+        shootArmed = false;
+        shootGateOpenedSinceArmed = false;
+        shotFeedController.setArmed(shootArmed);
         shooter.setGoalPosition(goalXInches, goalYInches);
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         limelightFilterInitialized = false;
@@ -150,11 +156,13 @@ public final class CompetitionTeleopRobot {
         shooter.setAimPosition(aimGoalXInches, aimGoalYInches);
         shooter.setYawTrimDegrees(yawTrimDegrees);
         shooter.setRpmTrim(rpmTrim);
-        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || shotFeedController.isArmed());
+        shotFeedController.setArmed(shootArmed);
+        shooter.setSpinEnabled(TeleopConstants.ALWAYS_SPIN_FLYWHEEL || shootArmed);
         shooter.setAutoAimEnabled(true);
-        shooter.requestFire(shotFeedController.isArmed());
+        shooter.requestFire(shootArmed);
         shooter.update();
         PrecisionShooterSubsystem.TelemetrySnapshot shooterSnapshot = shooter.snapshot();
+        updateShootAutoCancel(shooterSnapshot);
 
         double turretDeadZoneNudge = shooter.getTurretDeadZoneNudgeTurnCommand();
         boolean nudgeDriverOverride = Math.abs(driverTurnCommand)
@@ -166,7 +174,7 @@ public final class CompetitionTeleopRobot {
 
         boolean chassisHeadingLockActive = false;
         if (TeleopConstants.ENABLE_HEADING_LOCK
-                && shotFeedController.isArmed()
+                && shootArmed
                 && shooter.shouldUseChassisHeadingLock()) {
             turnCommand = getHeadingLockTurnCommand(shooterSnapshot);
             chassisHeadingLockActive = true;
@@ -212,6 +220,10 @@ public final class CompetitionTeleopRobot {
 
         indexerBase.OutTake();
         Pose pose = follower.getPose();
+        joinedTelemetry.addData("Shoot", getShootStatus(shooterSnapshot));
+        joinedTelemetry.addData("Shot Zone", shooterSnapshot.inShootingZone);
+        joinedTelemetry.addData("Shot Ready", shooterSnapshot.ready);
+        joinedTelemetry.addData("Feed Gate", shooter.isFeedGateOpen() ? "OPEN" : "CLOSED");
         joinedTelemetry.addData("Yaw Trim Deg", "%.2f", yawTrimDegrees);
         joinedTelemetry.addData("RPM Trim", "%.1f", rpmTrim);
         joinedTelemetry.addData("Turret Deadzone Target", shooter.isTurretRequestedAngleInForwardDeadZone());
@@ -223,7 +235,9 @@ public final class CompetitionTeleopRobot {
     }
 
     public void stop() {
-        shotFeedController.setArmed(false);
+        shootArmed = false;
+        shootGateOpenedSinceArmed = false;
+        shotFeedController.setArmed(shootArmed);
         intake.stop();
         if (limelight != null) {
             try {
@@ -235,8 +249,7 @@ public final class CompetitionTeleopRobot {
 
     private void handleFireToggle(Gamepad gamepad) {
         if (gamepad.y && !fireToggleLast) {
-            boolean armingShooter = !shotFeedController.isArmed();
-            if (armingShooter) {
+            if (!shootArmed) {
                 armShootingSequence();
             } else {
                 stopShootingSequence();
@@ -256,15 +269,64 @@ public final class CompetitionTeleopRobot {
     }
 
     private void armShootingSequence() {
-        shotFeedController.setArmed(true);
+        shootArmed = true;
+        shootGateOpenedSinceArmed = false;
+        shotFeedController.setArmed(shootArmed);
         headingLockController.reset();
     }
 
     private void stopShootingSequence() {
-        shotFeedController.setArmed(false);
+        shootArmed = false;
+        shootGateOpenedSinceArmed = false;
+        shotFeedController.setArmed(shootArmed);
         shooter.requestFire(false);
         intake.stop();
         headingLockController.reset();
+    }
+
+    private void updateShootAutoCancel(PrecisionShooterSubsystem.TelemetrySnapshot snapshot) {
+        if (!shootArmed || snapshot == null) {
+            return;
+        }
+
+        if (shooter.isFeedGateOpen()) {
+            shootGateOpenedSinceArmed = true;
+        }
+
+        if (shootGateOpenedSinceArmed && !snapshot.inShootingZone) {
+            stopShootingSequence();
+        }
+    }
+
+    private String getShootStatus(PrecisionShooterSubsystem.TelemetrySnapshot snapshot) {
+        if (!shootArmed) {
+            return "OFF";
+        }
+        if (shotFeedController.isFarZoneFeedPaused()) {
+            return "ARMED - FAR RPM PAUSE";
+        }
+        if (shotFeedController.getState() == ShotFeedCadenceController.State.FEEDING) {
+            return "ARMED - FEEDING";
+        }
+        if (shotFeedController.getState() == ShotFeedCadenceController.State.GATE_OPENING) {
+            return "ARMED - GATE OPENING";
+        }
+        if (snapshot == null) {
+            return "ARMED - WAITING";
+        }
+        if (!snapshot.inShootingZone) {
+            return "ARMED - WAIT ZONE";
+        }
+        if (!snapshot.solutionValid) {
+            return "ARMED - WAIT SOLUTION";
+        }
+        if (!snapshot.homed) {
+            return "ARMED - WAIT TURRET HOME";
+        }
+        if (!snapshot.ready) {
+            return "ARMED - WAIT READY";
+        }
+        return "ARMED - READY";
     }
 
     private void updateTrimAdjustments(Gamepad gamepad) {

@@ -360,10 +360,15 @@ public final class PrecisionShooterSubsystem {
                 : new ScorePoint(aimGoalX, aimGoalY, Math.hypot(aimGoalX - releaseTurret.x, aimGoalY - releaseTurret.y));
         lastTableDistanceInches = scorePoint.distanceInches;
         lastGoalForwardOffsetInches = config.shootOnMoveEnabled ? config.sotmPassThroughRadiusInches : 0.0;
-        double shootingZoneRadius = useAutoShootingZoneRadius
-                ? ShootingZones.autoRadiusInches
-                : ShootingZones.radiusInches;
-        lastInShootingZone = ShootingZones.isInShootingZone(pose.getX(), pose.getY(), shootingZoneRadius);
+        double shootingZonePadding = useAutoShootingZoneRadius
+                ? ShootingZones.autoPaddingInches
+                : ShootingZones.paddingInches;
+        lastInShootingZone = ShootingZones.isInShootingZone(
+                pose.getX(),
+                pose.getY(),
+                pose.getHeading(),
+                shootingZonePadding
+        );
         double targetHeightDeltaInches = config.targetHeightInches - config.shooterHeightInches;
 
         ShootOnMoveCalculator.Solution aimSolution;
