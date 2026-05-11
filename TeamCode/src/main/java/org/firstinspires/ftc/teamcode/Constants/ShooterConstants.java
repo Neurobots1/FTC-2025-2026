@@ -101,7 +101,7 @@ public class ShooterConstants {
     public static double blueGoalXInches = 0.0;
     public static double blueGoalYInches = 138.0;
     public static double redGoalXInches = 144.0;
-    public static double redGoalYInches =138.0;
+    public static double redGoalYInches = 138.0;
     public static double blueHeadingAimXInches = 4.0; //modifier
     public static double blueHeadingAimYInches = 144.0;
     public static double redHeadingAimXInches = 140.0;

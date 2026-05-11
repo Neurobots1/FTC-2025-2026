@@ -59,17 +59,17 @@ public abstract class Unsorted15BallAuto30 extends BaseUnsortedAutoTemplate {
 
         path1 = lineFromFieldPose(startPose, firstShotPose, false);
         path2 = tangentLine(firstShotPose, line1IntakePose, false);
-        path3 = tangentLine(line1IntakePose, shotPose, true, true);
+        path3 = tangentLine(line1IntakePose, shotPose, true, false);
         path4 = tangentCurve(shotPose, line2ControlPose, line2IntakePose, false);
-        path5 = tangentLine(line2IntakePose, shotPose, true, true);
+        path5 = tangentLine(line2IntakePose, shotPose, true, false);
         path6 = constantLine(shotPose, line3IntakePose,Math.toRadians(180),false);
         path7 = line(line3IntakePose, gatePose, false);
         path8 = line(gatePose, gatePose2, false);
-        path9 = tangentLine(gatePose2, shotPose, true, true);
+        path9 = tangentLine(gatePose2, shotPose, true, false);
         path10 = constantLine(shotPose, line3IntakePose, Math.toRadians(180), false);
         path11 = line(line3IntakePose, gatePose, false);
         path12 = line(gatePose, gatePose2, false);
-        path13 = tangentLine(gatePose2, finalPose, true, true);
+        path13 = tangentLine(gatePose2, finalPose, true, false);
     }
 
     private PathChain line(Pose blueStart, Pose blueEnd, boolean reversed) {
