@@ -1,0 +1,122 @@
+package org.firstinspires.ftc.teamcode.Subsystems;
+
+import com.pedropathing.geometry.Pose;
+
+import org.firstinspires.ftc.teamcode.Constants.TeleopConstants;
+import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AllianceMirroring;
+import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
+
+public final class AllianceSelector {
+
+    public enum Alliance { RED, BLUE }
+
+    public interface Provider {
+        Alliance getAlliance();
+
+        default void setAlliance(Alliance a) {}
+
+        default void toggle() {
+            setAlliance(getAlliance() == Alliance.BLUE ? Alliance.RED : Alliance.BLUE);
+        }
+    }
+
+    public static final class Manager implements Provider {
+        public Alliance alliance;
+
+        public Manager(Alliance start) {
+            this.alliance = start;
+        }
+
+        @Override
+        public Alliance getAlliance() {
+            return alliance;
+        }
+
+        @Override
+        public void setAlliance(Alliance a) {
+            this.alliance = a;
+        }
+    }
+
+    public static final class Field {
+
+        public static final double BLUE_CORNER_Y_IN = 9;
+        public static final double BLUE_CORNER_X_IN = 135;
+        public static final double RED_CORNER_Y_IN = 9;
+        public static final double RED_CORNER_X_IN = 9;
+
+        public static final double RED_FINAL_X = 93;
+        public static final double RED_FINAL_Y = 108;
+        public static final double BLUE_FINAL_X = 55;
+        public static final double BLUE_FINAL_Y = 105;
+
+        public static final double BLUE_FINAL_H = 140;
+        public static final double RED_FINAL_H = 37;
+
+        public static double EndAutoX(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_X : RED_FINAL_X;
+        }
+
+        public static double EndAutoY(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_Y : RED_FINAL_Y;
+        }
+
+        public static double EndAutoH(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_FINAL_H : RED_FINAL_H;
+        }
+
+        public static double resetX(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_CORNER_X_IN : RED_CORNER_X_IN;
+        }
+
+        public static double resetY(Alliance a) {
+            return a == Alliance.BLUE ? BLUE_CORNER_Y_IN : RED_CORNER_Y_IN;
+        }
+
+        public static double goalX(Alliance a) {
+            return goalPose(a).getX();
+        }
+
+        public static double goalY(Alliance a) {
+            return goalPose(a).getY();
+        }
+
+        public static Pose goalPose(Alliance a) {
+            return AllianceMirroring.forAlliance(
+                    TeleopConstants.BLUE_GOAL_POSE,
+                    a == Alliance.BLUE ? AutoAlliance.BLUE : AutoAlliance.RED
+            );
+        }
+
+        public static double fieldCentricOffset(Alliance a) {
+            return (a == Alliance.BLUE)
+                    ? Math.toRadians(180)
+                    : Math.toRadians(0);
+        }
+
+        public static double headingToGoal(Pose pose, Alliance alliance) {
+            double gx = goalX(alliance);
+            double gy = goalY(alliance);
+            double dx = gx - pose.getX();
+            double dy = gy - pose.getY();
+            return Math.atan2(dy, dx);
+        }
+    }
+
+    public static final Provider defaultProvider = new Provider() {
+        private Alliance alliance = Alliance.RED;
+
+        @Override
+        public Alliance getAlliance() {
+            return alliance;
+        }
+
+        @Override
+        public void setAlliance(Alliance a) {
+            alliance = a;
+        }
+    };
+
+    private AllianceSelector() {}
+}
+

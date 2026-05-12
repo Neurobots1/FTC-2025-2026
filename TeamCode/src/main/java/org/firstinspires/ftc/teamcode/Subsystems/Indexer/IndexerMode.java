@@ -1,0 +1,20 @@
+package org.firstinspires.ftc.teamcode.Subsystems.Indexer;
+
+public interface IndexerMode {
+
+    void startIntake(int line);
+    void startOuttake(int line);
+
+    boolean isBusy();
+
+    void update();
+    void stopAll();
+
+    void setShootContext(double x, double y, double distance);
+
+    default void setPreSpinEnabled(boolean enabled) {}
+
+    default boolean isInShootingZone() { return true; }
+
+    default boolean isReadyToShoot() { return false; }
+}
