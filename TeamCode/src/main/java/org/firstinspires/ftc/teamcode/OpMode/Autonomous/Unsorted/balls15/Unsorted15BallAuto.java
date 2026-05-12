@@ -1,10 +1,11 @@
 package org.firstinspires.ftc.teamcode.OpMode.Autonomous.Unsorted.balls15;
 
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 
-import org.firstinspires.ftc.teamcode.Constants.AutoPoseConstants;
-import org.firstinspires.ftc.teamcode.Constants.ShooterHardwareConstants;
 import org.firstinspires.ftc.teamcode.OpMode.Autonomous.templates.BaseUnsortedAutoTemplate;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Actions;
 import org.firstinspires.ftc.teamcode.Subsystems.Autonomous.Modular.AutoAlliance;
@@ -23,131 +24,227 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
     private PathChain shotToGate;
     private PathChain gateToShot;
     private PathChain shotToGateAgain;
+    private PathChain openGate;
     private PathChain gateToFinalShot;
     private PathChain shotToLine1Start;
     private PathChain line1StartToFinish;
+    private PathChain intakeRightLine;
     private PathChain line1ToFinalShot;
 
     @Override
     protected Pose startPose() {
-        return paths().pose(AutoPoseConstants.CloseStartPose());
+        return paths().pose(new Pose(56.000, 8.500, Math.toRadians(180)));
     }
 
     @Override
     protected void buildPaths() {
-        Pose startPose = AutoPoseConstants.CloseStartPose();
-        Pose preloadShot = AutoPoseConstants.CloseShootPose();
-        Pose line2Start = AutoPoseConstants.line2StartPose();
-        Pose line2Finish = AutoPoseConstants.line2FinishPoseUnsorted();
-        Pose line2Control = AutoPoseConstants.line2ControlPose();
-        Pose line2ReturnControl = AutoPoseConstants.line2ReturnControlPose();
-        Pose gatePose = AutoPoseConstants.gatePose();
-        Pose firstGatePose = AutoPoseConstants.firstGatePose();
-        Pose gateControl = AutoPoseConstants.gateControlPose();
-        Pose line1Start = AutoPoseConstants.line1StartPose();
-        Pose line1Finish = AutoPoseConstants.line1FinishPose();
-        Pose finalShot = AutoPoseConstants.finalShotPose();
-        Pose gateShootControl = AutoPoseConstants.gateShootControl();
+        Pose startPose = new Pose(56.000, 8.500, Math.toRadians(180));
+        Pose humanZone = new Pose(12.000, 8.500);
+        Pose humanZoneShot = new Pose(48.000, 13.000);
+        Pose leftLine = new Pose(18.444, 35.183);
+        Pose leftLineShot = new Pose(47.989, 13.164);
+        Pose middleLine = new Pose(23.597, 63.974);
+        Pose openGatePose = new Pose(15.728, 63.939);
+        Pose middleLineShot = new Pose(50.233, 78.124);
+        Pose gatePose = new Pose(9.058, 58.000);
+        Pose gateShot = new Pose(50.041, 83.121);
+        Pose rightLine = new Pose(21.932, 82.739);
+        Pose finalShot = new Pose(44.475, 99.469);
 
-        if (ShooterHardwareConstants.turretEnabled) {
-            buildTurretEnabledNormalPaths(
-                    startPose,
-                    preloadShot,
-                    line2Start,
-                    line2Finish,
-                    line2Control,
-                    line2ReturnControl,
-                    gatePose,
-                    firstGatePose,
-                    gateControl,
-                    line1Start,
-                    line1Finish,
-                    finalShot,
-                    gateShootControl
-            );
-            return;
+        toPreloadShot = linearHeadingLine(
+                startPose,
+                startPose,
+                Math.toRadians(180),
+                Math.toRadians(180),
+                false
+        );
+        line2ControlToStart = tangentLine(startPose, humanZone, false);
+        toLine2Finish = tangentLine(humanZone, humanZoneShot, true);
+        line2ToShot = tangentLine(humanZoneShot, humanZoneShot, false);
+        shotToGate = tangentCurve(
+                humanZoneShot,
+                new Pose(46.915, 36.863),
+                leftLine,
+                false
+        );
+        gateToShot = tangentLine(leftLine, leftLineShot, true);
+        shotToGateAgain = tangentCurve(
+                leftLineShot,
+                new Pose(24.327, 27.003),
+                new Pose(23.774, 33.830),
+                middleLine,
+                false
+        );
+        openGate = constantHeadingLine(
+                middleLine,
+                openGatePose,
+                Math.toRadians(90),
+                false
+        );
+        gateToFinalShot = linearHeadingCurve(
+                openGatePose,
+                new Pose(48.775, 68.616),
+                middleLineShot,
+                Math.toRadians(90),
+                Math.toRadians(180),
+                false
+        );
+        shotToLine1Start = linearHeadingCurve(
+                middleLineShot,
+                new Pose(39.924, 53.095),
+                gatePose,
+                Math.toRadians(180),
+                Math.toRadians(150),
+                false
+        );
+        line1StartToFinish = linearHeadingCurve(
+                gatePose,
+                new Pose(52.684, 67.132),
+                gateShot,
+                Math.toRadians(150),
+                Math.toRadians(180),
+                false
+        );
+        intakeRightLine = tangentLine(gateShot, rightLine, false);
+        line1ToFinalShot = tangentLine(rightLine, finalShot, true);
+    }
+
+    private PathChain tangentLine(Pose blueStart, Pose blueEnd, boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierLine(start, end))
+                .setTangentHeadingInterpolation();
+
+        if (reversed) {
+            builder = builder.setReversed();
         }
 
-        buildNormalPaths(
-                startPose,
-                preloadShot,
-                line2Start,
-                line2Finish,
-                line2Control,
-                line2ReturnControl,
-                gatePose,
-                firstGatePose,
-                gateControl,
-                line1Start,
-                line1Finish,
-                finalShot,
-                gateShootControl
-        );
+        return builder.build();
     }
 
-    private void buildTurretEnabledNormalPaths(Pose startPose,
-                                               Pose preloadShot,
-                                               Pose line2Start,
-                                               Pose line2Finish,
-                                               Pose line2Control,
-                                               Pose line2ReturnControl,
-                                               Pose gatePose,
-                                               Pose firstGatePose,
-                                               Pose gateControl,
-                                               Pose line1Start,
-                                               Pose line1Finish,
-                                               Pose finalShot,
-                                               Pose gateShootControl) {
-        Pose preloadShotHeading = new Pose(
-                preloadShot.getX(),
-                preloadShot.getY(),
-                Math.toRadians(180)
-        );
-        Pose finalShotHeading = new Pose(
-                finalShot.getX(),
-                finalShot.getY(),
-                Math.toRadians(180)
-        );
+    private PathChain tangentCurve(Pose blueStart, Pose blueControl, Pose blueEnd, boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose control = paths().pose(blueControl);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierCurve(start, control, end))
+                .setTangentHeadingInterpolation();
 
-        toPreloadShot = paths().line(startPose, preloadShotHeading);
-        toLine2Control = paths().tangentLine(preloadShotHeading, line2Control);
-        line2ControlToStart = paths().tangentLine(line2Control, line2Start);
-        toLine2Finish = paths().line(line2Start, line2Finish);
-        line2ToShot = paths().curve(line2Finish, line2ReturnControl, preloadShotHeading);
-        shotToGate = paths().curve(preloadShotHeading, gateControl, firstGatePose);
-        gateToShot = paths().curve(firstGatePose, gateShootControl, preloadShotHeading);
-        shotToGateAgain = paths().curve(preloadShotHeading, gateControl, gatePose);
-        gateToFinalShot = paths().curve(gatePose, gateShootControl, finalShotHeading);
-        shotToLine1Start = paths().line(finalShotHeading, line1Start);
-        line1StartToFinish = paths().line(line1Start, line1Finish);
-        line1ToFinalShot = paths().line(line1Finish, finalShot);
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
     }
 
-    private void buildNormalPaths(Pose startPose,
-                                  Pose preloadShot,
-                                  Pose line2Start,
-                                  Pose line2Finish,
-                                  Pose line2Control,
-                                  Pose line2ReturnControl,
-                                  Pose gatePose,
-                                  Pose firstGatePose,
-                                  Pose gateControl,
-                                  Pose line1Start,
-                                  Pose line1Finish,
-                                  Pose finalShot,
-                                  Pose gateShootControl) {
-        toPreloadShot = paths().shotLine(startPose, preloadShot);
-        toLine2Control = paths().tangentLine(preloadShot, line2Control);
-        line2ControlToStart = paths().tangentLine(line2Control, line2Start);
-        toLine2Finish = paths().line(line2Start, line2Finish);
-        line2ToShot = paths().shotCurve(line2Finish, line2ReturnControl, preloadShot);
-        shotToGate = paths().curve(preloadShot, gateControl, firstGatePose);
-        gateToShot = paths().shotCurve(firstGatePose, gateShootControl, preloadShot);
-        shotToGateAgain = paths().curve(preloadShot, gateControl, gatePose);
-        gateToFinalShot = paths().shotCurve(gatePose, gateShootControl, preloadShot);
-        shotToLine1Start = paths().line(finalShot, line1Start);
-        line1StartToFinish = paths().line(line1Start, line1Finish);
-        line1ToFinalShot = paths().shotLine(line1Finish, finalShot);
+    private PathChain tangentCurve(Pose blueStart,
+                                   Pose blueControl1,
+                                   Pose blueControl2,
+                                   Pose blueEnd,
+                                   boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose control1 = paths().pose(blueControl1);
+        Pose control2 = paths().pose(blueControl2);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierCurve(start, control1, control2, end))
+                .setTangentHeadingInterpolation();
+
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
+    }
+
+    private PathChain middleLineGatePath(Pose blueStart, Pose blueMiddleLine, Pose blueGateOpen) {
+        Pose start = paths().pose(blueStart);
+        Pose control1 = paths().pose(new Pose(24.327, 27.003));
+        Pose control2 = paths().pose(new Pose(23.774, 33.830));
+        Pose middleLine = paths().pose(blueMiddleLine);
+        Pose gateOpen = paths().pose(blueGateOpen);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierCurve(start, control1, control2, middleLine))
+                .addPath(new BezierLine(middleLine, gateOpen))
+                .setConstantHeadingInterpolation(allianceHeading(Math.toRadians(90)));
+
+        return builder.build();
+    }
+
+    private PathChain finalRightLinePath(Pose blueStart, Pose blueRightLine, Pose blueFinalShot) {
+        Pose start = paths().pose(blueStart);
+        Pose rightLine = paths().pose(blueRightLine);
+        Pose finalShot = paths().pose(blueFinalShot);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierLine(start, rightLine))
+                .addPath(new BezierLine(rightLine, finalShot))
+                .setTangentHeadingInterpolation()
+                .setReversed();
+
+        return builder.build();
+    }
+
+    private PathChain linearHeadingLine(Pose blueStart,
+                                        Pose blueEnd,
+                                        double blueStartHeading,
+                                        double blueEndHeading,
+                                        boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierLine(start, end))
+                .setLinearHeadingInterpolation(
+                        allianceHeading(blueStartHeading),
+                        allianceHeading(blueEndHeading)
+                );
+
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
+    }
+
+    private PathChain constantHeadingLine(Pose blueStart, Pose blueEnd, double blueHeading, boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierLine(start, end))
+                .setConstantHeadingInterpolation(allianceHeading(blueHeading));
+
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
+    }
+
+    private PathChain linearHeadingCurve(Pose blueStart,
+                                         Pose blueControl,
+                                         Pose blueEnd,
+                                         double blueStartHeading,
+                                         double blueEndHeading,
+                                         boolean reversed) {
+        Pose start = paths().pose(blueStart);
+        Pose control = paths().pose(blueControl);
+        Pose end = paths().pose(blueEnd);
+        PathBuilder builder = follower().pathBuilder()
+                .addPath(new BezierCurve(start, control, end))
+                .setLinearHeadingInterpolation(
+                        allianceHeading(blueStartHeading),
+                        allianceHeading(blueEndHeading)
+                );
+
+        if (reversed) {
+            builder = builder.setReversed();
+        }
+
+        return builder.build();
+    }
+
+    private double allianceHeading(double blueHeading) {
+        return alliance() == AutoAlliance.BLUE ? blueHeading : Math.PI - blueHeading;
     }
 
     @Override
@@ -185,6 +282,8 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 .doAction(startTimedIntake())
                 .followAsync(shotToGateAgain, 1.0, true)
                 .waitForFollowerIdle()
+                .followAsync(openGate, 1.0, false)
+                .waitForFollowerIdle()
                 .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
                 .doAction(stopIntake())
                 .followAsync(gateToFinalShot, 1.0, true)
@@ -196,6 +295,14 @@ public abstract class Unsorted15BallAuto extends BaseUnsortedAutoTemplate {
                 .followAsync(shotToLine1Start, 1.0, false)
                 .waitForFollowerIdle()
                 .followAsync(line1StartToFinish, LINE_INTAKE_SPEED, false)
+                .waitForFollowerIdle()
+                .doAction(stopIntake())
+                .waitForUnsortedReadyToShoot()
+                .startUnsortedShot()
+                .waitForUnsortedShotDone()
+                .waitForFollowerIdle()
+                .doAction(startTimedIntake())
+                .followAsync(intakeRightLine, 1.0, false)
                 .waitForFollowerIdle()
                 .doAction(stopIntake())
                 .followAsync(line1ToFinalShot, 1.0, true)
