@@ -25,47 +25,36 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
     private PathChain path6;
     private PathChain path7;
     private PathChain path8;
-    private PathChain path100;
     private PathChain path9;
-    private PathChain path10;
-    private PathChain path11;
-    private PathChain path12;
-    private PathChain path13;
-    private PathChain path14;
-    private PathChain path15;
 
     @Override
     protected Pose startPose() {
-        return paths().pose(new Pose(34.000, 135.000, Math.toRadians(270)));
+        return paths().pose(new Pose(34.000, 137.000, Math.toRadians(90)));
     }
 
     @Override
     protected void buildPaths() {
-        Pose startPose = new Pose(34.609, 137.659, Math.toRadians(270));
-        Pose firstShotPose = new Pose(54.260, 93.945, Math.toRadians(270));
-        Pose line1IntakePose = new Pose(17.993, 85.071, Math.toRadians(175));
-        Pose shotPose = new Pose(59.19, 78.04);
-        Pose line2ControlPose = new Pose(60.468, 59.166);
-        Pose line2IntakePose = new Pose(7.305, 52.900);
-        Pose line3ControlPose = new Pose(38.000, 60.034);
-        Pose gatePose = new Pose(11, 51.000, Math.toRadians(140));
-        Pose gatePose2 = new Pose(11, 54.000, Math.toRadians(140));
-        Pose finalPose = new Pose(61.000, 107.000);
-        Pose line3IntakePose = new Pose(18, 64.034, Math.toRadians(180));
+        Pose startPose = new Pose(34.000, 137.000, Math.toRadians(90));
+        Pose shotPose = new Pose(59.000, 78.000, Math.toRadians(180));
+        Pose line1IntakePose = new Pose(9.463, 70.588);
+        Pose line1ControlOut = new Pose(58.227, 27.322);
+        Pose line1ControlBack = new Pose(58.432, 27.199);
+        Pose line2IntakePose = new Pose(7.000, 35.000);
+        Pose line2ControlPose = new Pose(60.000, 30.000);
+        Pose line3IntakePose = new Pose(9.000, 8.000);
+        Pose line3ControlPose = new Pose(11.000, 47.000);
+        Pose finalApproachPose = new Pose(15.000, 85.000);
+        Pose finalShotPose = new Pose(46.000, 115.000);
 
-        path1 = line(startPose, firstShotPose, false);
-        path2 = tangentLine(firstShotPose, line1IntakePose, false);
-        path3 = tangentLine(line1IntakePose, shotPose, true);
+        path1 = line(startPose, shotPose, false);
+        path2 = tangentCurve(shotPose, line1ControlOut, line1IntakePose, false);
+        path3 = tangentCurve(line1IntakePose, line1ControlBack, shotPose, true);
         path4 = tangentCurve(shotPose, line2ControlPose, line2IntakePose, false);
-        path5 = tangentLine(line2IntakePose, shotPose, true);
-        path6 = constantLine(shotPose, line3IntakePose,Math.toRadians(180),false);
-        path7 = line(line3IntakePose, gatePose, false);
-        path8 = line(gatePose, gatePose2, false);
-        path9 = tangentLine(gatePose2, shotPose, true);
-        path10 = constantLine(shotPose, line3IntakePose, Math.toRadians(180), false);
-        path11 = line(line3IntakePose, gatePose, false);
-        path12 = line(gatePose, gatePose2, false);
-        path14 = tangentLine(gatePose2, finalPose, true);
+        path5 = tangentCurve(line2IntakePose, line2ControlPose, shotPose, true);
+        path6 = tangentCurve(shotPose, line3ControlPose, line3IntakePose, false);
+        path7 = tangentCurve(line3IntakePose, line3ControlPose, shotPose, true);
+        path8 = tangentLine(shotPose, finalApproachPose, false);
+        path9 = tangentLine(finalApproachPose, finalShotPose, true);
     }
 
     private PathChain line(Pose blueStart, Pose blueEnd, boolean reversed) {
@@ -138,6 +127,15 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
                 .waitForUnsortedShotDone()
                 .waitSeconds(SHOOT_POSE_DEPART_DELAY_SECONDS)
                 .doAction(startIntake())
+                .followAsync(path2, LINE_INTAKE_SPEED, false)
+                .waitForFollowerIdle()
+                .followAsync(path3, 1.0, true)
+                .waitForUnsortedShotZone()
+                .startUnsortedShot()
+                .waitForUnsortedShotDone()
+                .waitForFollowerIdle()
+                .waitSeconds(SHOOT_POSE_DEPART_DELAY_SECONDS)
+                .doAction(startIntake())
                 .followAsync(path4, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()
                 .followAsync(path5, 1.0, true)
@@ -149,39 +147,20 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
                 .doAction(startIntake())
                 .followAsync(path6, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()
-                .followAsync(path7, 1.0, false)
-                .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
-                .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
-                .doAction((stopIntake()))
-                .followAsync(path9, LINE_INTAKE_SPEED, false)
+                .followAsync(path7, 1.0, true)
                 .waitForUnsortedShotZone()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
                 .waitForFollowerIdle()
                 .waitSeconds(SHOOT_POSE_DEPART_DELAY_SECONDS)
                 .doAction(startIntake())
-                .followAsync(path10, 1.0, false)
+                .followAsync(path8, LINE_INTAKE_SPEED, false)
                 .waitForFollowerIdle()
-                .followAsync(path11, 1.0, true)
-                .waitForFollowerIdle()
-                .doAction(Actions.waitSeconds(GATE_TURN_SETTLE_SECONDS))
-                .doAction(Actions.waitSeconds(GATE_INTAKE_SECONDS))
-                .follow(path14, 1.0, true)
+                .follow(path9, 1.0, true)
+                .doAction(stopIntake())
                 .waitForUnsortedReadyToShoot()
                 .startUnsortedShot()
                 .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .doAction(startIntake())
-                .followAsync(path2, LINE_INTAKE_SPEED, false)
-                .waitForFollowerIdle()
-                .followAsync(path3, 1.0, true)
-                .waitForUnsortedShotZone()
-                .startUnsortedShot()
-                .waitForUnsortedShotDone()
-                .waitForFollowerIdle()
-                .waitSeconds(SHOOT_POSE_DEPART_DELAY_SECONDS)
-                .doAction(startIntake())
                 .doAction(stopDrive())
                 .stopUnsortedShooter();
 
@@ -203,14 +182,14 @@ public abstract class Unsorted15BallAuto20 extends BaseUnsortedAutoTemplate {
         });
     }
 
-    public static class Blue extends Unsorted15BallAuto30 {
+    public static class Blue extends Unsorted15BallAuto20 {
         @Override
         protected AutoAlliance alliance() {
             return AutoAlliance.BLUE;
         }
     }
 
-    public static class Red extends Unsorted15BallAuto30 {
+    public static class Red extends Unsorted15BallAuto20 {
         @Override
         protected AutoAlliance alliance() {
             return AutoAlliance.RED;
